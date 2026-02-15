@@ -1,0 +1,5 @@
+{
+  "name": "LingoBurmese",
+  "description": "A clean, modern language learning application for Burmese, featuring audio pronunciation, progress tracking, and a beautiful Duolingo-inspired interface.",
+  "requestFramePermissions": []
+}
