@@ -4,8 +4,10 @@ import { AudioButton } from './components/AudioButton';
 import { LessonData, ProgressState } from './types';
 
 const LEARN_QUESTIONS_PER_UNIT = 10;
-const REVIEW_QUESTIONS_PER_UNIT = 5;
 const QUICK_REVIEW_CHECKPOINTS = [2, 4, 6, 8, 10];
+const QUICK_REVIEW_COUNT = QUICK_REVIEW_CHECKPOINTS.length;
+const TOTAL_XP_PER_COURSE = QUICK_REVIEW_COUNT;
+const PASS_SCORE = 4;
 const PROFILE_NAME_KEY = 'lingo_burmese_profile_name';
 const PROGRESS_KEY = 'lingo_burmese_progress';
 const UNLOCKED_LEVEL_KEY = 'lingo_burmese_unlocked_level';
@@ -14,77 +16,150 @@ const PRONUNCIATION_ENABLED_KEY = 'lingo_burmese_pronunciation_enabled';
 const LEARN_LANGUAGE_KEY = 'lingo_burmese_learn_language';
 const DEFAULT_LANGUAGE_KEY = 'lingo_burmese_default_language';
 const LESSONS_PER_BATCH = 3;
+const MATCH_PAIRS_PER_REVIEW = 3;
 const CURRICULUM = [
   {
     level: 1,
-    title: 'Foundations',
+    title: 'Sound & Survival Speech',
     stage: 'A1',
-    topics: ['Alphabet & sounds', 'Basic greetings', 'Be verb (am/is/are)', 'Simple nouns', 'Yes/No questions'],
+    topics: [
+      'Alphabet sounds & basic pronunciation',
+      'Greeting and introducing yourself',
+      'Saying name, country, job',
+      'Yes/No short answers',
+      'Classroom survival phrases',
+    ],
   },
   {
     level: 2,
-    title: 'Survival Basics',
+    title: 'Basic Daily Speech',
     stage: 'A1',
-    topics: ['Present simple', 'Daily routines', 'Basic adjectives', 'There is/are', 'Simple WH questions'],
+    topics: [
+      'Talking about daily routine',
+      'Describing people & objects',
+      'Asking simple questions',
+      'Talking about time & dates',
+      'Giving simple directions',
+    ],
   },
   {
     level: 3,
-    title: 'Structured Sentences',
-    stage: 'A2',
-    topics: ['Past simple', 'Future (will / going to)', 'Comparatives', 'Basic modals (can/must)', 'Frequency adverbs'],
+    title: 'Guided Conversation',
+    stage: 'A1',
+    topics: [
+      'Talking about likes & preferences',
+      'Talking about family & friends',
+      'Talking about past weekend',
+      'Talking about future plans',
+      'Role-play conversations',
+    ],
   },
   {
     level: 4,
-    title: 'Functional English',
+    title: 'Narrating Events',
     stage: 'A2',
-    topics: ['Present continuous', 'Countable/uncountable', 'Requests & offers', 'Directions', 'Basic connectors'],
+    topics: [
+      'Telling past stories',
+      'Describing experiences',
+      'Sequencing events clearly',
+      'Comparing things',
+      'Giving short explanations',
+    ],
   },
   {
     level: 5,
-    title: 'Intermediate Core',
-    stage: 'B1',
+    title: 'Functional Interaction',
+    stage: 'A2',
     topics: [
-      'Present perfect',
-      'Conditionals (type 1)',
-      'Passive voice (basic)',
-      'Relative clauses',
-      'Reported speech (basic)',
+      'Making requests politely',
+      'Giving advice',
+      'Making suggestions',
+      'Handling simple problems',
+      'Expressing agreement/disagreement',
     ],
   },
   {
     level: 6,
-    title: 'Everyday Fluency',
-    stage: 'B1',
+    title: 'Structured Responses',
+    stage: 'A2',
     topics: [
-      'Phrasal verbs',
-      'Suggestions & advice',
-      'Obligation & permission',
-      'Experiences & opinions',
-      'Sequencing ideas',
+      'Giving opinions with reasons',
+      'Explaining cause & effect',
+      'Describing advantages & disadvantages',
+      'Reacting naturally in conversation',
+      'Extending answers confidently',
     ],
   },
   {
     level: 7,
-    title: 'Upper-Intermediate Skills',
-    stage: 'B2',
+    title: 'Expanding Fluency',
+    stage: 'B1',
     topics: [
-      'Conditionals (type 2/3)',
-      'Passive voice (advanced)',
-      'Indirect questions',
-      'Discourse markers',
-      'Nuanced comparisons',
+      'Talking about achievements',
+      'Describing processes',
+      'Hypothetical situations (if...)',
+      'Explaining decisions',
+      'Storytelling techniques',
     ],
   },
   {
     level: 8,
-    title: 'Professional Communication',
+    title: 'Discussion Skills',
+    stage: 'B1',
+    topics: [
+      'Expressing strong opinions',
+      'Supporting arguments',
+      'Comparing viewpoints',
+      'Participating in discussions',
+      'Managing turn-taking',
+    ],
+  },
+  {
+    level: 9,
+    title: 'Persuasive Speaking',
+    stage: 'B1',
+    topics: [
+      'Presenting arguments',
+      'Convincing others',
+      'Handling objections',
+      'Structured mini-presentations',
+      'Debate practice',
+    ],
+  },
+  {
+    level: 10,
+    title: 'Advanced Fluency',
     stage: 'B2',
     topics: [
-      'Meetings & negotiations',
-      'Email writing',
-      'Presentations',
+      'Hypothetical & abstract topics',
+      'Nuanced comparisons',
+      'Clarifying complex ideas',
+      'Paraphrasing smoothly',
+      'Emphasis & rhetorical devices',
+    ],
+  },
+  {
+    level: 11,
+    title: 'Analytical Discussion',
+    stage: 'B2',
+    topics: [
+      'Analyzing social issues',
+      'Evaluating arguments',
+      'Diplomatic disagreement',
       'Problem-solution discussions',
-      'Polite disagreement',
+      'Critical thinking in speech',
+    ],
+  },
+  {
+    level: 12,
+    title: 'Professional Speaking Mastery',
+    stage: 'B2',
+    topics: [
+      'Leading meetings',
+      'Formal presentations',
+      'Negotiation techniques',
+      'Handling Q&A sessions',
+      'Executive-level communication',
     ],
   },
 ] as const;
@@ -121,11 +196,20 @@ const STAGE_META = {
   },
 } as const;
 
-type AppMode = 'learn' | 'quiz' | 'completed';
+type AppMode = 'learn' | 'quiz' | 'result' | 'completed';
 type SidebarTab = 'profile' | 'levels' | 'lesson' | 'settings';
 type LearnLanguage = 'english' | 'chinese';
 type DefaultLanguage = 'burmese' | 'english';
-type ReviewKind = 'quick' | 'final';
+type MatchPair = {
+  id: string;
+  prompt: string;
+  answer: string;
+};
+type ReviewResult = {
+  correct: number;
+  total: number;
+  passed: boolean;
+};
 
 function shuffleArray<T>(items: T[]): T[] {
   const array = [...items];
@@ -194,15 +278,17 @@ const App: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isNextDisabled, setIsNextDisabled] = useState(false);
   const [learnStep, setLearnStep] = useState(0);
-  const [quizQuestions, setQuizQuestions] = useState<LessonData[]>([]);
-  const [quizChoiceSets, setQuizChoiceSets] = useState<string[][]>([]);
-  const [quizQuestionIndex, setQuizQuestionIndex] = useState(0);
-  const [quizResults, setQuizResults] = useState<boolean[]>([]);
-  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [answerChecked, setAnswerChecked] = useState(false);
-  const [reviewKind, setReviewKind] = useState<ReviewKind>('final');
+  const [unitXp, setUnitXp] = useState(0);
+  const [reviewResult, setReviewResult] = useState<ReviewResult | null>(null);
   const [quizSectionStart, setQuizSectionStart] = useState(0);
   const [quizSectionEnd, setQuizSectionEnd] = useState(0);
+  const [matchPairs, setMatchPairs] = useState<MatchPair[]>([]);
+  const [matchAnswerOptions, setMatchAnswerOptions] = useState<MatchPair[]>([]);
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+  const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
+  const [matchedPairIds, setMatchedPairIds] = useState<string[]>([]);
+  const [matchMistakes, setMatchMistakes] = useState(0);
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
   const profileStorageId = profileName ? toProfileStorageId(profileName) : '';
   const progressStorageKey = profileStorageId ? `${PROGRESS_KEY}:${profileStorageId}` : PROGRESS_KEY;
@@ -211,7 +297,9 @@ const App: React.FC = () => {
 
   const totalLevels = CURRICULUM.length;
   const activeLevelIndex =
-    mode === 'quiz' ? quizSectionStart : Math.min(currentIndex, Math.max(lessons.length - 1, 0));
+    mode === 'quiz' || mode === 'result'
+      ? quizSectionStart
+      : Math.min(currentIndex, Math.max(lessons.length - 1, 0));
   const fallbackLevel = Math.floor(activeLevelIndex / LEARN_QUESTIONS_PER_UNIT) + 1;
   const currentLevel = lessons[activeLevelIndex]?.level || fallbackLevel;
   const currentUnit = lessons[activeLevelIndex]?.unit || 1;
@@ -223,9 +311,9 @@ const App: React.FC = () => {
   const sectionStart = levelIndexes.length > 0 ? levelIndexes[0] : Math.max(0, activeLevelIndex);
   const sectionEnd = levelIndexes.length > 0 ? levelIndexes[levelIndexes.length - 1] : Math.max(0, activeLevelIndex);
   const sectionTotal = Math.max(1, sectionEnd - sectionStart + 1);
-  const currentQuizQuestion = quizQuestions[quizQuestionIndex];
-  const currentChoices = quizChoiceSets[quizQuestionIndex] || [];
-  const requiredCorrect = Math.max(1, Math.ceil(quizQuestions.length * 0.67));
+  const isMatchReview = mode === 'quiz';
+  const isMatchReviewComplete =
+    isMatchReview && matchPairs.length > 0 && matchedPairIds.length === matchPairs.length;
   const unitFlowTotal = LEARN_QUESTIONS_PER_UNIT;
   const batchStartOffset =
     mode === 'learn' ? ((learnStep * LESSONS_PER_BATCH) % Math.max(sectionTotal, 1)) : 0;
@@ -243,10 +331,13 @@ const App: React.FC = () => {
     Math.min(learnStep, LEARN_QUESTIONS_PER_UNIT);
 
   const resetQuizState = () => {
-    setQuizQuestionIndex(0);
-    setQuizResults([]);
-    setSelectedChoice(null);
     setAnswerChecked(false);
+    setMatchPairs([]);
+    setMatchAnswerOptions([]);
+    setSelectedPromptId(null);
+    setSelectedAnswerId(null);
+    setMatchedPairIds([]);
+    setMatchMistakes(0);
   };
 
   const applyProfileName = () => {
@@ -256,6 +347,8 @@ const App: React.FC = () => {
     setProfileName(nextName);
     setMode('learn');
     resetQuizState();
+    setUnitXp(0);
+    setReviewResult(null);
     setSidebarTab('lesson');
     setIsSidebarOpen(false);
   };
@@ -350,56 +443,61 @@ const App: React.FC = () => {
   }, [sidebarTab]);
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (mode !== 'quiz') return;
+    if (!isMatchReview || answerChecked) return;
+    if (matchPairs.length > 0 && matchedPairIds.length === matchPairs.length) {
+      setAnswerChecked(true);
+    }
+  }, [answerChecked, isMatchReview, matchPairs.length, matchedPairIds.length]);
 
-      const num = Number(event.key);
-      if (!answerChecked && Number.isInteger(num) && num >= 1 && num <= 4) {
-        const option = currentChoices[num - 1];
-        if (option) {
-          event.preventDefault();
-          setSelectedChoice(option);
-        }
-      }
-
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        if (!answerChecked && selectedChoice) {
-          const isCorrect = selectedChoice === currentQuizQuestion?.burmese;
-          setQuizResults((prev) => [...prev, Boolean(isCorrect)]);
-          setAnswerChecked(true);
-        } else if (answerChecked) {
-          handleQuizNext();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [answerChecked, currentChoices, currentQuizQuestion?.burmese, mode, selectedChoice]);
-
-  const startQuizForLevel = (start: number, end: number, questionCount: number, kind: ReviewKind) => {
+  const startQuizForLevel = (start: number, end: number) => {
     const levelLessons: LessonData[] = lessons.slice(start, end + 1);
-    const quizPool: LessonData[] = shuffleArray(levelLessons).slice(
-      0,
-      Math.min(questionCount, levelLessons.length),
-    );
-    const options: string[][] = quizPool.map((question: LessonData) => {
-      const distractors = shuffleArray(
-        lessons.filter((lesson: LessonData) => lesson.burmese !== question.burmese),
-      )
-        .slice(0, 3)
-        .map((lesson: LessonData) => lesson.burmese);
-      return shuffleArray([question.burmese, ...distractors]);
-    });
 
     setQuizSectionStart(start);
     setQuizSectionEnd(end);
-    setReviewKind(kind);
-    setQuizQuestions(quizPool);
-    setQuizChoiceSets(options);
     resetQuizState();
+    const uniquePairs = Array.from(
+      new Map(levelLessons.map((lesson) => [`${lesson.english}__${lesson.burmese}`, lesson])).values(),
+    );
+    const selected = shuffleArray(uniquePairs).slice(0, Math.min(MATCH_PAIRS_PER_REVIEW, uniquePairs.length));
+    const pairs = selected.map((lesson, idx) => ({
+      id: `${idx}-${lesson.level}-${lesson.unit}`,
+      prompt: lesson.english,
+      answer: lesson.burmese,
+    }));
+    setMatchPairs(pairs);
+    setMatchAnswerOptions(shuffleArray(pairs));
     setMode('quiz');
+  };
+
+  const commitMatchAttempt = (promptId: string, answerId: string) => {
+    const isCorrectMatch = promptId === answerId;
+    if (isCorrectMatch) {
+      setMatchedPairIds((prev) => (prev.includes(promptId) ? prev : [...prev, promptId]));
+    } else {
+      setMatchMistakes((prev) => prev + 1);
+    }
+    setSelectedPromptId(null);
+    setSelectedAnswerId(null);
+  };
+
+  const handleSelectPrompt = (promptId: string) => {
+    if (!isMatchReview || matchedPairIds.includes(promptId)) return;
+    if (answerChecked) return;
+    if (selectedAnswerId) {
+      commitMatchAttempt(promptId, selectedAnswerId);
+      return;
+    }
+    setSelectedPromptId(promptId);
+  };
+
+  const handleSelectAnswer = (answerId: string) => {
+    if (!isMatchReview || matchedPairIds.includes(answerId)) return;
+    if (answerChecked) return;
+    if (selectedPromptId) {
+      commitMatchAttempt(selectedPromptId, answerId);
+      return;
+    }
+    setSelectedAnswerId(answerId);
   };
 
   const handleNext = () => {
@@ -411,13 +509,7 @@ const App: React.FC = () => {
 
     const needsCheckpoint = QUICK_REVIEW_CHECKPOINTS.includes(nextStep);
     if (needsCheckpoint) {
-      const isFinal = nextStep >= LEARN_QUESTIONS_PER_UNIT;
-      startQuizForLevel(
-        sectionStart,
-        sectionEnd,
-        isFinal ? REVIEW_QUESTIONS_PER_UNIT : 1,
-        isFinal ? 'final' : 'quick',
-      );
+      startQuizForLevel(sectionStart, sectionEnd);
     } else {
       const nextOffset = (nextStep * LESSONS_PER_BATCH) % Math.max(sectionTotal, 1);
       setCurrentIndex(sectionStart + nextOffset);
@@ -437,6 +529,8 @@ const App: React.FC = () => {
     setUnlockedLevel((prev) => Math.max(prev, safeLevel));
     setSidebarTab('lesson');
     setLearnStep(0);
+    setUnitXp(0);
+    setReviewResult(null);
     resetQuizState();
     setIsSidebarOpen(false);
   };
@@ -445,6 +539,8 @@ const App: React.FC = () => {
     setMode('learn');
     setCurrentIndex(0);
     setLearnStep(0);
+    setUnitXp(0);
+    setReviewResult(null);
     resetQuizState();
     setIsSidebarOpen(false);
   };
@@ -456,47 +552,22 @@ const App: React.FC = () => {
     setMode('learn');
     setCurrentIndex(target >= 0 ? target : 0);
     setLearnStep(0);
+    setUnitXp(0);
+    setReviewResult(null);
     resetQuizState();
     setSidebarTab('lesson');
     setIsSidebarOpen(false);
   };
 
-  const handleCheckAnswer = () => {
-    if (!currentQuizQuestion || !selectedChoice || answerChecked) return;
-    const isCorrect = selectedChoice === currentQuizQuestion.burmese;
-    setQuizResults((prev) => [...prev, isCorrect]);
-    setAnswerChecked(true);
-  };
+  const handleResultContinue = () => {
+    if (!reviewResult) return;
 
-  const handleQuizNext = () => {
-    if (!answerChecked) return;
-
-    if (quizQuestionIndex < quizQuestions.length - 1) {
-      setQuizQuestionIndex((prev) => prev + 1);
-      setSelectedChoice(null);
-      setAnswerChecked(false);
-      return;
-    }
-
-    const correctCount = quizResults.filter(Boolean).length;
-    const isPass = correctCount >= requiredCorrect;
-
-    if (reviewKind === 'quick') {
-      setMode('learn');
-      resetQuizState();
-      if (isPass) {
-        const nextOffset = (learnStep * LESSONS_PER_BATCH) % Math.max(sectionTotal, 1);
-        setCurrentIndex(sectionStart + nextOffset);
-      } else {
-        setStreak(0);
-      }
-      return;
-    }
-
-    if (!isPass) {
+    if (!reviewResult.passed) {
       setMode('learn');
       setCurrentIndex(quizSectionStart);
       setLearnStep(0);
+      setUnitXp(0);
+      setReviewResult(null);
       resetQuizState();
       setStreak(0);
       return;
@@ -511,13 +582,52 @@ const App: React.FC = () => {
     if (nextStart >= lessons.length) {
       setMode('completed');
       setUnlockedLevel(totalLevels);
+      setReviewResult(null);
+      resetQuizState();
       return;
     }
 
     setMode('learn');
     setCurrentIndex(nextStart);
     setLearnStep(0);
+    setUnitXp(0);
+    setReviewResult(null);
     resetQuizState();
+  };
+
+  const handleQuizNext = () => {
+    if (!answerChecked) return;
+
+    const isPass = matchMistakes === 0 && matchedPairIds.length === matchPairs.length;
+    const gainedXp = isPass ? 1 : 0;
+    const nextXp = Math.min(unitXp + gainedXp, TOTAL_XP_PER_COURSE);
+    if (isPass) {
+      setUnitXp(nextXp);
+    }
+
+    if (learnStep >= LEARN_QUESTIONS_PER_UNIT) {
+      const passedByScore = nextXp >= PASS_SCORE;
+      if (!passedByScore) {
+        setStreak(0);
+      }
+      setReviewResult({
+        correct: nextXp,
+        total: TOTAL_XP_PER_COURSE,
+        passed: passedByScore,
+      });
+      setMode('result');
+      resetQuizState();
+      return;
+    }
+
+    setMode('learn');
+    resetQuizState();
+    if (isPass && learnStep < LEARN_QUESTIONS_PER_UNIT) {
+      const nextOffset = (learnStep * LESSONS_PER_BATCH) % Math.max(sectionTotal, 1);
+      setCurrentIndex(sectionStart + nextOffset);
+    } else {
+      setStreak(0);
+    }
   };
 
   if (loading) {
@@ -569,10 +679,6 @@ const App: React.FC = () => {
     );
   }
 
-  const isCorrectAnswer =
-    answerChecked && selectedChoice !== null && currentQuizQuestion
-      ? selectedChoice === currentQuizQuestion.burmese
-      : false;
   const translationLabel = defaultLanguage === 'burmese' ? 'Burmese (Current)' : 'English';
   const pronunciationStyleLabel =
     defaultLanguage === 'burmese' ? 'Burmese style (Current)' : 'English style (Pinyin for Chinese)';
@@ -921,42 +1027,86 @@ const App: React.FC = () => {
                 </div>
               </div>
             </div>
-          ) : mode === 'quiz' && currentQuizQuestion ? (
+          ) : mode === 'quiz' ? (
             <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-2xl">
-              <p className="w-full text-center text-xs font-extrabold uppercase tracking-wide text-[#58cc02] mb-2">
-                Course {currentCourseCode} • {getLevelTitle(currentLevel)}
+              <div className="w-full mb-3 flex items-center justify-between gap-2">
+                <p className="text-xs font-extrabold uppercase tracking-wide text-[#58cc02]">
+                  Course {currentCourseCode} • {getLevelTitle(currentLevel)}
+                </p>
+                <span className="shrink-0 inline-flex items-center px-2 py-1 rounded-lg border-2 border-[#9ad56a] bg-[#f7ffef] text-[#2f7d01] text-[11px] font-extrabold uppercase tracking-wide">
+                  XP: {unitXp}
+                </span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-medium text-[#3c3c3c] mb-1">Match each sentence</h2>
+              <p className="text-xs font-extrabold uppercase tracking-wide text-[#58cc02] mb-4">
+                Quick Review • 3 Matches
               </p>
-              <h2 className="text-3xl font-medium text-[#3c3c3c] mb-6">{currentQuizQuestion.english}</h2>
-              <div className="space-y-3">
-                {currentChoices.map((choice) => {
-                  const selected = selectedChoice === choice;
-                  const isCorrectChoice = answerChecked && choice === currentQuizQuestion.burmese;
-                  const isWrongChoice = answerChecked && selected && !isCorrectChoice;
-                  return (
-                    <button
-                      key={choice}
-                      onClick={() => !answerChecked && setSelectedChoice(choice)}
-                      className={`w-full text-left px-4 py-3 rounded-xl border-2 font-medium transition-all ${
-                        isCorrectChoice
-                          ? 'border-[#58cc02] bg-[#f0ffe5] text-[#2f7d01]'
-                          : isWrongChoice
-                            ? 'border-[#ef4444] bg-[#fff1f1] text-[#b91c1c]'
-                            : selected
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  {matchPairs.map((pair) => {
+                    const isMatched = matchedPairIds.includes(pair.id);
+                    const isSelected = selectedPromptId === pair.id;
+                    return (
+                      <button
+                        key={`prompt-${pair.id}`}
+                        onClick={() => handleSelectPrompt(pair.id)}
+                        disabled={isMatched || answerChecked}
+                        className={`w-full text-left px-3 py-3 rounded-xl border-2 text-sm md:text-base font-medium transition-all ${
+                          isMatched
+                            ? 'border-[#58cc02] bg-[#f0ffe5] text-[#2f7d01]'
+                            : isSelected
                               ? 'border-[#58cc02] bg-[#f7ffef]'
                               : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                      disabled={answerChecked}
-                    >
-                      {choice}
-                    </button>
-                  );
-                })}
+                        }`}
+                      >
+                        {pair.prompt}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="space-y-2">
+                  {matchAnswerOptions.map((pair) => {
+                    const isMatched = matchedPairIds.includes(pair.id);
+                    const isSelected = selectedAnswerId === pair.id;
+                    return (
+                      <button
+                        key={`answer-${pair.id}`}
+                        onClick={() => handleSelectAnswer(pair.id)}
+                        disabled={isMatched || answerChecked}
+                        className={`w-full text-left px-3 py-3 rounded-xl border-2 text-sm md:text-base font-medium transition-all ${
+                          isMatched
+                            ? 'border-[#58cc02] bg-[#f0ffe5] text-[#2f7d01]'
+                            : isSelected
+                              ? 'border-[#58cc02] bg-[#f7ffef]'
+                              : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pair.answer}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              {answerChecked && (
-                <p className={`mt-4 text-sm font-normal ${isCorrectAnswer ? 'text-[#2f7d01]' : 'text-[#b91c1c]'}`}>
-                  {isCorrectAnswer ? 'Correct answer.' : `Wrong answer. Correct: ${currentQuizQuestion.burmese}`}
-                </p>
-              )}
+              <p className="mt-4 text-sm font-bold text-gray-500">
+                Matched: {matchedPairIds.length}/{Math.max(matchPairs.length, MATCH_PAIRS_PER_REVIEW)}
+                {isMatchReviewComplete && (matchMistakes === 0 ? ' • Perfect' : ` • Mistakes: ${matchMistakes}`)}
+              </p>
+            </div>
+          ) : mode === 'result' && reviewResult ? (
+            <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-2xl text-center">
+              <h2 className="text-3xl font-extrabold text-[#3c3c3c] mb-3">Review Complete</h2>
+              <p className="text-lg font-extrabold text-[#2f7d01] mb-1">
+                Review Score: {unitXp}/{TOTAL_XP_PER_COURSE}
+              </p>
+              <p className={`text-sm font-bold mb-6 ${reviewResult.passed ? 'text-[#2f7d01]' : 'text-[#b91c1c]'}`}>
+                {reviewResult.passed ? 'Passed' : 'Needs more practice'}
+              </p>
+              <button
+                onClick={handleResultContinue}
+                className="w-full py-4 rounded-2xl bg-[#58cc02] text-white font-extrabold text-lg uppercase tracking-wider duo-button-shadow hover:brightness-110 active:scale-95 transition-all"
+              >
+                {reviewResult.passed ? 'Continue' : 'Retry Unit'}
+              </button>
             </div>
           ) : mode === 'completed' ? (
             <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-2xl text-center">
@@ -973,9 +1123,14 @@ const App: React.FC = () => {
             <div
               className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-2xl flex flex-col items-center"
             >
-              <p className="w-full text-center text-xs font-extrabold uppercase tracking-wide text-[#58cc02] mb-2">
-                Course {currentCourseCode} • {getLevelTitle(currentLevel)}
-              </p>
+              <div className="w-full mb-3 flex items-center justify-between gap-2">
+                <p className="text-xs font-extrabold uppercase tracking-wide text-[#58cc02]">
+                  Course {currentCourseCode} • {getLevelTitle(currentLevel)}
+                </p>
+                <span className="shrink-0 inline-flex items-center px-2 py-1 rounded-lg border-2 border-[#9ad56a] bg-[#f7ffef] text-[#2f7d01] text-[11px] font-extrabold uppercase tracking-wide">
+                  XP: {unitXp}
+                </span>
+              </div>
               <div className="w-full space-y-2">
                 {currentBatchEntries.map(({ lesson, lessonIndex }, idx) => (
                   <div key={`${lesson.english}-${currentIndex + idx}`}>
@@ -1018,28 +1173,22 @@ const App: React.FC = () => {
                   {(() => {
                     const nextStep = Math.min(LEARN_QUESTIONS_PER_UNIT, learnStep + 1);
                     if (!QUICK_REVIEW_CHECKPOINTS.includes(nextStep)) return 'Next';
-                    return nextStep >= LEARN_QUESTIONS_PER_UNIT ? 'Take Final Review' : 'Quick Review';
+                    return 'Quick Review';
                   })()}
                 </button>
               </>
             )}
             {mode === 'quiz' && (
               <button
-                onClick={answerChecked ? handleQuizNext : handleCheckAnswer}
-                disabled={!answerChecked && selectedChoice === null}
+                onClick={handleQuizNext}
+                disabled={!isMatchReviewComplete}
                 className={`w-full py-3 md:py-4 rounded-2xl bg-[#58cc02] text-white font-extrabold text-base md:text-lg uppercase tracking-wide md:tracking-wider duo-button-shadow transition-all ${
-                  !answerChecked && selectedChoice === null
+                  !isMatchReviewComplete
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:brightness-110 active:scale-95'
                 }`}
               >
-                {answerChecked
-                  ? quizQuestionIndex < quizQuestions.length - 1
-                    ? 'Next Question'
-                    : reviewKind === 'quick'
-                      ? 'Submit Quick Review'
-                      : 'Submit Final Review'
-                  : 'Check Answer'}
+                Submit Quick Review
               </button>
             )}
           </div>
