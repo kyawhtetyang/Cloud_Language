@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { ProgressBar } from './components/ProgressBar';
-import { AudioButton } from './components/AudioButton';
 import { LessonData, ProgressState } from './types';
+import { useProfileProgress } from './hooks/useProfileProgress';
+import { useLessonFlow } from './hooks/useLessonFlow';
+import { isPassingScore } from './utils/reviewScoring';
+import { ProfileView } from './components/views/ProfileView';
+import { SettingsView } from './components/views/SettingsView';
+import { LessonView } from './components/views/LessonView';
+import { MatchReviewView } from './components/views/MatchReviewView';
+import { ResultView } from './components/views/ResultView';
+import { MobileBottomNav } from './components/MobileBottomNav';
 
 const LEARN_QUESTIONS_PER_UNIT = 10;
 const QUICK_REVIEW_CHECKPOINTS = [2, 4, 6, 8, 10];
@@ -201,25 +209,11 @@ type AppMode = 'learn' | 'quiz' | 'result' | 'completed';
 type SidebarTab = 'profile' | 'levels' | 'lesson' | 'settings';
 type LearnLanguage = 'english' | 'chinese';
 type DefaultLanguage = 'burmese' | 'english';
-type MatchPair = {
-  id: string;
-  prompt: string;
-  answer: string;
-};
 type ReviewResult = {
   correct: number;
   total: number;
   passed: boolean;
 };
-
-function shuffleArray<T>(items: T[]): T[] {
-  const array = [...items];
-  for (let i = array.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
 
 function getLevelTitle(level: number): string {
   const row = CURRICULUM.find((item) => item.level === level);
@@ -237,15 +231,15 @@ function toProfileStorageId(name: string): string {
 }
 
 const App: React.FC = () => {
-  const [profileName, setProfileName] = useState<string>(() => {
-    try {
-      return localStorage.getItem(PROFILE_NAME_KEY)?.trim() || '';
-    } catch {
-      return '';
-    }
-  });
-  const [profileInput, setProfileInput] = useState(profileName);
-  const [profileError, setProfileError] = useState<string | null>(null);
+  const {
+    profileName,
+    profileInput,
+    profileError,
+    hasProfileWhitespace,
+    isProfileInputValid,
+    setProfileInput,
+    applyProfileName,
+  } = useProfileProgress(PROFILE_NAME_KEY);
   const [lessons, setLessons] = useState<LessonData[]>([]);
   const [englishReferenceLessons, setEnglishReferenceLessons] = useState<LessonData[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -266,9 +260,9 @@ const App: React.FC = () => {
   });
   const [isPronunciationEnabled, setIsPronunciationEnabled] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(PRONUNCIATION_ENABLED_KEY) !== 'false';
+      return localStorage.getItem(PRONUNCIATION_ENABLED_KEY) === 'true';
     } catch {
-      return true;
+      return false;
     }
   });
   const [learnLanguage, setLearnLanguage] = useState<LearnLanguage>(() => {
@@ -289,18 +283,26 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isNextDisabled, setIsNextDisabled] = useState(false);
+  const [hasHydratedProfile, setHasHydratedProfile] = useState(false);
   const [learnStep, setLearnStep] = useState(0);
-  const [answerChecked, setAnswerChecked] = useState(false);
   const [unitXp, setUnitXp] = useState(0);
   const [reviewResult, setReviewResult] = useState<ReviewResult | null>(null);
   const [quizSectionStart, setQuizSectionStart] = useState(0);
   const [quizSectionEnd, setQuizSectionEnd] = useState(0);
-  const [matchPairs, setMatchPairs] = useState<MatchPair[]>([]);
-  const [matchAnswerOptions, setMatchAnswerOptions] = useState<MatchPair[]>([]);
-  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
-  const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
-  const [matchedPairIds, setMatchedPairIds] = useState<string[]>([]);
-  const [matchMistakes, setMatchMistakes] = useState(0);
+  const {
+    answerChecked,
+    matchPairs,
+    matchAnswerOptions,
+    selectedPromptId,
+    selectedAnswerId,
+    matchedPairIds,
+    matchMistakes,
+    isMatchReviewComplete,
+    resetQuizState,
+    startQuizForLevel,
+    handleSelectPrompt,
+    handleSelectAnswer,
+  } = useLessonFlow(MATCH_PAIRS_PER_REVIEW);
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
   const profileStorageId = profileName ? toProfileStorageId(profileName) : '';
   const progressStorageKey = profileStorageId ? `${PROGRESS_KEY}:${profileStorageId}` : PROGRESS_KEY;
@@ -323,9 +325,6 @@ const App: React.FC = () => {
   const sectionStart = levelIndexes.length > 0 ? levelIndexes[0] : Math.max(0, activeLevelIndex);
   const sectionEnd = levelIndexes.length > 0 ? levelIndexes[levelIndexes.length - 1] : Math.max(0, activeLevelIndex);
   const sectionTotal = Math.max(1, sectionEnd - sectionStart + 1);
-  const isMatchReview = mode === 'quiz';
-  const isMatchReviewComplete =
-    isMatchReview && matchPairs.length > 0 && matchedPairIds.length === matchPairs.length;
   const unitFlowTotal = LEARN_QUESTIONS_PER_UNIT;
   const batchStartOffset =
     mode === 'learn' ? ((learnStep * LESSONS_PER_BATCH) % Math.max(sectionTotal, 1)) : 0;
@@ -341,36 +340,17 @@ const App: React.FC = () => {
   const currentBatchLessons = currentBatchEntries.map((entry) => entry.lesson);
   const unitFlowCurrent =
     Math.min(learnStep, LEARN_QUESTIONS_PER_UNIT);
-  const trimmedProfileInput = profileInput.trim();
-  const hasProfileWhitespace = /\s/.test(trimmedProfileInput);
-  const isProfileInputValid = trimmedProfileInput.length > 0 && !hasProfileWhitespace;
 
-  const resetQuizState = () => {
-    setAnswerChecked(false);
-    setMatchPairs([]);
-    setMatchAnswerOptions([]);
-    setSelectedPromptId(null);
-    setSelectedAnswerId(null);
-    setMatchedPairIds([]);
-    setMatchMistakes(0);
-  };
-
-  const applyProfileName = () => {
-    const nextName = trimmedProfileInput;
-    if (!nextName) return;
-    if (/\s/.test(nextName)) {
-      setProfileError('Username cannot contain spaces.');
-      return;
-    }
-    setProfileError(null);
-    localStorage.setItem(PROFILE_NAME_KEY, nextName);
-    setProfileName(nextName);
-    setMode('learn');
-    resetQuizState();
-    setUnitXp(0);
-    setReviewResult(null);
-    setSidebarTab('lesson');
-    setIsSidebarOpen(false);
+  const handleApplyProfileName = () => {
+    applyProfileName(() => {
+      setHasHydratedProfile(false);
+      setMode('learn');
+      resetQuizState();
+      setUnitXp(0);
+      setReviewResult(null);
+      setSidebarTab('lesson');
+      setIsSidebarOpen(false);
+    });
   };
 
   useEffect(() => {
@@ -405,22 +385,76 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (lessons.length === 0 || !profileName) return;
+    let cancelled = false;
 
-    const saved = localStorage.getItem(progressStorageKey) || localStorage.getItem(PROGRESS_KEY);
-    const restoredIndex = saved ? (JSON.parse(saved) as ProgressState).currentIndex : 0;
-    const safeIndex = Math.min(Math.max(restoredIndex, 0), lessons.length - 1);
-    setCurrentIndex(safeIndex);
+    const hydrateProfileProgress = async () => {
+      const saved = localStorage.getItem(progressStorageKey) || localStorage.getItem(PROGRESS_KEY);
+      const restoredIndex = saved ? (JSON.parse(saved) as ProgressState).currentIndex : 0;
+      const safeLocalIndex = Math.min(Math.max(restoredIndex, 0), lessons.length - 1);
 
-    const savedUnlocked = Number(localStorage.getItem(unlockedStorageKey) || localStorage.getItem(UNLOCKED_LEVEL_KEY) || 1);
-    const inferredUnlocked = lessons[safeIndex]?.level || 1;
-    const safeUnlocked = Math.min(totalLevels, Math.max(savedUnlocked, inferredUnlocked, 1));
-    setUnlockedLevel(safeUnlocked);
-    setStreak(Math.max(0, Number(localStorage.getItem(streakStorageKey) || localStorage.getItem(STREAK_KEY) || 0)));
-  }, [lessons, profileName, progressStorageKey, streakStorageKey, totalLevels, unlockedStorageKey]);
+      const savedUnlocked = Number(localStorage.getItem(unlockedStorageKey) || localStorage.getItem(UNLOCKED_LEVEL_KEY) || 1);
+      const inferredUnlocked = lessons[safeLocalIndex]?.level || 1;
+      const safeLocalUnlocked = Math.min(totalLevels, Math.max(savedUnlocked, inferredUnlocked, 1));
+      const safeLocalStreak = Math.max(0, Number(localStorage.getItem(streakStorageKey) || localStorage.getItem(STREAK_KEY) || 0));
+
+      if (cancelled) return;
+      setCurrentIndex(safeLocalIndex);
+      setUnlockedLevel(safeLocalUnlocked);
+      setStreak(safeLocalStreak);
+
+      try {
+        const response = await fetch(
+          `${apiBaseUrl}/api/progress?profileName=${encodeURIComponent(profileName)}`,
+        );
+        if (response.ok) {
+          const remote = await response.json();
+          const remoteIndex = Math.min(
+            Math.max(0, Number(remote.currentIndex) || 0),
+            lessons.length - 1,
+          );
+          const remoteUnlocked = Math.min(
+            totalLevels,
+            Math.max(1, Number(remote.unlockedLevel) || 1),
+          );
+          const remoteStreak = Math.max(0, Number(remote.streak) || 0);
+          if (cancelled) return;
+          setCurrentIndex(remoteIndex);
+          setUnlockedLevel(remoteUnlocked);
+          setStreak(remoteStreak);
+          if (remote.learnLanguage === 'english' || remote.learnLanguage === 'chinese') {
+            setLearnLanguage(remote.learnLanguage);
+          }
+          if (remote.defaultLanguage === 'english' || remote.defaultLanguage === 'burmese') {
+            setDefaultLanguage(remote.defaultLanguage);
+          }
+          if (typeof remote.isPronunciationEnabled === 'boolean') {
+            setIsPronunciationEnabled(remote.isPronunciationEnabled);
+          }
+        }
+      } catch {
+        // DB sync is optional; localStorage remains the fallback.
+      } finally {
+        if (!cancelled) setHasHydratedProfile(true);
+      }
+    };
+
+    hydrateProfileProgress();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    apiBaseUrl,
+    lessons,
+    profileName,
+    progressStorageKey,
+    streakStorageKey,
+    totalLevels,
+    unlockedStorageKey,
+  ]);
 
   useEffect(() => {
     if (profileName) {
-      setProfileInput(profileName);
+      setHasHydratedProfile(false);
     }
   }, [profileName]);
 
@@ -447,6 +481,41 @@ const App: React.FC = () => {
   }, [lessons.length, profileName, streak, streakStorageKey]);
 
   useEffect(() => {
+    if (!profileName || lessons.length === 0 || !hasHydratedProfile) return;
+
+    const payload = {
+      profileName,
+      currentIndex,
+      unlockedLevel,
+      streak,
+      learnLanguage,
+      defaultLanguage,
+      isPronunciationEnabled,
+    };
+
+    void fetch(`${apiBaseUrl}/api/progress`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }).catch(() => {
+      // DB sync is optional; localStorage remains the fallback.
+    });
+  }, [
+    apiBaseUrl,
+    currentIndex,
+    defaultLanguage,
+    hasHydratedProfile,
+    isPronunciationEnabled,
+    learnLanguage,
+    lessons.length,
+    profileName,
+    streak,
+    unlockedLevel,
+  ]);
+
+  useEffect(() => {
     localStorage.setItem(LEARN_LANGUAGE_KEY, learnLanguage);
   }, [learnLanguage]);
 
@@ -462,64 +531,6 @@ const App: React.FC = () => {
     window.scrollTo(0, 0);
   }, [sidebarTab]);
 
-  useEffect(() => {
-    if (!isMatchReview || answerChecked) return;
-    if (matchPairs.length > 0 && matchedPairIds.length === matchPairs.length) {
-      setAnswerChecked(true);
-    }
-  }, [answerChecked, isMatchReview, matchPairs.length, matchedPairIds.length]);
-
-  const startQuizForLevel = (start: number, end: number) => {
-    const levelLessons: LessonData[] = lessons.slice(start, end + 1);
-
-    setQuizSectionStart(start);
-    setQuizSectionEnd(end);
-    resetQuizState();
-    const uniquePairs = Array.from(
-      new Map(levelLessons.map((lesson) => [`${lesson.english}__${lesson.burmese}`, lesson])).values(),
-    );
-    const selected = shuffleArray(uniquePairs).slice(0, Math.min(MATCH_PAIRS_PER_REVIEW, uniquePairs.length));
-    const pairs = selected.map((lesson, idx) => ({
-      id: `${idx}-${lesson.level}-${lesson.unit}`,
-      prompt: lesson.english,
-      answer: lesson.burmese,
-    }));
-    setMatchPairs(pairs);
-    setMatchAnswerOptions(shuffleArray(pairs));
-    setMode('quiz');
-  };
-
-  const commitMatchAttempt = (promptId: string, answerId: string) => {
-    const isCorrectMatch = promptId === answerId;
-    if (isCorrectMatch) {
-      setMatchedPairIds((prev) => (prev.includes(promptId) ? prev : [...prev, promptId]));
-    } else {
-      setMatchMistakes((prev) => prev + 1);
-    }
-    setSelectedPromptId(null);
-    setSelectedAnswerId(null);
-  };
-
-  const handleSelectPrompt = (promptId: string) => {
-    if (!isMatchReview || matchedPairIds.includes(promptId)) return;
-    if (answerChecked) return;
-    if (selectedAnswerId) {
-      commitMatchAttempt(promptId, selectedAnswerId);
-      return;
-    }
-    setSelectedPromptId(promptId);
-  };
-
-  const handleSelectAnswer = (answerId: string) => {
-    if (!isMatchReview || matchedPairIds.includes(answerId)) return;
-    if (answerChecked) return;
-    if (selectedPromptId) {
-      commitMatchAttempt(selectedPromptId, answerId);
-      return;
-    }
-    setSelectedAnswerId(answerId);
-  };
-
   const handleNext = () => {
     if (isNextDisabled || mode !== 'learn') return;
 
@@ -529,7 +540,10 @@ const App: React.FC = () => {
 
     const needsCheckpoint = QUICK_REVIEW_CHECKPOINTS.includes(nextStep);
     if (needsCheckpoint) {
-      startQuizForLevel(sectionStart, sectionEnd);
+      setQuizSectionStart(sectionStart);
+      setQuizSectionEnd(sectionEnd);
+      startQuizForLevel(lessons, sectionStart, sectionEnd);
+      setMode('quiz');
     } else {
       const nextOffset = (nextStep * LESSONS_PER_BATCH) % Math.max(sectionTotal, 1);
       setCurrentIndex(sectionStart + nextOffset);
@@ -626,7 +640,7 @@ const App: React.FC = () => {
     }
 
     if (learnStep >= LEARN_QUESTIONS_PER_UNIT) {
-      const passedByScore = nextXp >= PASS_SCORE;
+      const passedByScore = isPassingScore(nextXp, PASS_SCORE);
       if (!passedByScore) {
         setStreak(0);
       }
@@ -678,11 +692,8 @@ const App: React.FC = () => {
           <p className="text-sm text-gray-500 mb-5">Enter your name to create a local profile.</p>
           <input
             value={profileInput}
-            onChange={(event) => {
-              setProfileInput(event.target.value);
-              if (profileError) setProfileError(null);
-            }}
-            onKeyDown={(event) => event.key === 'Enter' && applyProfileName()}
+            onChange={(event) => setProfileInput(event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleApplyProfileName()}
             placeholder="Username (no spaces)"
             className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#58cc02] outline-none font-semibold text-[#3c3c3c]"
           />
@@ -690,7 +701,7 @@ const App: React.FC = () => {
             <p className="mt-2 text-xs font-bold text-[#b91c1c]">Username cannot contain spaces.</p>
           )}
           <button
-            onClick={applyProfileName}
+            onClick={handleApplyProfileName}
             disabled={!isProfileInputValid}
             className={`w-full mt-4 py-3 rounded-xl font-extrabold uppercase tracking-wide transition-all ${
               isProfileInputValid
@@ -708,6 +719,7 @@ const App: React.FC = () => {
   const translationLabel = defaultLanguage === 'burmese' ? 'Burmese (Current)' : 'English';
   const pronunciationStyleLabel =
     defaultLanguage === 'burmese' ? 'Burmese style (Current)' : 'English style (Pinyin for Chinese)';
+  const currentLevelTitle = getLevelTitle(currentLevel);
   const unitsPerLevel = CURRICULUM.find((item) => item.level === currentLevel)?.topics.length || 5;
   const currentUnitProgress = Math.min(learnStep, LEARN_QUESTIONS_PER_UNIT) / LEARN_QUESTIONS_PER_UNIT;
   const levelProgressUnitsRaw = Math.min(unitsPerLevel, Math.max(0, currentUnit - 1 + currentUnitProgress));
@@ -795,7 +807,7 @@ const App: React.FC = () => {
                 : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow hover:bg-gray-50'
             }`}
           >
-            Units
+            Road Map
           </button>
           <button
             onClick={() => {
@@ -841,81 +853,22 @@ const App: React.FC = () => {
           }`}
         >
           {isProfileView ? (
-            <div className="w-full max-w-2xl space-y-4">
-              <section className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-5 md:p-7">
-                <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-[#58cc02] border-2 border-[#46a302] text-white flex items-center justify-center text-2xl font-extrabold">
-                    U
-                  </div>
-                  <div>
-                    <h2 className="text-xl md:text-2xl font-extrabold text-[#3c3c3c]">Welcome back</h2>
-                    <p className="text-sm text-gray-500 font-bold">{profileName}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-3">
-                  <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-wide text-[#2f7d01]">
-                    <span>Level Progress</span>
-                    <span>Level {currentLevel}</span>
-                  </div>
-                  <div className="mt-2 h-3 bg-[#d9ecc8] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#58cc02] rounded-full transition-all duration-500"
-                      style={{ width: `${levelProgressPercent}%` }}
-                    ></div>
-                  </div>
-                  <p className="mt-2 text-[11px] text-[#6a6a6a] font-bold uppercase tracking-wide">
-                    {levelProgressLabel} units completed ({levelProgressPercent}%)
-                  </p>
-                </div>
-
-                <div className="mt-4">
-                  <p className="text-[11px] text-gray-500 font-extrabold uppercase tracking-wide mb-2">Switch Profile</p>
-                  <div className="flex gap-2">
-                    <input
-                      value={profileInput}
-                      onChange={(event) => {
-                        setProfileInput(event.target.value);
-                        if (profileError) setProfileError(null);
-                      }}
-                      onKeyDown={(event) => event.key === 'Enter' && applyProfileName()}
-                      placeholder="Username (no spaces)"
-                      className="flex-1 px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-[#58cc02] outline-none text-sm font-semibold text-[#3c3c3c]"
-                    />
-                    <button
-                      onClick={applyProfileName}
-                      disabled={!isProfileInputValid}
-                      className={`px-4 rounded-xl text-xs font-extrabold uppercase tracking-wide border-2 transition-all ${
-                        isProfileInputValid
-                          ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
-                          : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                      }`}
-                    >
-                      Save
-                    </button>
-                  </div>
-                  {(profileError || hasProfileWhitespace) && (
-                    <p className="mt-2 text-xs font-bold text-[#b91c1c]">Username cannot contain spaces.</p>
-                  )}
-                </div>
-              </section>
-
-              <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="rounded-2xl border-2 border-[#c5eb9f] bg-[#f7ffef] p-4">
-                  <p className="text-[11px] text-[#2f7d01] font-extrabold uppercase tracking-wide">Current Course</p>
-                  <p className="text-3xl font-extrabold text-[#3c3c3c] mt-1">{currentCourseCode}</p>
-                </div>
-                <div className="rounded-2xl border-2 border-[#c5eb9f] bg-[#f7ffef] p-4">
-                  <p className="text-[11px] text-[#2f7d01] font-extrabold uppercase tracking-wide">Unlocked Units</p>
-                  <p className="text-3xl font-extrabold text-[#3c3c3c] mt-1">{unlockedLevel}/{totalLevels}</p>
-                </div>
-                <div className="rounded-2xl border-2 border-[#ffe5b4] bg-[#fff8ea] p-4">
-                  <p className="text-[11px] text-[#f59e0b] font-extrabold uppercase tracking-wide">Streak</p>
-                  <p className="text-3xl font-extrabold text-[#3c3c3c] mt-1">{streak}</p>
-                </div>
-              </section>
-
-            </div>
+            <ProfileView
+              profileName={profileName}
+              currentLevel={currentLevel}
+              levelProgressPercent={levelProgressPercent}
+              levelProgressLabel={levelProgressLabel}
+              profileInput={profileInput}
+              profileError={profileError}
+              hasProfileWhitespace={hasProfileWhitespace}
+              isProfileInputValid={isProfileInputValid}
+              currentCourseCode={currentCourseCode}
+              unlockedLevel={unlockedLevel}
+              totalLevels={totalLevels}
+              streak={streak}
+              onProfileInputChange={setProfileInput}
+              onApplyProfileName={handleApplyProfileName}
+            />
           ) : isLevelsView ? (
             <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-6 md:p-8 w-full max-w-2xl">
               <h2 className="text-2xl font-extrabold text-[#3c3c3c] mb-4">Levels</h2>
@@ -976,176 +929,40 @@ const App: React.FC = () => {
               })}
             </div>
           ) : isSettingsView ? (
-            <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-6 md:p-8 w-full max-w-2xl">
-              <h2 className="text-2xl font-extrabold text-[#3c3c3c] mb-4">Settings</h2>
-              <div className="rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-4 mb-3">
-                <p className="text-sm font-extrabold uppercase tracking-wide text-[#2f7d01]">Default Language</p>
-                <p className="text-sm text-gray-600 mt-1 mb-3">Select one: Burmese (default) or English.</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDefaultLanguage('burmese')}
-                    className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-                      defaultLanguage === 'burmese'
-                        ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
-                        : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
-                    }`}
-                  >
-                    Burmese (Default)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDefaultLanguage('english')}
-                    className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-                      defaultLanguage === 'english'
-                        ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
-                        : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
-                    }`}
-                  >
-                    English
-                  </button>
-                </div>
-              </div>
-              <div className="rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-4 mb-3">
-                <p className="text-sm font-extrabold uppercase tracking-wide text-[#2f7d01]">Learn Language</p>
-                <p className="text-sm text-gray-600 mt-1 mb-3">Choose your target learning language.</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setLearnLanguage('english')}
-                    className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-                      learnLanguage === 'english'
-                        ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
-                        : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
-                    }`}
-                  >
-                    English
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLearnLanguage('chinese')}
-                    className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-                      learnLanguage === 'chinese'
-                        ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
-                        : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
-                    }`}
-                  >
-                    Chinese
-                  </button>
-                </div>
-              </div>
-              <div className="rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-4 mb-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-extrabold uppercase tracking-wide text-[#2f7d01]">Pronunciation</p>
-                    <p className="text-sm text-gray-600 mt-1">Show pronunciation row in lessons.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsPronunciationEnabled((prev) => !prev)}
-                    className={`px-4 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-                      isPronunciationEnabled
-                        ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
-                        : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
-                    }`}
-                  >
-                    {isPronunciationEnabled ? 'On' : 'Off'}
-                  </button>
-                </div>
-              </div>
-              <div className="rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-4">
-                <p className="text-sm font-extrabold uppercase tracking-wide text-[#2f7d01]">Current Mapping</p>
-                <div className="mt-3 space-y-1.5 text-xs">
-                  <p className="text-gray-600 font-bold">
-                    <span className="text-[#2f7d01] uppercase tracking-wide">Translation:</span> {translationLabel}
-                  </p>
-                  <p className="text-gray-600 font-bold">
-                    <span className="text-[#2f7d01] uppercase tracking-wide">Pronunciation:</span> {pronunciationStyleLabel}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <SettingsView
+              defaultLanguage={defaultLanguage}
+              learnLanguage={learnLanguage}
+              isPronunciationEnabled={isPronunciationEnabled}
+              translationLabel={translationLabel}
+              pronunciationStyleLabel={pronunciationStyleLabel}
+              onDefaultLanguageChange={setDefaultLanguage}
+              onLearnLanguageChange={setLearnLanguage}
+              onTogglePronunciation={() => setIsPronunciationEnabled((prev) => !prev)}
+            />
           ) : mode === 'quiz' ? (
-            <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-2xl">
-              <div className="w-full mb-3 flex items-center justify-between gap-2">
-                <p className="text-xs font-extrabold uppercase tracking-wide text-[#58cc02]">
-                  Course {currentCourseCode} • {getLevelTitle(currentLevel)}
-                </p>
-                <span className="shrink-0 inline-flex items-center px-2 py-1 rounded-lg border-2 border-[#9ad56a] bg-[#f7ffef] text-[#2f7d01] text-[11px] font-extrabold uppercase tracking-wide">
-                  XP: {unitXp}
-                </span>
-              </div>
-              <h2 className="text-2xl md:text-3xl font-medium text-[#3c3c3c] mb-1">Match each sentence</h2>
-              <p className="text-xs font-extrabold uppercase tracking-wide text-[#58cc02] mb-4">
-                Quick Review • 3 Matches
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  {matchPairs.map((pair) => {
-                    const isMatched = matchedPairIds.includes(pair.id);
-                    const isSelected = selectedPromptId === pair.id;
-                    return (
-                      <button
-                        key={`prompt-${pair.id}`}
-                        onClick={() => handleSelectPrompt(pair.id)}
-                        disabled={isMatched || answerChecked}
-                        className={`w-full text-left px-3 py-3 rounded-xl border-2 text-sm md:text-base font-medium transition-all ${
-                          isMatched
-                            ? 'border-[#58cc02] bg-[#f0ffe5] text-[#2f7d01]'
-                            : isSelected
-                              ? 'border-[#58cc02] bg-[#f7ffef]'
-                              : 'border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pair.prompt}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="space-y-2">
-                  {matchAnswerOptions.map((pair) => {
-                    const isMatched = matchedPairIds.includes(pair.id);
-                    const isSelected = selectedAnswerId === pair.id;
-                    return (
-                      <button
-                        key={`answer-${pair.id}`}
-                        onClick={() => handleSelectAnswer(pair.id)}
-                        disabled={isMatched || answerChecked}
-                        className={`w-full text-left px-3 py-3 rounded-xl border-2 text-sm md:text-base font-medium transition-all ${
-                          isMatched
-                            ? 'border-[#58cc02] bg-[#f0ffe5] text-[#2f7d01]'
-                            : isSelected
-                              ? 'border-[#58cc02] bg-[#f7ffef]'
-                              : 'border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pair.answer}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <p className="mt-4 text-sm font-bold text-gray-500">
-                Matched: {matchedPairIds.length}/{Math.max(matchPairs.length, MATCH_PAIRS_PER_REVIEW)}
-                {isMatchReviewComplete && (matchMistakes === 0 ? ' • Perfect' : ` • Mistakes: ${matchMistakes}`)}
-              </p>
-            </div>
+            <MatchReviewView
+              currentCourseCode={currentCourseCode}
+              currentLevelTitle={currentLevelTitle}
+              unitXp={unitXp}
+              matchPairs={matchPairs}
+              matchAnswerOptions={matchAnswerOptions}
+              matchedPairIds={matchedPairIds}
+              selectedPromptId={selectedPromptId}
+              selectedAnswerId={selectedAnswerId}
+              answerChecked={answerChecked}
+              matchMistakes={matchMistakes}
+              matchPairsPerReview={MATCH_PAIRS_PER_REVIEW}
+              isMatchReviewComplete={isMatchReviewComplete}
+              onSelectPrompt={handleSelectPrompt}
+              onSelectAnswer={handleSelectAnswer}
+            />
           ) : mode === 'result' && reviewResult ? (
-            <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-2xl text-center">
-              <h2 className="text-3xl font-extrabold text-[#3c3c3c] mb-3">Review Complete</h2>
-              <p className="text-lg font-extrabold text-[#2f7d01] mb-1">
-                Review Score: {unitXp}/{TOTAL_XP_PER_COURSE}
-              </p>
-              <p className={`text-sm font-bold mb-6 ${reviewResult.passed ? 'text-[#2f7d01]' : 'text-[#b91c1c]'}`}>
-                {reviewResult.passed ? 'Passed' : 'Needs more practice'}
-              </p>
-              <button
-                onClick={handleResultContinue}
-                className="w-full py-4 rounded-2xl bg-[#58cc02] text-white font-extrabold text-lg uppercase tracking-wider duo-button-shadow hover:brightness-110 active:scale-95 transition-all"
-              >
-                {reviewResult.passed ? 'Continue' : 'Retry Unit'}
-              </button>
-            </div>
+            <ResultView
+              reviewResult={reviewResult}
+              unitXp={unitXp}
+              totalXp={TOTAL_XP_PER_COURSE}
+              onContinue={handleResultContinue}
+            />
           ) : mode === 'completed' ? (
             <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-2xl text-center">
               <h2 className="text-3xl font-extrabold text-[#3c3c3c] mb-3">All Units Passed</h2>
@@ -1158,41 +975,17 @@ const App: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div
-              className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-2xl flex flex-col items-center"
-            >
-              <div className="w-full mb-3 flex items-center justify-between gap-2">
-                <p className="text-xs font-extrabold uppercase tracking-wide text-[#58cc02]">
-                  Course {currentCourseCode} • {getLevelTitle(currentLevel)}
-                </p>
-                <span className="shrink-0 inline-flex items-center px-2 py-1 rounded-lg border-2 border-[#9ad56a] bg-[#f7ffef] text-[#2f7d01] text-[11px] font-extrabold uppercase tracking-wide">
-                  XP: {unitXp}
-                </span>
-              </div>
-              <div className="w-full space-y-2">
-                {currentBatchEntries.map(({ lesson, lessonIndex }, idx) => (
-                  <div key={`${lesson.english}-${currentIndex + idx}`}>
-                    {(() => {
-                      const englishTranslation = englishReferenceLessons[lessonIndex]?.english || lesson.english;
-                      const translatedText = defaultLanguage === 'burmese' ? lesson.burmese : englishTranslation;
-                      return (
-                    <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-2.5 py-2">
-                      <AudioButton text={lesson.english} compact />
-                      <div className="text-left leading-tight">
-                        <p className="text-base md:text-lg font-medium text-[#3c3c3c]">{lesson.english}</p>
-                        <p className="text-base md:text-lg font-normal text-[#58cc02]">{translatedText}</p>
-                        {isPronunciationEnabled && (
-                          <p className="text-sm md:text-base font-normal text-gray-500">{lesson.pronunciation}</p>
-                        )}
-                      </div>
-                    </div>
-                      );
-                    })()}
-                    {idx < currentBatchLessons.length - 1 && <div className="h-1"></div>}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <LessonView
+              currentCourseCode={currentCourseCode}
+              currentLevelTitle={currentLevelTitle}
+              unitXp={unitXp}
+              currentIndex={currentIndex}
+              currentBatchEntries={currentBatchEntries}
+              currentBatchLessonsCount={currentBatchLessons.length}
+              englishReferenceLessons={englishReferenceLessons}
+              defaultLanguage={defaultLanguage}
+              isPronunciationEnabled={isPronunciationEnabled}
+            />
           )}
         </main>
 
@@ -1233,51 +1026,13 @@ const App: React.FC = () => {
         </footer>
         )}
 
-        {
-          <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white border-t-2 border-gray-100">
-            <div className="grid grid-cols-3 gap-1 p-2">
-              <button
-                onClick={() => {
-                  setSidebarTab('lesson');
-                  setIsSidebarOpen(false);
-                }}
-                className={`py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wide transition-all ${
-                  isLessonView
-                    ? 'bg-[#58cc02] text-white border-2 border-[#46a302] duo-button-shadow'
-                    : 'bg-white text-gray-500 border-2 border-gray-200'
-                }`}
-              >
-                Lesson
-              </button>
-              <button
-                onClick={() => {
-                  setSidebarTab('levels');
-                  setIsSidebarOpen(false);
-                }}
-                className={`py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wide transition-all ${
-                  isLevelsView
-                    ? 'bg-[#58cc02] text-white border-2 border-[#46a302] duo-button-shadow'
-                    : 'bg-white text-gray-500 border-2 border-gray-200'
-                }`}
-              >
-                Units
-              </button>
-              <button
-                onClick={() => {
-                  setSidebarTab('profile');
-                  setIsSidebarOpen(false);
-                }}
-                className={`py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wide transition-all ${
-                  isProfileView
-                    ? 'bg-[#58cc02] text-white border-2 border-[#46a302] duo-button-shadow'
-                    : 'bg-white text-gray-500 border-2 border-gray-200'
-                }`}
-              >
-                Profile
-              </button>
-            </div>
-          </nav>
-        }
+        <MobileBottomNav
+          activeTab={sidebarTab}
+          onTabChange={(tab) => {
+            setSidebarTab(tab);
+            setIsSidebarOpen(false);
+          }}
+        />
       </div>
     </div>
   );

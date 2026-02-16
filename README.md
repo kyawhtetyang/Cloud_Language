@@ -10,8 +10,9 @@ This is the frontend client for LingoBurmese.
 ## Local Run
 
 1. `npm install`
-2. Set API URL in `.env.local` (optional):
+2. `cp .env.example .env.local`
+3. Required key in env:
    - `VITE_API_BASE_URL=http://localhost:4000`
-3. `npm run dev`
+4. `npm run dev`
 
 Default local frontend URL: `http://localhost:5173`
