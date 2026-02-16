@@ -7,13 +7,56 @@ interface AudioButtonProps {
   compact?: boolean;
 }
 
+const YOUNG_FEMALE_VOICE_HINTS = [
+  'google uk english female',
+  'google us english',
+  'google',
+  'aria',
+  'jenny',
+  'ava',
+  'emma',
+  'xiaoxiao',
+  'tingting',
+  'katya',
+  'female',
+  'woman',
+  'girl',
+];
+
+function guessUtteranceLang(text: string): string {
+  if (/[\u1000-\u109F]/.test(text)) return 'my-MM';
+  if (/[\u4E00-\u9FFF]/.test(text)) return 'zh-CN';
+  return 'en-US';
+}
+
+function pickPreferredVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechSynthesisVoice | null {
+  if (!voices.length) return null;
+  const sameLang = voices.filter((voice) => voice.lang.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()));
+  const pool = sameLang.length > 0 ? sameLang : voices;
+  const googleFemale = pool.find((voice) => {
+    const name = voice.name.toLowerCase();
+    return name.includes('google') && (name.includes('female') || name.includes('aria') || name.includes('jenny'));
+  });
+  if (googleFemale) return googleFemale;
+  const femaleMatch = pool.find((voice) =>
+    YOUNG_FEMALE_VOICE_HINTS.some((hint) => voice.name.toLowerCase().includes(hint)),
+  );
+  return femaleMatch || pool[0] || null;
+}
+
 export const AudioButton: React.FC<AudioButtonProps> = ({ text, onPlay, compact = false }) => {
   const playAudio = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
+      const lang = guessUtteranceLang(text);
+      utterance.lang = lang;
+      const preferredVoice = pickPreferredVoice(window.speechSynthesis.getVoices(), lang);
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+      utterance.rate = 1.02;
+      utterance.pitch = 1.35;
       window.speechSynthesis.speak(utterance);
       onPlay?.();
     }
