@@ -15,6 +15,7 @@ const STREAK_KEY = 'lingo_burmese_streak';
 const PRONUNCIATION_ENABLED_KEY = 'lingo_burmese_pronunciation_enabled';
 const LEARN_LANGUAGE_KEY = 'lingo_burmese_learn_language';
 const DEFAULT_LANGUAGE_KEY = 'lingo_burmese_default_language';
+const RELOAD_TO_LESSON_KEY = 'lingo_burmese_reload_to_lesson';
 const LESSONS_PER_BATCH = 3;
 const MATCH_PAIRS_PER_REVIEW = 3;
 const CURRICULUM = [
@@ -244,6 +245,7 @@ const App: React.FC = () => {
     }
   });
   const [profileInput, setProfileInput] = useState(profileName);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [lessons, setLessons] = useState<LessonData[]>([]);
   const [englishReferenceLessons, setEnglishReferenceLessons] = useState<LessonData[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -251,7 +253,17 @@ const App: React.FC = () => {
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [streak, setStreak] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [sidebarTab, setSidebarTab] = useState<SidebarTab>('profile');
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>(() => {
+    try {
+      if (sessionStorage.getItem(RELOAD_TO_LESSON_KEY) === 'true') {
+        sessionStorage.removeItem(RELOAD_TO_LESSON_KEY);
+        return 'lesson';
+      }
+    } catch {
+      // Ignore sessionStorage failures and use default.
+    }
+    return 'profile';
+  });
   const [isPronunciationEnabled, setIsPronunciationEnabled] = useState<boolean>(() => {
     try {
       return localStorage.getItem(PRONUNCIATION_ENABLED_KEY) !== 'false';
@@ -329,6 +341,9 @@ const App: React.FC = () => {
   const currentBatchLessons = currentBatchEntries.map((entry) => entry.lesson);
   const unitFlowCurrent =
     Math.min(learnStep, LEARN_QUESTIONS_PER_UNIT);
+  const trimmedProfileInput = profileInput.trim();
+  const hasProfileWhitespace = /\s/.test(trimmedProfileInput);
+  const isProfileInputValid = trimmedProfileInput.length > 0 && !hasProfileWhitespace;
 
   const resetQuizState = () => {
     setAnswerChecked(false);
@@ -341,8 +356,13 @@ const App: React.FC = () => {
   };
 
   const applyProfileName = () => {
-    const nextName = profileInput.trim();
+    const nextName = trimmedProfileInput;
     if (!nextName) return;
+    if (/\s/.test(nextName)) {
+      setProfileError('Username cannot contain spaces.');
+      return;
+    }
+    setProfileError(null);
     localStorage.setItem(PROFILE_NAME_KEY, nextName);
     setProfileName(nextName);
     setMode('learn');
@@ -658,16 +678,22 @@ const App: React.FC = () => {
           <p className="text-sm text-gray-500 mb-5">Enter your name to create a local profile.</p>
           <input
             value={profileInput}
-            onChange={(event) => setProfileInput(event.target.value)}
+            onChange={(event) => {
+              setProfileInput(event.target.value);
+              if (profileError) setProfileError(null);
+            }}
             onKeyDown={(event) => event.key === 'Enter' && applyProfileName()}
-            placeholder="Your name"
+            placeholder="Username (no spaces)"
             className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#58cc02] outline-none font-semibold text-[#3c3c3c]"
           />
+          {(profileError || hasProfileWhitespace) && (
+            <p className="mt-2 text-xs font-bold text-[#b91c1c]">Username cannot contain spaces.</p>
+          )}
           <button
             onClick={applyProfileName}
-            disabled={!profileInput.trim()}
+            disabled={!isProfileInputValid}
             className={`w-full mt-4 py-3 rounded-xl font-extrabold uppercase tracking-wide transition-all ${
-              profileInput.trim()
+              isProfileInputValid
                 ? 'bg-[#58cc02] text-white duo-button-shadow hover:brightness-110'
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
             }`}
@@ -709,7 +735,19 @@ const App: React.FC = () => {
       >
         <div className="h-full flex flex-col">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="flex items-center gap-2 text-lg font-extrabold text-[#3c3c3c] uppercase tracking-wide">
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                sessionStorage.setItem(RELOAD_TO_LESSON_KEY, 'true');
+              } catch {
+                // Ignore sessionStorage failures and proceed.
+              }
+              window.location.reload();
+            }}
+            className="flex items-center gap-2 text-lg font-extrabold text-[#3c3c3c] uppercase tracking-wide hover:opacity-80 transition-opacity"
+            aria-label="Reload page"
+          >
             <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#58cc02] shadow-[0_2px_0_0_#46a302]">
               <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
                 <circle cx="8" cy="11" r="4" fill="white" />
@@ -722,7 +760,7 @@ const App: React.FC = () => {
               </svg>
             </span>
             Duolingo
-          </h2>
+          </button>
           <button
             className="md:hidden text-gray-500 font-bold text-xl"
             onClick={() => setIsSidebarOpen(false)}
@@ -735,16 +773,16 @@ const App: React.FC = () => {
         <div className="mb-4 flex flex-col gap-2">
           <button
             onClick={() => {
-              setSidebarTab('profile');
+              setSidebarTab('lesson');
               setIsSidebarOpen(false);
             }}
             className={`w-full px-3 py-2.5 rounded-xl text-sm font-extrabold uppercase tracking-wide border-2 transition-all ${
-              sidebarTab === 'profile'
+              sidebarTab === 'lesson'
                 ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow hover:brightness-110'
                 : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow hover:bg-gray-50'
             }`}
           >
-            Profile
+            Lesson
           </button>
           <button
             onClick={() => {
@@ -758,19 +796,6 @@ const App: React.FC = () => {
             }`}
           >
             Units
-          </button>
-          <button
-            onClick={() => {
-              setSidebarTab('lesson');
-              setIsSidebarOpen(false);
-            }}
-            className={`w-full px-3 py-2.5 rounded-xl text-sm font-extrabold uppercase tracking-wide border-2 transition-all ${
-              sidebarTab === 'lesson'
-                ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow hover:brightness-110'
-                : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow hover:bg-gray-50'
-            }`}
-          >
-            Lesson
           </button>
           <button
             onClick={() => {
@@ -789,10 +814,17 @@ const App: React.FC = () => {
 
         <div className="mt-auto">
           <button
-            onClick={handleSidebarReview}
-            className="w-full px-3 py-3 rounded-xl text-sm font-extrabold uppercase tracking-wide border-2 border-[#46a302] bg-[#58cc02] text-white duo-button-shadow hover:brightness-110 transition-all"
+            onClick={() => {
+              setSidebarTab('profile');
+              setIsSidebarOpen(false);
+            }}
+            className={`w-full px-3 py-3 rounded-xl text-sm font-extrabold uppercase tracking-wide border-2 transition-all ${
+              sidebarTab === 'profile'
+                ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow hover:brightness-110'
+                : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow hover:bg-gray-50'
+            }`}
           >
-            Review
+            Profile
           </button>
         </div>
         </div>
@@ -842,16 +874,19 @@ const App: React.FC = () => {
                   <div className="flex gap-2">
                     <input
                       value={profileInput}
-                      onChange={(event) => setProfileInput(event.target.value)}
+                      onChange={(event) => {
+                        setProfileInput(event.target.value);
+                        if (profileError) setProfileError(null);
+                      }}
                       onKeyDown={(event) => event.key === 'Enter' && applyProfileName()}
-                      placeholder="Enter name"
+                      placeholder="Username (no spaces)"
                       className="flex-1 px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-[#58cc02] outline-none text-sm font-semibold text-[#3c3c3c]"
                     />
                     <button
                       onClick={applyProfileName}
-                      disabled={!profileInput.trim()}
+                      disabled={!isProfileInputValid}
                       className={`px-4 rounded-xl text-xs font-extrabold uppercase tracking-wide border-2 transition-all ${
-                        profileInput.trim()
+                        isProfileInputValid
                           ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
                           : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
                       }`}
@@ -859,6 +894,9 @@ const App: React.FC = () => {
                       Save
                     </button>
                   </div>
+                  {(profileError || hasProfileWhitespace) && (
+                    <p className="mt-2 text-xs font-bold text-[#b91c1c]">Username cannot contain spaces.</p>
+                  )}
                 </div>
               </section>
 
@@ -1200,16 +1238,16 @@ const App: React.FC = () => {
             <div className="grid grid-cols-3 gap-1 p-2">
               <button
                 onClick={() => {
-                  setSidebarTab('profile');
+                  setSidebarTab('lesson');
                   setIsSidebarOpen(false);
                 }}
                 className={`py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wide transition-all ${
-                  isProfileView
+                  isLessonView
                     ? 'bg-[#58cc02] text-white border-2 border-[#46a302] duo-button-shadow'
                     : 'bg-white text-gray-500 border-2 border-gray-200'
                 }`}
               >
-                Profile
+                Lesson
               </button>
               <button
                 onClick={() => {
@@ -1226,16 +1264,16 @@ const App: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  setSidebarTab('lesson');
+                  setSidebarTab('profile');
                   setIsSidebarOpen(false);
                 }}
                 className={`py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wide transition-all ${
-                  isLessonView
+                  isProfileView
                     ? 'bg-[#58cc02] text-white border-2 border-[#46a302] duo-button-shadow'
                     : 'bg-white text-gray-500 border-2 border-gray-200'
                 }`}
               >
-                Lesson
+                Profile
               </button>
             </div>
           </nav>
