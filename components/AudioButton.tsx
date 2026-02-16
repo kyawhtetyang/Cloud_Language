@@ -5,7 +5,10 @@ interface AudioButtonProps {
   text: string;
   onPlay?: () => void;
   compact?: boolean;
+  voicePreference?: VoicePreference;
 }
+
+export type VoicePreference = 'young_female' | 'google_female' | 'system_default';
 
 const YOUNG_FEMALE_VOICE_HINTS = [
   'google uk english female',
@@ -29,14 +32,24 @@ function guessUtteranceLang(text: string): string {
   return 'en-US';
 }
 
-function pickPreferredVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechSynthesisVoice | null {
+function pickPreferredVoice(
+  voices: SpeechSynthesisVoice[],
+  lang: string,
+  voicePreference: VoicePreference,
+): SpeechSynthesisVoice | null {
   if (!voices.length) return null;
   const sameLang = voices.filter((voice) => voice.lang.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()));
   const pool = sameLang.length > 0 ? sameLang : voices;
+  if (voicePreference === 'system_default') {
+    return pool[0] || null;
+  }
   const googleFemale = pool.find((voice) => {
     const name = voice.name.toLowerCase();
     return name.includes('google') && (name.includes('female') || name.includes('aria') || name.includes('jenny'));
   });
+  if (voicePreference === 'google_female') {
+    return googleFemale || pool[0] || null;
+  }
   if (googleFemale) return googleFemale;
   const femaleMatch = pool.find((voice) =>
     YOUNG_FEMALE_VOICE_HINTS.some((hint) => voice.name.toLowerCase().includes(hint)),
@@ -44,14 +57,23 @@ function pickPreferredVoice(voices: SpeechSynthesisVoice[], lang: string): Speec
   return femaleMatch || pool[0] || null;
 }
 
-export const AudioButton: React.FC<AudioButtonProps> = ({ text, onPlay, compact = false }) => {
+export const AudioButton: React.FC<AudioButtonProps> = ({
+  text,
+  onPlay,
+  compact = false,
+  voicePreference = 'young_female',
+}) => {
   const playAudio = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       const lang = guessUtteranceLang(text);
       utterance.lang = lang;
-      const preferredVoice = pickPreferredVoice(window.speechSynthesis.getVoices(), lang);
+      const preferredVoice = pickPreferredVoice(
+        window.speechSynthesis.getVoices(),
+        lang,
+        voicePreference,
+      );
       if (preferredVoice) {
         utterance.voice = preferredVoice;
       }

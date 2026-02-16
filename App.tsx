@@ -10,6 +10,7 @@ import { LessonView } from './components/views/LessonView';
 import { MatchReviewView } from './components/views/MatchReviewView';
 import { ResultView } from './components/views/ResultView';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { VoicePreference } from './components/AudioButton';
 
 const LEARN_QUESTIONS_PER_UNIT = 10;
 const QUICK_REVIEW_CHECKPOINTS = [2, 4, 6, 8, 10];
@@ -23,6 +24,9 @@ const STREAK_KEY = 'lingo_burmese_streak';
 const PRONUNCIATION_ENABLED_KEY = 'lingo_burmese_pronunciation_enabled';
 const LEARN_LANGUAGE_KEY = 'lingo_burmese_learn_language';
 const DEFAULT_LANGUAGE_KEY = 'lingo_burmese_default_language';
+const TEXT_SCALE_PERCENT_KEY = 'lingo_burmese_text_scale_percent';
+const VOICE_PREFERENCE_KEY = 'lingo_burmese_voice_preference';
+const BOLD_TEXT_ENABLED_KEY = 'lingo_burmese_bold_text_enabled';
 const RELOAD_TO_LESSON_KEY = 'lingo_burmese_reload_to_lesson';
 const LESSONS_PER_BATCH = 3;
 const MATCH_PAIRS_PER_REVIEW = 3;
@@ -231,6 +235,7 @@ function toProfileStorageId(name: string): string {
 }
 
 const App: React.FC = () => {
+  const clampTextScale = (value: number) => Math.min(120, Math.max(90, value));
   const {
     profileName,
     profileInput,
@@ -278,6 +283,31 @@ const App: React.FC = () => {
       return value === 'english' ? 'english' : 'burmese';
     } catch {
       return 'burmese';
+    }
+  });
+  const [textScalePercent, setTextScalePercent] = useState<number>(() => {
+    try {
+      return clampTextScale(Number(localStorage.getItem(TEXT_SCALE_PERCENT_KEY) || 100));
+    } catch {
+      return 100;
+    }
+  });
+  const [voicePreference, setVoicePreference] = useState<VoicePreference>(() => {
+    try {
+      const value = localStorage.getItem(VOICE_PREFERENCE_KEY);
+      if (value === 'google_female' || value === 'system_default' || value === 'young_female') {
+        return value;
+      }
+      return 'young_female';
+    } catch {
+      return 'young_female';
+    }
+  });
+  const [isBoldTextEnabled, setIsBoldTextEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(BOLD_TEXT_ENABLED_KEY) === 'true';
+    } catch {
+      return false;
     }
   });
   const [loading, setLoading] = useState(true);
@@ -526,6 +556,19 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(DEFAULT_LANGUAGE_KEY, defaultLanguage);
   }, [defaultLanguage]);
+
+  useEffect(() => {
+    localStorage.setItem(TEXT_SCALE_PERCENT_KEY, String(textScalePercent));
+    document.documentElement.style.fontSize = `${textScalePercent}%`;
+  }, [textScalePercent]);
+
+  useEffect(() => {
+    localStorage.setItem(VOICE_PREFERENCE_KEY, voicePreference);
+  }, [voicePreference]);
+
+  useEffect(() => {
+    localStorage.setItem(BOLD_TEXT_ENABLED_KEY, String(isBoldTextEnabled));
+  }, [isBoldTextEnabled]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -933,11 +976,24 @@ const App: React.FC = () => {
               defaultLanguage={defaultLanguage}
               learnLanguage={learnLanguage}
               isPronunciationEnabled={isPronunciationEnabled}
+              isBoldTextEnabled={isBoldTextEnabled}
+              textScalePercent={textScalePercent}
+              canDecreaseTextSize={textScalePercent > 90}
+              canIncreaseTextSize={textScalePercent < 120}
+              voicePreference={voicePreference}
               translationLabel={translationLabel}
               pronunciationStyleLabel={pronunciationStyleLabel}
               onDefaultLanguageChange={setDefaultLanguage}
               onLearnLanguageChange={setLearnLanguage}
               onTogglePronunciation={() => setIsPronunciationEnabled((prev) => !prev)}
+              onToggleBoldText={() => setIsBoldTextEnabled((prev) => !prev)}
+              onDecreaseTextSize={() =>
+                setTextScalePercent((prev) => clampTextScale(prev - 5))
+              }
+              onIncreaseTextSize={() =>
+                setTextScalePercent((prev) => clampTextScale(prev + 5))
+              }
+              onVoicePreferenceChange={setVoicePreference}
             />
           ) : mode === 'quiz' ? (
             <MatchReviewView
@@ -985,6 +1041,8 @@ const App: React.FC = () => {
               englishReferenceLessons={englishReferenceLessons}
               defaultLanguage={defaultLanguage}
               isPronunciationEnabled={isPronunciationEnabled}
+              isBoldTextEnabled={isBoldTextEnabled}
+              voicePreference={voicePreference}
             />
           )}
         </main>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AudioButton } from '../AudioButton';
+import { AudioButton, VoicePreference } from '../AudioButton';
 import { LessonData } from '../../types';
 
 type LessonEntry = {
@@ -17,6 +17,8 @@ type LessonViewProps = {
   englishReferenceLessons: LessonData[];
   defaultLanguage: 'burmese' | 'english';
   isPronunciationEnabled: boolean;
+  isBoldTextEnabled: boolean;
+  voicePreference: VoicePreference;
 };
 
 export const LessonView: React.FC<LessonViewProps> = ({
@@ -29,6 +31,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
   englishReferenceLessons,
   defaultLanguage,
   isPronunciationEnabled,
+  isBoldTextEnabled,
+  voicePreference,
 }) => {
   return (
     <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-2xl flex flex-col items-center">
@@ -48,12 +52,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
               const translatedText = defaultLanguage === 'burmese' ? lesson.burmese : englishTranslation;
               return (
                 <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-2.5 py-2">
-                  <AudioButton text={lesson.english} compact />
+                  <AudioButton text={lesson.english} compact voicePreference={voicePreference} />
                   <div className="text-left leading-tight">
-                    <p className="text-base md:text-lg font-medium text-[#3c3c3c]">{lesson.english}</p>
-                    <p className="text-base md:text-lg font-normal text-[#58cc02]">{translatedText}</p>
+                    <p className={`text-base md:text-lg text-[#3c3c3c] ${isBoldTextEnabled ? 'font-bold' : 'font-medium'}`}>
+                      {lesson.english}
+                    </p>
+                    <p className={`text-base md:text-lg text-[#58cc02] ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
+                      {translatedText}
+                    </p>
                     {isPronunciationEnabled && (
-                      <p className="text-sm md:text-base font-normal text-gray-500">{lesson.pronunciation}</p>
+                      <p className={`text-sm md:text-base text-gray-500 ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
+                        {lesson.pronunciation}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -66,4 +76,3 @@ export const LessonView: React.FC<LessonViewProps> = ({
     </div>
   );
 };
-
