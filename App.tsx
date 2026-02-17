@@ -87,6 +87,10 @@ const App: React.FC = () => {
   const [reviewResult, setReviewResult] = useState<ReviewResult | null>(null);
   const [quizSectionStart, setQuizSectionStart] = useState(0);
   const [quizSectionEnd, setQuizSectionEnd] = useState(0);
+  const [isLeaveQuizModalOpen, setIsLeaveQuizModalOpen] = useState(false);
+  const [pendingUnitTarget, setPendingUnitTarget] = useState<{ level: number; unit: number } | null>(
+    null,
+  );
   const {
     answerChecked,
     matchPairs,
@@ -148,6 +152,10 @@ const App: React.FC = () => {
     defaultLanguage === 'burmese'
       ? 'Quick Review မှ ထွက်မလား? ဒီ review အတွင်း တိုးတက်မှုတွေ ပျက်သွားပါမယ်။'
       : 'Leave quick review? Progress in this review will be lost.';
+  const leaveQuizModalTitle = defaultLanguage === 'burmese' ? 'Quick Review မှ ထွက်ရန်' : 'Leave quick review?';
+  const leaveQuizCancelLabel = defaultLanguage === 'burmese' ? 'မထွက်တော့ပါ' : 'Cancel';
+  const leaveQuizConfirmLabel =
+    defaultLanguage === 'burmese' ? 'ထွက်မယ်' : 'Leave quick review';
   const activeLevelIndex =
     mode === 'quiz' || mode === 'result'
       ? quizSectionStart
@@ -216,11 +224,7 @@ const App: React.FC = () => {
     setIsNextDisabled(false);
   };
 
-  const goToLevelUnit = (level: number, unit: number) => {
-    if (mode === 'quiz') {
-      const shouldLeaveQuiz = window.confirm(leaveQuizConfirmMessage);
-      if (!shouldLeaveQuiz) return;
-    }
+  const navigateToLevelUnit = (level: number, unit: number) => {
     const safeLevel = Math.min(Math.max(level, 1), totalLevels);
     const safeUnit = Math.max(1, unit);
     const target = lessons.findIndex((lesson) => lesson.level === safeLevel && lesson.unit === safeUnit);
@@ -234,6 +238,28 @@ const App: React.FC = () => {
     setReviewResult(null);
     resetQuizState();
     setIsSidebarOpen(false);
+  };
+
+  const goToLevelUnit = (level: number, unit: number) => {
+    if (mode === 'quiz') {
+      setPendingUnitTarget({ level, unit });
+      setIsLeaveQuizModalOpen(true);
+      return;
+    }
+    navigateToLevelUnit(level, unit);
+  };
+
+  const handleLeaveQuizCancel = () => {
+    setIsLeaveQuizModalOpen(false);
+    setPendingUnitTarget(null);
+  };
+
+  const handleLeaveQuizConfirm = () => {
+    if (pendingUnitTarget) {
+      navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit);
+    }
+    setIsLeaveQuizModalOpen(false);
+    setPendingUnitTarget(null);
   };
 
   const handleReview = () => {
@@ -356,6 +382,44 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f1ffe2_0%,#eef8ff_55%,#f5f7fa_100%)] md:flex">
+      {isLeaveQuizModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            onClick={handleLeaveQuizCancel}
+            aria-label="Close leave quick review dialog"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="leave-quiz-title"
+            className="relative w-full max-w-sm rounded-2xl border-2 border-gray-100 bg-white p-5 shadow-xl"
+          >
+            <h3 id="leave-quiz-title" className="text-lg font-extrabold text-[#3c3c3c]">
+              {leaveQuizModalTitle}
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">{leaveQuizConfirmMessage}</p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={handleLeaveQuizCancel}
+                className="flex-1 rounded-xl border-2 border-gray-200 bg-white px-3 py-2 text-xs font-extrabold uppercase tracking-wide text-gray-600 duo-secondary-shadow"
+              >
+                {leaveQuizCancelLabel}
+              </button>
+              <button
+                type="button"
+                onClick={handleLeaveQuizConfirm}
+                className="flex-1 rounded-xl border-2 border-[#46a302] bg-[#58cc02] px-3 py-2 text-xs font-extrabold uppercase tracking-wide text-white duo-button-shadow"
+              >
+                {leaveQuizConfirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isSidebarOpen && (
         <button
           className="fixed inset-0 bg-black/30 z-30 md:hidden"

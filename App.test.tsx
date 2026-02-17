@@ -51,7 +51,6 @@ describe('App quick review navigation guard', () => {
   });
 
   it('keeps quiz state when user cancels leave confirmation', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<App />);
 
     await screen.findByText('Welcome back');
@@ -64,14 +63,13 @@ describe('App quick review navigation guard', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Road Map' })[0]);
     await screen.findByRole('heading', { name: 'Road Map' });
     fireEvent.click(screen.getAllByRole('button', { name: /Unit Topic/i })[0]);
-
-    expect(confirmSpy).toHaveBeenCalledOnce();
+    await screen.findByRole('dialog');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
     expect(await screen.findByText('Match each sentence')).toBeInTheDocument();
   });
 
   it('leaves quiz and navigates to selected unit when user confirms', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<App />);
 
     await screen.findByText('Welcome back');
@@ -84,8 +82,8 @@ describe('App quick review navigation guard', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Road Map' })[0]);
     await screen.findByRole('heading', { name: 'Road Map' });
     fireEvent.click(screen.getAllByRole('button', { name: /Unit Topic/i })[0]);
-
-    expect(confirmSpy).toHaveBeenCalledOnce();
+    await screen.findByRole('dialog');
+    fireEvent.click(screen.getByRole('button', { name: 'Leave quick review' }));
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
     });

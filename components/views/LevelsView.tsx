@@ -121,7 +121,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({ lessons, defaultLanguage
                           className={`w-full text-left rounded-lg border px-3 py-2.5 text-sm md:text-[15px] font-bold text-gray-700 transition-all ${stageUi.topicCardClass}`}
                         >
                           <span
-                            className={`inline-flex items-center justify-center min-w-12 h-5 rounded-md text-[10px] font-extrabold mr-2 ${stageUi.badgeClass}`}
+                            className={`inline-flex items-center justify-center h-4 px-1.5 rounded-md text-[9px] font-extrabold mr-1.5 ${stageUi.badgeClass}`}
                             aria-label={`${text.unitPrefix} ${entry.stageUnitNumber}`}
                           >
                             {entry.stageUnitNumber}
