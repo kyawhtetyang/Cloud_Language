@@ -81,8 +81,8 @@ export const LevelsView: React.FC<LevelsViewProps> = ({ lessons, defaultLanguage
   }, { A1: [], A2: [], B1: [], B2: [] });
 
   return (
-    <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-6 md:p-8 w-full max-w-2xl">
-      <h2 className="text-[28px] md:text-3xl font-extrabold text-[#3c3c3c] mb-4">{text.roadmap}</h2>
+    <div className="w-full max-w-2xl">
+      <h2 className="text-2xl md:text-3xl font-extrabold text-[#3c3c3c] mb-4">{text.roadmap}</h2>
 
       {STAGE_ORDER.map((stage) => {
         const stageRows = unitsByStage[stage];

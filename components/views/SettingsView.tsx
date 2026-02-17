@@ -44,8 +44,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onVoicePreferenceChange,
 }) => {
   return (
-    <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-6 md:p-8 w-full max-w-2xl">
-      <h2 className="text-2xl font-extrabold text-[#3c3c3c] mb-4">Settings</h2>
+    <div className="w-full max-w-2xl">
       <div className="rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-4 mb-3">
         <p className="text-sm font-extrabold uppercase tracking-wide text-[#2f7d01]">Default Language</p>
         <p className="text-sm text-gray-600 mt-1 mb-3">Select one: Burmese (default) or English.</p>
