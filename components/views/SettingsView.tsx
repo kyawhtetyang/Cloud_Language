@@ -192,7 +192,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
             }`}
           >
-            Girl Voice
+            Warm Female
           </button>
           <button
             type="button"
@@ -203,7 +203,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
             }`}
           >
-            Google Style
+            Google Female
           </button>
           <button
             type="button"
@@ -214,7 +214,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
             }`}
           >
-            System Default
+            Device Default
           </button>
         </div>
       </div>

@@ -93,18 +93,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="rounded-2xl border-2 border-[#c5eb9f] bg-[#f7ffef] p-4">
           <p className="text-[11px] text-[#2f7d01] font-extrabold uppercase tracking-wide">Current Course</p>
-          <p className="text-3xl font-extrabold text-[#3c3c3c] mt-1">{currentCourseCode}</p>
+          <p className="text-xl md:text-2xl font-extrabold text-[#3c3c3c] mt-1">{currentCourseCode}</p>
         </div>
         <div className="rounded-2xl border-2 border-[#c5eb9f] bg-[#f7ffef] p-4">
           <p className="text-[11px] text-[#2f7d01] font-extrabold uppercase tracking-wide">Unlocked Units</p>
-          <p className="text-3xl font-extrabold text-[#3c3c3c] mt-1">{unlockedLevel}/{totalLevels}</p>
+          <p className="text-xl md:text-2xl font-extrabold text-[#3c3c3c] mt-1">{unlockedLevel}/{totalLevels}</p>
         </div>
         <div className="rounded-2xl border-2 border-[#ffe5b4] bg-[#fff8ea] p-4">
           <p className="text-[11px] text-[#f59e0b] font-extrabold uppercase tracking-wide">Streak</p>
-          <p className="text-3xl font-extrabold text-[#3c3c3c] mt-1">{streak}</p>
+          <p className="text-xl md:text-2xl font-extrabold text-[#3c3c3c] mt-1">{streak}</p>
         </div>
       </section>
     </div>
   );
 };
-
