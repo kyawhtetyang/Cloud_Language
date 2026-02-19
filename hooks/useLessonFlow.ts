@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getLessonOrderIndex, getLessonUnitId } from '../config/appConfig';
 import { LessonData } from '../types';
 
 type MatchPair = {
@@ -52,7 +53,7 @@ export function useLessonFlow(matchPairsPerReview: number) {
     );
     const selected = shuffleArray(uniquePairs).slice(0, Math.min(matchPairsPerReview, uniquePairs.length));
     const pairs = selected.map((lesson, idx) => ({
-      id: `${idx}-${lesson.level}-${lesson.unit}`,
+      id: `${idx}-${getLessonOrderIndex(lesson)}-${getLessonUnitId(lesson)}`,
       prompt: lesson.english,
       answer: lesson.burmese,
     }));

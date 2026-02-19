@@ -1,16 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { LessonData, ProgressState } from '../types';
 import { VoicePreference } from '../components/AudioButton';
 import {
   AppMode,
-  ChineseTrack,
   DefaultLanguage,
+  getLessonOrderIndex,
   LearnLanguage,
   PROGRESS_KEY,
   STREAK_KEY,
   UNLOCKED_LEVEL_KEY,
 } from '../config/appConfig';
 import { applyRemoteSyncedSettings, buildSyncedSettingsPayload } from '../config/settingsSync';
+import {
+  enqueueProgressUpdate,
+  flushProgressQueue,
+  resetProcessingQueueItems,
+} from '../offline/offlineStore';
 
 const PROGRESS_SYNC_DEBOUNCE_MS = 600;
 
@@ -23,7 +28,6 @@ type UseProfileProgressSyncParams = {
   unlockedLevel: number;
   streak: number;
   learnLanguage: LearnLanguage;
-  chineseTrack: ChineseTrack;
   defaultLanguage: DefaultLanguage;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
@@ -39,7 +43,6 @@ type UseProfileProgressSyncParams = {
   setUnlockedLevel: React.Dispatch<React.SetStateAction<number>>;
   setStreak: React.Dispatch<React.SetStateAction<number>>;
   setLearnLanguage: React.Dispatch<React.SetStateAction<LearnLanguage>>;
-  setChineseTrack: React.Dispatch<React.SetStateAction<ChineseTrack>>;
   setDefaultLanguage: React.Dispatch<React.SetStateAction<DefaultLanguage>>;
   setIsPronunciationEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setTextScalePercent: React.Dispatch<React.SetStateAction<number>>;
@@ -58,7 +61,6 @@ export function useProfileProgressSync({
   unlockedLevel,
   streak,
   learnLanguage,
-  chineseTrack,
   defaultLanguage,
   isPronunciationEnabled,
   textScalePercent,
@@ -74,7 +76,6 @@ export function useProfileProgressSync({
   setUnlockedLevel,
   setStreak,
   setLearnLanguage,
-  setChineseTrack,
   setDefaultLanguage,
   setIsPronunciationEnabled,
   setTextScalePercent,
@@ -84,10 +85,21 @@ export function useProfileProgressSync({
   setIsReviewQuestionsRemoved,
 }: UseProfileProgressSyncParams) {
   const [hasHydratedProfile, setHasHydratedProfile] = useState(false);
+  const isFlushingQueueRef = useRef(false);
 
   const markHydrationStale = useCallback(() => {
     setHasHydratedProfile(false);
   }, []);
+
+  const flushSyncQueueSafely = useCallback(async () => {
+    if (isFlushingQueueRef.current) return;
+    isFlushingQueueRef.current = true;
+    try {
+      await flushProgressQueue(apiBaseUrl);
+    } finally {
+      isFlushingQueueRef.current = false;
+    }
+  }, [apiBaseUrl]);
 
   useEffect(() => {
     if (lessons.length === 0 || !profileName) return;
@@ -99,7 +111,7 @@ export function useProfileProgressSync({
       const safeLocalIndex = Math.min(Math.max(restoredIndex, 0), lessons.length - 1);
 
       const savedUnlocked = Number(localStorage.getItem(unlockedStorageKey) || localStorage.getItem(UNLOCKED_LEVEL_KEY) || 1);
-      const inferredUnlocked = lessons[safeLocalIndex]?.level || 1;
+      const inferredUnlocked = lessons[safeLocalIndex] ? getLessonOrderIndex(lessons[safeLocalIndex]) : 1;
       const safeLocalUnlocked = Math.min(totalLevels, Math.max(savedUnlocked, inferredUnlocked, 1));
       const safeLocalStreak = Math.max(0, Number(localStorage.getItem(streakStorageKey) || localStorage.getItem(STREAK_KEY) || 0));
 
@@ -129,7 +141,6 @@ export function useProfileProgressSync({
           setStreak(remoteStreak);
           applyRemoteSyncedSettings(remote as Record<string, unknown>, {
             setLearnLanguage,
-            setChineseTrack,
             setDefaultLanguage,
             setIsPronunciationEnabled,
             setTextScalePercent,
@@ -158,7 +169,6 @@ export function useProfileProgressSync({
     setCurrentIndex,
     setDefaultLanguage,
     setIsPronunciationEnabled,
-    setChineseTrack,
     setTextScalePercent,
     setVoicePreference,
     setIsBoldTextEnabled,
@@ -177,6 +187,20 @@ export function useProfileProgressSync({
       setHasHydratedProfile(false);
     }
   }, [profileName]);
+
+  useEffect(() => {
+    if (!profileName) return;
+
+    void resetProcessingQueueItems().then(() => flushSyncQueueSafely());
+
+    const handleOnline = () => {
+      void flushSyncQueueSafely();
+    };
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [flushSyncQueueSafely, profileName]);
 
   useEffect(() => {
     if (lessons.length > 0 && mode !== 'quiz' && profileName) {
@@ -210,7 +234,6 @@ export function useProfileProgressSync({
       streak,
       ...buildSyncedSettingsPayload({
         learnLanguage,
-        chineseTrack,
         defaultLanguage,
         isPronunciationEnabled,
         textScalePercent,
@@ -222,15 +245,24 @@ export function useProfileProgressSync({
     };
 
     const timeoutId = window.setTimeout(() => {
-      void fetch(`${apiBaseUrl}/api/progress`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      }).catch(() => {
-        // DB sync is optional; localStorage remains the fallback.
-      });
+      const clientUpdatedAt = new Date().toISOString();
+      void enqueueProgressUpdate(profileName, payload, clientUpdatedAt)
+        .then(() => flushSyncQueueSafely())
+        .catch(() => {
+          // Fallback to direct sync when queue storage is unavailable (e.g. blocked IndexedDB).
+          void fetch(`${apiBaseUrl}/api/progress`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...payload,
+              clientUpdatedAt,
+            }),
+          }).catch(() => {
+            // DB sync is optional; localStorage remains the fallback.
+          });
+        });
     }, PROGRESS_SYNC_DEBOUNCE_MS);
 
     return () => {
@@ -240,7 +272,6 @@ export function useProfileProgressSync({
     apiBaseUrl,
     currentIndex,
     defaultLanguage,
-    chineseTrack,
     hasHydratedProfile,
     isPronunciationEnabled,
     textScalePercent,
@@ -253,6 +284,7 @@ export function useProfileProgressSync({
     profileName,
     streak,
     unlockedLevel,
+    flushSyncQueueSafely,
   ]);
 
   return { markHydrationStale };

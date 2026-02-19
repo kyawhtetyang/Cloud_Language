@@ -9,6 +9,7 @@ import { useLessonData } from './hooks/useLessonData';
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { useAppPreferences } from './hooks/useAppPreferences';
 import { useLessonUnitState } from './hooks/useLessonUnitState';
+import { useOfflineLessonPacks } from './hooks/useOfflineLessonPacks';
 import { isPassingScore } from './utils/reviewScoring';
 import { buildLessonReferenceKey } from './utils/lessonReference';
 import { ProfileView } from './components/views/ProfileView';
@@ -22,14 +23,19 @@ import { LeaveQuizModal } from './components/modals/LeaveQuizModal';
 import {
   AppMode,
   clampTextScale,
-  getLearningFlowConfig,
+  getLessonOrderIndex,
+  getLessonUnitId,
+  LEARN_QUESTIONS_PER_UNIT,
+  LESSONS_PER_BATCH,
   MATCH_PAIRS_PER_REVIEW,
   PASS_SCORE,
   PROFILE_NAME_KEY,
   PROGRESS_KEY,
+  QUICK_REVIEW_CHECKPOINTS,
   ReviewResult,
   STREAK_KEY,
   toProfileStorageId,
+  TOTAL_XP_PER_COURSE,
   UNLOCKED_LEVEL_KEY,
 } from './config/appConfig';
 import { LevelsView } from './components/views/LevelsView';
@@ -69,8 +75,6 @@ const App: React.FC = () => {
     setIsPronunciationEnabled,
     learnLanguage,
     setLearnLanguage,
-    chineseTrack,
-    setChineseTrack,
     defaultLanguage,
     setDefaultLanguage,
     textScalePercent,
@@ -114,18 +118,15 @@ const App: React.FC = () => {
   const { lessons, englishReferenceLessons, loading, errorMessage } = useLessonData(
     apiBaseUrl,
     learnLanguage,
-    chineseTrack,
   );
-  const flowConfig = useMemo(
-    () => getLearningFlowConfig(learnLanguage, chineseTrack),
-    [learnLanguage, chineseTrack],
-  );
-  const unitFlowTotal = flowConfig.questionsPerUnit;
-  const lessonsPerBatch = flowConfig.lessonsPerBatch;
-  const quickReviewCheckpoints = flowConfig.quickReviewCheckpoints;
-  const totalXpPerCourse = flowConfig.quickReviewCheckpoints.length;
+  const {
+    downloadedUnitKeys,
+    downloadUnitPack,
+    removeUnitPack,
+    isUnitDownloading,
+  } = useOfflineLessonPacks(learnLanguage, lessons);
   const totalLevels = useMemo(
-    () => lessons.reduce((max, lesson) => Math.max(max, lesson.level), 1),
+    () => lessons.reduce((max, lesson) => Math.max(max, getLessonOrderIndex(lesson)), 1),
     [lessons],
   );
   const englishReferenceByKey = useMemo(() => {
@@ -149,7 +150,6 @@ const App: React.FC = () => {
     unlockedLevel,
     streak,
     learnLanguage,
-    chineseTrack,
     defaultLanguage,
     isPronunciationEnabled,
     textScalePercent,
@@ -165,7 +165,6 @@ const App: React.FC = () => {
     setUnlockedLevel,
     setStreak,
     setLearnLanguage,
-    setChineseTrack,
     setDefaultLanguage,
     setIsPronunciationEnabled,
     setTextScalePercent,
@@ -179,7 +178,6 @@ const App: React.FC = () => {
     profileStorageId,
     enabled: Boolean(profileName) && hasHydratedSettings,
     learnLanguage,
-    chineseTrack,
     defaultLanguage,
     isPronunciationEnabled,
     textScalePercent,
@@ -199,7 +197,6 @@ const App: React.FC = () => {
     defaultLanguage === 'burmese' ? 'ထွက်မယ်' : 'Leave quick review';
   const {
     currentLevel,
-    currentUnit,
     currentCourseCode,
     currentLevelTitle,
     orderedUnitIndexes,
@@ -207,6 +204,7 @@ const App: React.FC = () => {
     sectionEnd,
     sectionTotal,
     unitFlowCurrent,
+    unitFlowTotal,
     currentBatchEntries,
     currentBatchLessonsCount,
   } = useLessonUnitState({
@@ -215,8 +213,6 @@ const App: React.FC = () => {
     currentIndex,
     quizSectionStart,
     learnStep,
-    lessonsPerBatch,
-    questionsPerUnit: unitFlowTotal,
     isRandomLessonOrderEnabled,
     randomOrderVersion,
   });
@@ -241,11 +237,11 @@ const App: React.FC = () => {
     const nextStep = learnStep + 1;
     setLearnStep(nextStep);
 
-    const isCheckpointStep = quickReviewCheckpoints.includes(nextStep);
+    const isCheckpointStep = QUICK_REVIEW_CHECKPOINTS.includes(nextStep);
 
     if (isReviewQuestionsRemoved && isCheckpointStep) {
-      if (nextStep >= unitFlowTotal) {
-        const passedLevel = lessons[sectionStart]?.level || 1;
+      if (nextStep >= LEARN_QUESTIONS_PER_UNIT) {
+        const passedLevel = lessons[sectionStart] ? getLessonOrderIndex(lessons[sectionStart]) : 1;
         const nextUnlocked = Math.min(totalLevels, passedLevel + 1);
         setUnlockedLevel((prev) => Math.max(prev, nextUnlocked));
         setStreak((prev) => prev + 1);
@@ -268,7 +264,7 @@ const App: React.FC = () => {
         setReviewResult(null);
         resetQuizState();
       } else {
-        const nextOffset = (nextStep * lessonsPerBatch) % sectionTotal;
+        const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotal;
         setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
       }
       setIsNextDisabled(false);
@@ -278,11 +274,11 @@ const App: React.FC = () => {
     const needsCheckpoint = isCheckpointStep;
     if (needsCheckpoint) {
       const previousCheckpoint =
-        quickReviewCheckpoints.filter((checkpoint) => checkpoint < nextStep).at(-1) || 0;
+        QUICK_REVIEW_CHECKPOINTS.filter((checkpoint) => checkpoint < nextStep).at(-1) || 0;
       const reviewSourceIndexes = Array.from(
-        { length: (nextStep - previousCheckpoint) * lessonsPerBatch },
+        { length: (nextStep - previousCheckpoint) * LESSONS_PER_BATCH },
         (_, idx) => {
-          const offset = ((previousCheckpoint * lessonsPerBatch) + idx) % sectionTotal;
+          const offset = ((previousCheckpoint * LESSONS_PER_BATCH) + idx) % sectionTotal;
           return orderedUnitIndexes[offset] ?? sectionStart;
         },
       );
@@ -299,7 +295,7 @@ const App: React.FC = () => {
       }
       setMode('quiz');
     } else {
-      const nextOffset = (nextStep * lessonsPerBatch) % sectionTotal;
+      const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotal;
       setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
     }
 
@@ -309,7 +305,9 @@ const App: React.FC = () => {
   const navigateToLevelUnit = (level: number, unit: number) => {
     const safeLevel = Math.min(Math.max(level, 1), totalLevels);
     const safeUnit = Math.max(1, unit);
-    const target = lessons.findIndex((lesson) => lesson.level === safeLevel && lesson.unit === safeUnit);
+    const target = lessons.findIndex(
+      (lesson) => getLessonOrderIndex(lesson) === safeLevel && getLessonUnitId(lesson) === safeUnit,
+    );
     if (target < 0) return;
     setMode('learn');
     setCurrentIndex(target);
@@ -371,7 +369,7 @@ const App: React.FC = () => {
       return;
     }
 
-    const passedLevel = lessons[quizSectionStart]?.level || 1;
+    const passedLevel = lessons[quizSectionStart] ? getLessonOrderIndex(lessons[quizSectionStart]) : 1;
     const nextUnlocked = Math.min(totalLevels, passedLevel + 1);
     setUnlockedLevel((prev) => Math.max(prev, nextUnlocked));
     setStreak((prev) => prev + 1);
@@ -399,19 +397,19 @@ const App: React.FC = () => {
 
     const isPass = matchMistakes === 0 && matchedPairIds.length === matchPairs.length;
     const gainedXp = isPass ? 1 : 0;
-    const nextXp = Math.min(unitXp + gainedXp, totalXpPerCourse);
+    const nextXp = Math.min(unitXp + gainedXp, TOTAL_XP_PER_COURSE);
     if (isPass) {
       setUnitXp(nextXp);
     }
 
-    if (learnStep >= unitFlowTotal) {
+    if (learnStep >= LEARN_QUESTIONS_PER_UNIT) {
       const passedByScore = isPassingScore(nextXp, PASS_SCORE);
       if (!passedByScore) {
         setStreak(0);
       }
       setReviewResult({
         correct: nextXp,
-        total: totalXpPerCourse,
+        total: TOTAL_XP_PER_COURSE,
         passed: passedByScore,
       });
       setMode('result');
@@ -421,8 +419,8 @@ const App: React.FC = () => {
 
     setMode('learn');
     resetQuizState();
-    if (isPass && learnStep < unitFlowTotal) {
-      const nextOffset = (learnStep * lessonsPerBatch) % sectionTotal;
+    if (isPass && learnStep < LEARN_QUESTIONS_PER_UNIT) {
+      const nextOffset = (learnStep * LESSONS_PER_BATCH) % sectionTotal;
       setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
     } else {
       setStreak(0);
@@ -453,13 +451,11 @@ const App: React.FC = () => {
   const translationLabel = defaultLanguage === 'burmese' ? 'Burmese (Current)' : 'English';
   const pronunciationStyleLabel =
     defaultLanguage === 'burmese' ? 'Burmese style (Current)' : 'English style (Pinyin for Chinese)';
-  const unitsPerLevel = new Set(
-    lessons.filter((lesson) => lesson.level === currentLevel).map((lesson) => lesson.unit),
-  ).size || 1;
-  const currentUnitProgress = Math.min(learnStep, unitFlowTotal) / unitFlowTotal;
-  const levelProgressUnitsRaw = Math.min(unitsPerLevel, Math.max(0, currentUnit - 1 + currentUnitProgress));
-  const levelProgressPercent = Math.round((levelProgressUnitsRaw / Math.max(unitsPerLevel, 1)) * 100);
-  const levelProgressLabel = `${levelProgressUnitsRaw.toFixed(1)}/${unitsPerLevel}`;
+  const totalLessonsCount = lessons.length;
+  const completedLessonsCount = Math.min(currentIndex + 1, totalLessonsCount);
+  const overallProgressPercent = totalLessonsCount > 0
+    ? Math.round((completedLessonsCount / totalLessonsCount) * 100)
+    : 0;
   const isLevelsView = sidebarTab === 'levels';
   const isProfileView = sidebarTab === 'profile';
   const isLessonView = sidebarTab === 'lesson';
@@ -504,16 +500,15 @@ const App: React.FC = () => {
           {isProfileView ? (
             <ProfileView
               profileName={profileName}
-              currentLevel={currentLevel}
-              levelProgressPercent={levelProgressPercent}
-              levelProgressLabel={levelProgressLabel}
+              progressPercent={overallProgressPercent}
+              progressLabel={`${completedLessonsCount}/${totalLessonsCount} lessons completed`}
               profileInput={profileInput}
               profileError={profileError}
               hasProfileWhitespace={hasProfileWhitespace}
               isProfileInputValid={isProfileInputValid}
               currentCourseCode={currentCourseCode}
-              unlockedLevel={unlockedLevel}
-              totalLevels={totalLevels}
+              unlockedUnits={Math.max(unlockedLevel, 1)}
+              totalUnits={Math.max(totalLevels, 1)}
               streak={streak}
               onProfileInputChange={setProfileInput}
               onApplyProfileName={handleApplyProfileName}
@@ -523,12 +518,15 @@ const App: React.FC = () => {
               lessons={lessons}
               defaultLanguage={defaultLanguage}
               onSelectUnit={goToLevelUnit}
+              downloadedUnitKeys={downloadedUnitKeys}
+              onDownloadUnit={(level, unit) => { void downloadUnitPack(level, unit); }}
+              onRemoveUnitDownload={(level, unit) => { void removeUnitPack(level, unit); }}
+              isUnitDownloading={isUnitDownloading}
             />
           ) : isSettingsView ? (
             <SettingsView
               defaultLanguage={defaultLanguage}
               learnLanguage={learnLanguage}
-              chineseTrack={chineseTrack}
               isPronunciationEnabled={isPronunciationEnabled}
               isBoldTextEnabled={isBoldTextEnabled}
               isRandomLessonOrderEnabled={isRandomLessonOrderEnabled}
@@ -541,7 +539,6 @@ const App: React.FC = () => {
               pronunciationStyleLabel={pronunciationStyleLabel}
               onDefaultLanguageChange={setDefaultLanguage}
               onLearnLanguageChange={setLearnLanguage}
-              onChineseTrackChange={setChineseTrack}
               onTogglePronunciation={() => setIsPronunciationEnabled((prev) => !prev)}
               onToggleBoldText={() => setIsBoldTextEnabled((prev) => !prev)}
               onToggleRandomLessonOrder={() => {
@@ -574,7 +571,7 @@ const App: React.FC = () => {
             <ResultView
               reviewResult={reviewResult}
               unitXp={unitXp}
-              totalXp={totalXpPerCourse}
+              totalXp={TOTAL_XP_PER_COURSE}
               onContinue={handleResultContinue}
             />
           ) : mode === 'completed' ? (
@@ -602,8 +599,6 @@ const App: React.FC = () => {
             mode={mode}
             isNextDisabled={isNextDisabled}
             learnStep={learnStep}
-            questionsPerUnit={unitFlowTotal}
-            quickReviewCheckpoints={quickReviewCheckpoints}
             isReviewQuestionsRemoved={isReviewQuestionsRemoved}
             isMatchReviewComplete={isMatchReviewComplete}
             onNext={handleNext}

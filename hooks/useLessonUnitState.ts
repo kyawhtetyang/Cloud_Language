@@ -4,6 +4,10 @@ import {
   AppMode,
   buildStageUnitsFromLessons,
   getLevelTitle,
+  getLessonOrderIndex,
+  getLessonUnitId,
+  LEARN_QUESTIONS_PER_UNIT,
+  LESSONS_PER_BATCH,
   resolveStageCode,
 } from '../config/appConfig';
 
@@ -13,8 +17,6 @@ type UseLessonUnitStateParams = {
   currentIndex: number;
   quizSectionStart: number;
   learnStep: number;
-  lessonsPerBatch: number;
-  questionsPerUnit: number;
   isRandomLessonOrderEnabled: boolean;
   randomOrderVersion: number;
 };
@@ -46,8 +48,6 @@ export function useLessonUnitState({
   currentIndex,
   quizSectionStart,
   learnStep,
-  lessonsPerBatch,
-  questionsPerUnit,
   isRandomLessonOrderEnabled,
   randomOrderVersion,
 }: UseLessonUnitStateParams): UseLessonUnitStateResult {
@@ -55,9 +55,9 @@ export function useLessonUnitState({
     mode === 'quiz' || mode === 'result'
       ? quizSectionStart
       : Math.min(currentIndex, Math.max(lessons.length - 1, 0));
-  const fallbackLevel = Math.floor(activeLevelIndex / questionsPerUnit) + 1;
-  const currentLevel = lessons[activeLevelIndex]?.level || fallbackLevel;
-  const currentUnit = lessons[activeLevelIndex]?.unit || 1;
+  const fallbackLevel = Math.floor(activeLevelIndex / LEARN_QUESTIONS_PER_UNIT) + 1;
+  const currentLevel = lessons[activeLevelIndex] ? getLessonOrderIndex(lessons[activeLevelIndex]) : fallbackLevel;
+  const currentUnit = lessons[activeLevelIndex] ? getLessonUnitId(lessons[activeLevelIndex]) : 1;
   const currentStage = resolveStageCode(currentLevel, lessons[activeLevelIndex]?.stage);
   const currentStageUnits = buildStageUnitsFromLessons(lessons).filter((entry) => entry.stage === currentStage);
   const currentStageUnitNumber =
@@ -68,7 +68,7 @@ export function useLessonUnitState({
   const levelIndexes = useMemo(
     () =>
       lessons.reduce<number[]>((acc, lesson, idx) => {
-        if (lesson.level === currentLevel && lesson.unit === currentUnit) acc.push(idx);
+        if (getLessonOrderIndex(lesson) === currentLevel && getLessonUnitId(lesson) === currentUnit) acc.push(idx);
         return acc;
       }, []),
     [currentLevel, currentUnit, lessons],
@@ -89,18 +89,18 @@ export function useLessonUnitState({
   const sectionStart = levelIndexes.length > 0 ? Math.min(...levelIndexes) : Math.max(0, activeLevelIndex);
   const sectionEnd = levelIndexes.length > 0 ? Math.max(...levelIndexes) : Math.max(0, activeLevelIndex);
   const sectionTotal = Math.max(1, orderedUnitIndexes.length);
-  const unitFlowTotal = questionsPerUnit;
-  const batchStartOffset = mode === 'learn' ? (learnStep * lessonsPerBatch) % sectionTotal : 0;
+  const unitFlowTotal = LEARN_QUESTIONS_PER_UNIT;
+  const batchStartOffset = mode === 'learn' ? (learnStep * LESSONS_PER_BATCH) % sectionTotal : 0;
   const currentBatchEntries =
     mode === 'learn'
-      ? Array.from({ length: lessonsPerBatch }, (_, idx) => {
+      ? Array.from({ length: LESSONS_PER_BATCH }, (_, idx) => {
           const orderedIndex = (batchStartOffset + idx) % sectionTotal;
           const lessonIndex = orderedUnitIndexes[orderedIndex] ?? sectionStart;
           const lesson = lessons[lessonIndex];
           return lesson ? { lesson, lessonIndex } : null;
         }).filter((entry): entry is LessonBatchEntry => Boolean(entry))
       : [];
-  const unitFlowCurrent = Math.min(learnStep, questionsPerUnit);
+  const unitFlowCurrent = Math.min(learnStep, LEARN_QUESTIONS_PER_UNIT);
 
   return {
     currentLevel,
@@ -118,3 +118,4 @@ export function useLessonUnitState({
     currentBatchLessonsCount: currentBatchEntries.length,
   };
 }
+

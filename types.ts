@@ -1,5 +1,8 @@
 
 export interface LessonData {
+  groupId?: string;
+  unitId?: number;
+  orderIndex?: number;
   level: number;
   unit: number;
   stage?: string;

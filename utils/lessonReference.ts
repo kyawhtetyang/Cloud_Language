@@ -1,7 +1,8 @@
+import { getLessonOrderIndex, getLessonUnitId } from '../config/appConfig';
 import { LessonData } from '../types';
 
 export function buildLessonReferenceKey(
-  lesson: Pick<LessonData, 'level' | 'unit' | 'topic' | 'burmese'>,
+  lesson: Pick<LessonData, 'groupId' | 'unitId' | 'orderIndex' | 'level' | 'unit' | 'topic' | 'burmese'>,
 ): string {
-  return `${lesson.level}|${lesson.unit}|${lesson.topic}|${lesson.burmese}`;
+  return `${getLessonOrderIndex(lesson)}|${getLessonUnitId(lesson)}|${lesson.topic}|${lesson.burmese}`;
 }
