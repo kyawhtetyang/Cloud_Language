@@ -1,8 +1,11 @@
 import React from 'react';
 import { VoicePreference } from '../AudioButton';
-
-type LearnLanguage = 'english' | 'chinese';
-type DefaultLanguage = 'burmese' | 'english';
+import {
+  DEFAULT_LANGUAGE_OPTIONS,
+  DefaultLanguage,
+  LEARN_LANGUAGE_OPTIONS,
+  LearnLanguage,
+} from '../../config/appConfig';
 
 type SettingsViewProps = {
   defaultLanguage: DefaultLanguage;
@@ -57,56 +60,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <p className="text-sm font-extrabold uppercase tracking-wide text-[#2f7d01]">Default Language</p>
         <p className="text-sm text-gray-600 mt-1 mb-3">Select one: Burmese (default) or English.</p>
         <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => onDefaultLanguageChange('burmese')}
-            className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-              defaultLanguage === 'burmese'
-                ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
-                : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
-            }`}
-          >
-            Burmese (Default)
-          </button>
-          <button
-            type="button"
-            onClick={() => onDefaultLanguageChange('english')}
-            className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-              defaultLanguage === 'english'
-                ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
-                : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
-            }`}
-          >
-            English
-          </button>
+          {DEFAULT_LANGUAGE_OPTIONS.map((option) => (
+            <button
+              key={option.code}
+              type="button"
+              onClick={() => onDefaultLanguageChange(option.code)}
+              className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
+                defaultLanguage === option.code
+                  ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
+                  : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </div>
       <div className="rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-4 mb-3">
         <p className="text-sm font-extrabold uppercase tracking-wide text-[#2f7d01]">Learn Language</p>
         <p className="text-sm text-gray-600 mt-1 mb-3">Choose your target learning language.</p>
         <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => onLearnLanguageChange('english')}
-            className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-              learnLanguage === 'english'
-                ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
-                : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
-            }`}
-          >
-            English
-          </button>
-          <button
-            type="button"
-            onClick={() => onLearnLanguageChange('chinese')}
-            className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-              learnLanguage === 'chinese'
-                ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
-                : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
-            }`}
-          >
-            Chinese
-          </button>
+          {LEARN_LANGUAGE_OPTIONS.map((option) => (
+            <button
+              key={option.code}
+              type="button"
+              onClick={() => onLearnLanguageChange(option.code)}
+              className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
+                learnLanguage === option.code
+                  ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
+                  : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </div>
       <div className="rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-4 mb-3">

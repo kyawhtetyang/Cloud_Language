@@ -208,8 +208,17 @@ export const STAGE_META = {
 
 export type AppMode = 'learn' | 'quiz' | 'result' | 'completed';
 export type SidebarTab = 'profile' | 'levels' | 'lesson' | 'settings';
-export type LearnLanguage = 'english' | 'chinese';
-export type DefaultLanguage = 'burmese' | 'english';
+export const LEARN_LANGUAGE_OPTIONS = [
+  { code: 'english', label: 'English' },
+  { code: 'chinese', label: 'Chinese' },
+] as const;
+export type LearnLanguage = (typeof LEARN_LANGUAGE_OPTIONS)[number]['code'];
+
+export const DEFAULT_LANGUAGE_OPTIONS = [
+  { code: 'burmese', label: 'Burmese (Default)' },
+  { code: 'english', label: 'English' },
+] as const;
+export type DefaultLanguage = (typeof DEFAULT_LANGUAGE_OPTIONS)[number]['code'];
 
 export type ReviewResult = {
   correct: number;
@@ -219,6 +228,16 @@ export type ReviewResult = {
 
 export function clampTextScale(value: number): number {
   return Math.min(120, Math.max(90, value));
+}
+
+export function isLearnLanguage(value: unknown): value is LearnLanguage {
+  if (typeof value !== 'string') return false;
+  return LEARN_LANGUAGE_OPTIONS.some((option) => option.code === value);
+}
+
+export function isDefaultLanguage(value: unknown): value is DefaultLanguage {
+  if (typeof value !== 'string') return false;
+  return DEFAULT_LANGUAGE_OPTIONS.some((option) => option.code === value);
 }
 
 type LessonStageInput = {

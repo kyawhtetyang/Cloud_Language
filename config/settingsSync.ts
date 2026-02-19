@@ -5,6 +5,8 @@ import {
   clampTextScale,
   DEFAULT_LANGUAGE_KEY,
   DefaultLanguage,
+  isDefaultLanguage,
+  isLearnLanguage,
   LEARN_LANGUAGE_KEY,
   LearnLanguage,
   PRONUNCIATION_ENABLED_KEY,
@@ -64,11 +66,11 @@ function safeWrite(key: string, value: string): void {
 }
 
 function parseLearnLanguage(value: string | null): LearnLanguage {
-  return value === 'chinese' ? 'chinese' : 'english';
+  return isLearnLanguage(value) ? value : 'english';
 }
 
 function parseDefaultLanguage(value: string | null): DefaultLanguage {
-  return value === 'english' ? 'english' : 'burmese';
+  return isDefaultLanguage(value) ? value : 'burmese';
 }
 
 function parseVoicePreference(value: string | null): VoicePreference {
@@ -127,10 +129,10 @@ export function applyRemoteSyncedSettings(
   remote: Record<string, unknown>,
   setters: SyncedAppSettingsSetters,
 ): void {
-  if (remote.learnLanguage === 'english' || remote.learnLanguage === 'chinese') {
+  if (isLearnLanguage(remote.learnLanguage)) {
     setters.setLearnLanguage(remote.learnLanguage);
   }
-  if (remote.defaultLanguage === 'english' || remote.defaultLanguage === 'burmese') {
+  if (isDefaultLanguage(remote.defaultLanguage)) {
     setters.setDefaultLanguage(remote.defaultLanguage);
   }
   if (typeof remote.isPronunciationEnabled === 'boolean') {
