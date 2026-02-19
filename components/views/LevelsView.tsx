@@ -7,41 +7,13 @@ import {
   STAGE_ORDER,
   StageCode,
 } from '../../config/appConfig';
+import { getRoadmapText, localizeRoadmapTopic } from '../../config/roadmapI18n';
 
 type LevelsViewProps = {
   lessons: LessonData[];
   defaultLanguage: DefaultLanguage;
   onSelectUnit: (level: number, unit: number) => void;
 };
-
-const ROADMAP_TEXT = {
-  english: {
-    roadmap: 'Road Map',
-    unitPrefix: 'Unit',
-    groupPrefix: 'Units',
-    stageLabels: {
-      A1: 'Beginner (A1)',
-      A2: 'Pre-Intermediate (A2)',
-      B1: 'Intermediate (B1)',
-      B2: 'Upper-Intermediate (B2)',
-    },
-  },
-  burmese: {
-    roadmap: 'လေ့လာမှုမြေပုံ',
-    unitPrefix: 'ယူနစ်',
-    groupPrefix: 'ယူနစ်များ',
-    stageLabels: {
-      A1: 'အခြေခံ (A1)',
-      A2: 'အခြေခံအလယ်တန်း (A2)',
-      B1: 'အလယ်တန်း (B1)',
-      B2: 'အလယ်တန်းမြင့် (B2)',
-    },
-  },
-} as const;
-
-function localizeTopic(topic: string): string {
-  return topic;
-}
 
 function shortenLabel(text: string, max = 56): string {
   if (text.length <= max) return text;
@@ -57,7 +29,7 @@ function chunkUnits<T>(items: T[], size: number): T[][] {
 }
 
 export const LevelsView: React.FC<LevelsViewProps> = ({ lessons, defaultLanguage, onSelectUnit }) => {
-  const text = defaultLanguage === 'burmese' ? ROADMAP_TEXT.burmese : ROADMAP_TEXT.english;
+  const text = getRoadmapText(defaultLanguage);
   const stageUnits = buildStageUnitsFromLessons(lessons);
   const unitsByStage = STAGE_ORDER.reduce<Record<StageCode, typeof stageUnits>>((acc, stage) => {
     acc[stage] = stageUnits.filter((item) => item.stage === stage);
@@ -81,10 +53,8 @@ export const LevelsView: React.FC<LevelsViewProps> = ({ lessons, defaultLanguage
             </p>
             <div className="space-y-3">
               {groupedStageRows.map((group, groupIndex) => {
-                const start = group[0]?.stageUnitNumber || 1;
-                const end = group[group.length - 1]?.stageUnitNumber || start;
                 const firstTopic = group[0]
-                  ? localizeTopic(group[0].topic)
+                  ? localizeRoadmapTopic(group[0].topic, defaultLanguage)
                   : '';
                 return (
                   <div
@@ -110,7 +80,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({ lessons, defaultLanguage
                           >
                             {entry.stageUnitNumber}
                           </span>
-                          {localizeTopic(entry.topic)}
+                          {localizeRoadmapTopic(entry.topic, defaultLanguage)}
                         </button>
                       ))}
                     </div>
