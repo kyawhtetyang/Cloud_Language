@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonData } from './types';
 import { useProfileProgress } from './hooks/useProfileProgress';
@@ -20,8 +20,10 @@ import { ResultView } from './components/views/ResultView';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { LessonActionFooter } from './components/LessonActionFooter';
 import { LeaveQuizModal } from './components/modals/LeaveQuizModal';
+import { cancelSpeech, speakText } from './components/AudioButton';
 import {
   AppMode,
+  buildStageUnitsFromLessons,
   clampTextScale,
   getLessonOrderIndex,
   getLessonUnitId,
@@ -93,12 +95,15 @@ const App: React.FC = () => {
   const [learnStep, setLearnStep] = useState(0);
   const [unitXp, setUnitXp] = useState(0);
   const [reviewResult, setReviewResult] = useState<ReviewResult | null>(null);
+  const [completedUnitKeys, setCompletedUnitKeys] = useState<Set<string>>(new Set());
   const [quizSectionStart, setQuizSectionStart] = useState(0);
   const [quizSectionEnd, setQuizSectionEnd] = useState(0);
   const [isLeaveQuizModalOpen, setIsLeaveQuizModalOpen] = useState(false);
+  const [isReading, setIsReading] = useState(false);
   const [pendingUnitTarget, setPendingUnitTarget] = useState<{ level: number; unit: number } | null>(
     null,
   );
+  const readSessionRef = useRef(0);
   const [randomOrderVersion, setRandomOrderVersion] = useState(0);
   const {
     answerChecked,
@@ -197,6 +202,7 @@ const App: React.FC = () => {
     defaultLanguage === 'burmese' ? 'ထွက်မယ်' : 'Leave quick review';
   const {
     currentLevel,
+    currentUnit,
     currentCourseCode,
     currentLevelTitle,
     orderedUnitIndexes,
@@ -230,6 +236,45 @@ const App: React.FC = () => {
     });
   };
 
+  useEffect(() => {
+    if (mode !== 'learn' && isReading) {
+      readSessionRef.current += 1;
+      setIsReading(false);
+      cancelSpeech();
+    }
+  }, [isReading, mode]);
+
+  const handleReadCurrentBatch = async () => {
+    if (mode !== 'learn') return;
+
+    if (isReading) {
+      readSessionRef.current += 1;
+      setIsReading(false);
+      cancelSpeech();
+      return;
+    }
+
+    const texts = currentBatchEntries
+      .map(({ lesson }) => lesson.english)
+      .filter((text) => typeof text === 'string' && text.trim().length > 0);
+
+    if (texts.length === 0) return;
+
+    const sessionId = readSessionRef.current + 1;
+    readSessionRef.current = sessionId;
+    setIsReading(true);
+    cancelSpeech();
+
+    for (const text of texts) {
+      if (readSessionRef.current !== sessionId) break;
+      await speakText(text, voicePreference);
+    }
+
+    if (readSessionRef.current === sessionId) {
+      setIsReading(false);
+    }
+  };
+
   const handleNext = () => {
     if (isNextDisabled || mode !== 'learn') return;
 
@@ -241,6 +286,12 @@ const App: React.FC = () => {
 
     if (isReviewQuestionsRemoved && isCheckpointStep) {
       if (nextStep >= LEARN_QUESTIONS_PER_UNIT) {
+        const completedUnitKey = lessons[sectionStart]
+          ? `${getLessonOrderIndex(lessons[sectionStart])}:${getLessonUnitId(lessons[sectionStart])}`
+          : null;
+        if (completedUnitKey) {
+          setCompletedUnitKeys((prev) => new Set([...prev, completedUnitKey]));
+        }
         const passedLevel = lessons[sectionStart] ? getLessonOrderIndex(lessons[sectionStart]) : 1;
         const nextUnlocked = Math.min(totalLevels, passedLevel + 1);
         setUnlockedLevel((prev) => Math.max(prev, nextUnlocked));
@@ -299,6 +350,23 @@ const App: React.FC = () => {
       setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
     }
 
+    setIsNextDisabled(false);
+  };
+
+  const handlePrevious = () => {
+    if (mode !== 'learn' || isNextDisabled || learnStep <= 0) return;
+
+    if (isReading) {
+      readSessionRef.current += 1;
+      setIsReading(false);
+      cancelSpeech();
+    }
+
+    setIsNextDisabled(true);
+    const previousStep = Math.max(0, learnStep - 1);
+    setLearnStep(previousStep);
+    const previousOffset = (previousStep * LESSONS_PER_BATCH) % sectionTotal;
+    setCurrentIndex(orderedUnitIndexes[previousOffset] ?? sectionStart);
     setIsNextDisabled(false);
   };
 
@@ -370,6 +438,12 @@ const App: React.FC = () => {
     }
 
     const passedLevel = lessons[quizSectionStart] ? getLessonOrderIndex(lessons[quizSectionStart]) : 1;
+    const completedUnitKey = lessons[quizSectionStart]
+      ? `${getLessonOrderIndex(lessons[quizSectionStart])}:${getLessonUnitId(lessons[quizSectionStart])}`
+      : null;
+    if (completedUnitKey) {
+      setCompletedUnitKeys((prev) => new Set([...prev, completedUnitKey]));
+    }
     const nextUnlocked = Math.min(totalLevels, passedLevel + 1);
     setUnlockedLevel((prev) => Math.max(prev, nextUnlocked));
     setStreak((prev) => prev + 1);
@@ -456,6 +530,12 @@ const App: React.FC = () => {
   const overallProgressPercent = totalLessonsCount > 0
     ? Math.round((completedLessonsCount / totalLessonsCount) * 100)
     : 0;
+  const activeUnitKey = `${currentLevel}:${currentUnit}`;
+  const stageUnits = buildStageUnitsFromLessons(lessons).sort((a, b) => a.level - b.level || a.unit - b.unit);
+  const completedRoadmapKeys =
+    mode === 'completed'
+      ? new Set(stageUnits.map((item) => `${item.level}:${item.unit}`))
+      : completedUnitKeys;
   const isLevelsView = sidebarTab === 'levels';
   const isProfileView = sidebarTab === 'profile';
   const isLessonView = sidebarTab === 'lesson';
@@ -518,6 +598,8 @@ const App: React.FC = () => {
               lessons={lessons}
               defaultLanguage={defaultLanguage}
               onSelectUnit={goToLevelUnit}
+              completedUnitKeys={completedRoadmapKeys}
+              activeUnitKey={activeUnitKey}
               downloadedUnitKeys={downloadedUnitKeys}
               onDownloadUnit={(level, unit) => { void downloadUnitPack(level, unit); }}
               onRemoveUnitDownload={(level, unit) => { void removeUnitPack(level, unit); }}
@@ -598,9 +680,14 @@ const App: React.FC = () => {
           <LessonActionFooter
             mode={mode}
             isNextDisabled={isNextDisabled}
+            isPreviousDisabled={mode !== 'learn' || isNextDisabled || learnStep <= 0}
+            isReadDisabled={mode !== 'learn' || currentBatchEntries.length === 0}
+            isReading={isReading}
             learnStep={learnStep}
             isReviewQuestionsRemoved={isReviewQuestionsRemoved}
             isMatchReviewComplete={isMatchReviewComplete}
+            onPrevious={handlePrevious}
+            onRead={() => { void handleReadCurrentBatch(); }}
             onNext={handleNext}
             onQuizSubmit={handleQuizNext}
           />

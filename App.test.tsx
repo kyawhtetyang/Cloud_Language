@@ -53,8 +53,6 @@ describe('App quick review navigation guard', () => {
   it('keeps quiz state when user cancels leave confirmation', async () => {
     render(<App />);
 
-    await screen.findByText('Welcome back');
-    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
     await screen.findByRole('button', { name: 'Next' });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Quick Review' }));
@@ -72,8 +70,6 @@ describe('App quick review navigation guard', () => {
   it('leaves quiz and navigates to selected unit when user confirms', async () => {
     render(<App />);
 
-    await screen.findByText('Welcome back');
-    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
     await screen.findByRole('button', { name: 'Next' });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Quick Review' }));
@@ -94,8 +90,6 @@ describe('App quick review navigation guard', () => {
   it('shows quick review at checkpoint when remove-review toggle is off', async () => {
     render(<App />);
 
-    await screen.findByText('Welcome back');
-    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
     await screen.findByRole('button', { name: 'Next' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -105,7 +99,7 @@ describe('App quick review navigation guard', () => {
   it('skips quick review checkpoints when remove-review toggle is on', async () => {
     render(<App />);
 
-    await screen.findByText('Welcome back');
+    await screen.findByRole('button', { name: 'Next' });
     fireEvent.click(screen.getAllByRole('button', { name: 'Settings' })[0]);
     await screen.findByText('Default Language');
 
@@ -127,6 +121,24 @@ describe('App quick review navigation guard', () => {
       expect(screen.queryByText('Match each sentence')).not.toBeInTheDocument();
     });
     expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
+  });
+
+  it('moves back to previous learn batch when previous is clicked', async () => {
+    render(<App />);
+
+    expect((await screen.findAllByText('English 1')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('English 2')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('English 3')).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect((await screen.findAllByText('English 4')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('English 5')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('English 6')).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
+    expect((await screen.findAllByText('English 1')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('English 2')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('English 3')).length).toBeGreaterThan(0);
   });
 
 });

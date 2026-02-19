@@ -27,4 +27,19 @@ describe('LevelsView topic localization', () => {
 
     expect(screen.getByRole('button', { name: /Burmese words/i })).toBeInTheDocument();
   });
+
+  it('renders completed units with gray style', () => {
+    render(
+      <LevelsView
+        lessons={lessons}
+        defaultLanguage="english"
+        onSelectUnit={vi.fn()}
+        completedUnitKeys={new Set(['1:1'])}
+      />,
+    );
+
+    const unitButton = screen.getByRole('button', { name: /Burmese words/i });
+    const unitCard = unitButton.closest('div.rounded-lg');
+    expect(unitCard?.className).toContain('bg-gray-100');
+  });
 });

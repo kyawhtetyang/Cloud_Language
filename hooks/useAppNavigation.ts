@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RELOAD_TO_LESSON_KEY, SidebarTab } from '../config/appConfig';
+import { PROFILE_NAME_KEY, RELOAD_TO_LESSON_KEY, SidebarTab } from '../config/appConfig';
 
 type UseAppNavigationResult = {
   isSidebarOpen: boolean;
@@ -17,6 +17,9 @@ export function useAppNavigation(): UseAppNavigationResult {
     try {
       if (sessionStorage.getItem(RELOAD_TO_LESSON_KEY) === 'true') {
         sessionStorage.removeItem(RELOAD_TO_LESSON_KEY);
+        return 'lesson';
+      }
+      if (localStorage.getItem(PROFILE_NAME_KEY)?.trim()) {
         return 'lesson';
       }
     } catch {
