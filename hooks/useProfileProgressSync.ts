@@ -9,6 +9,7 @@ import {
   STREAK_KEY,
   UNLOCKED_LEVEL_KEY,
 } from '../config/appConfig';
+import { applyRemoteSyncedSettings, buildSyncedSettingsPayload } from '../config/settingsSync';
 
 const PROGRESS_SYNC_DEBOUNCE_MS = 600;
 
@@ -121,34 +122,16 @@ export function useProfileProgressSync({
           setCurrentIndex(remoteIndex);
           setUnlockedLevel(remoteUnlocked);
           setStreak(remoteStreak);
-          if (remote.learnLanguage === 'english' || remote.learnLanguage === 'chinese') {
-            setLearnLanguage(remote.learnLanguage);
-          }
-          if (remote.defaultLanguage === 'english' || remote.defaultLanguage === 'burmese') {
-            setDefaultLanguage(remote.defaultLanguage);
-          }
-          if (typeof remote.isPronunciationEnabled === 'boolean') {
-            setIsPronunciationEnabled(remote.isPronunciationEnabled);
-          }
-          if (typeof remote.textScalePercent === 'number') {
-            setTextScalePercent(Math.min(120, Math.max(90, remote.textScalePercent)));
-          }
-          if (
-            remote.voicePreference === 'young_female' ||
-            remote.voicePreference === 'google_female' ||
-            remote.voicePreference === 'system_default'
-          ) {
-            setVoicePreference(remote.voicePreference);
-          }
-          if (typeof remote.isBoldTextEnabled === 'boolean') {
-            setIsBoldTextEnabled(remote.isBoldTextEnabled);
-          }
-          if (typeof remote.isRandomLessonOrderEnabled === 'boolean') {
-            setIsRandomLessonOrderEnabled(remote.isRandomLessonOrderEnabled);
-          }
-          if (typeof remote.isReviewQuestionsRemoved === 'boolean') {
-            setIsReviewQuestionsRemoved(remote.isReviewQuestionsRemoved);
-          }
+          applyRemoteSyncedSettings(remote as Record<string, unknown>, {
+            setLearnLanguage,
+            setDefaultLanguage,
+            setIsPronunciationEnabled,
+            setTextScalePercent,
+            setVoicePreference,
+            setIsBoldTextEnabled,
+            setIsRandomLessonOrderEnabled,
+            setIsReviewQuestionsRemoved,
+          });
         }
       } catch {
         // DB sync is optional; localStorage remains the fallback.
@@ -218,14 +201,16 @@ export function useProfileProgressSync({
       currentIndex,
       unlockedLevel,
       streak,
-      learnLanguage,
-      defaultLanguage,
-      isPronunciationEnabled,
-      textScalePercent,
-      voicePreference,
-      isBoldTextEnabled,
-      isRandomLessonOrderEnabled,
-      isReviewQuestionsRemoved,
+      ...buildSyncedSettingsPayload({
+        learnLanguage,
+        defaultLanguage,
+        isPronunciationEnabled,
+        textScalePercent,
+        voicePreference,
+        isBoldTextEnabled,
+        isRandomLessonOrderEnabled,
+        isReviewQuestionsRemoved,
+      }),
     };
 
     const timeoutId = window.setTimeout(() => {

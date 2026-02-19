@@ -1,0 +1,80 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  applyRemoteSyncedSettings,
+  buildSyncedSettingsPayload,
+  persistSyncedSettingsToStorage,
+  readSyncedSettingsFromStorage,
+} from './settingsSync';
+
+describe('settingsSync', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('reads defaults when nothing is stored', () => {
+    expect(readSyncedSettingsFromStorage()).toEqual({
+      learnLanguage: 'english',
+      defaultLanguage: 'burmese',
+      isPronunciationEnabled: false,
+      textScalePercent: 100,
+      voicePreference: 'young_female',
+      isBoldTextEnabled: false,
+      isRandomLessonOrderEnabled: false,
+      isReviewQuestionsRemoved: false,
+    });
+  });
+
+  it('persists and reads all synced settings consistently', () => {
+    const settings = {
+      learnLanguage: 'chinese' as const,
+      defaultLanguage: 'english' as const,
+      isPronunciationEnabled: true,
+      textScalePercent: 115,
+      voicePreference: 'system_default' as const,
+      isBoldTextEnabled: true,
+      isRandomLessonOrderEnabled: true,
+      isReviewQuestionsRemoved: true,
+    };
+
+    persistSyncedSettingsToStorage(settings);
+    expect(readSyncedSettingsFromStorage()).toEqual(settings);
+    expect(buildSyncedSettingsPayload(settings)).toEqual(settings);
+  });
+
+  it('applies only valid remote values to setters', () => {
+    const setters = {
+      setLearnLanguage: vi.fn(),
+      setDefaultLanguage: vi.fn(),
+      setIsPronunciationEnabled: vi.fn(),
+      setTextScalePercent: vi.fn(),
+      setVoicePreference: vi.fn(),
+      setIsBoldTextEnabled: vi.fn(),
+      setIsRandomLessonOrderEnabled: vi.fn(),
+      setIsReviewQuestionsRemoved: vi.fn(),
+    };
+
+    applyRemoteSyncedSettings(
+      {
+        learnLanguage: 'chinese',
+        defaultLanguage: 'english',
+        isPronunciationEnabled: true,
+        textScalePercent: 999,
+        voicePreference: 'google_female',
+        isBoldTextEnabled: true,
+        isRandomLessonOrderEnabled: true,
+        isReviewQuestionsRemoved: true,
+      },
+      setters,
+    );
+
+    expect(setters.setLearnLanguage).toHaveBeenCalledWith('chinese');
+    expect(setters.setDefaultLanguage).toHaveBeenCalledWith('english');
+    expect(setters.setIsPronunciationEnabled).toHaveBeenCalledWith(true);
+    expect(setters.setTextScalePercent).toHaveBeenCalledWith(120);
+    expect(setters.setVoicePreference).toHaveBeenCalledWith('google_female');
+    expect(setters.setIsBoldTextEnabled).toHaveBeenCalledWith(true);
+    expect(setters.setIsRandomLessonOrderEnabled).toHaveBeenCalledWith(true);
+    expect(setters.setIsReviewQuestionsRemoved).toHaveBeenCalledWith(true);
+  });
+});
+
