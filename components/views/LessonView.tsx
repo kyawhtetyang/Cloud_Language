@@ -59,17 +59,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-2.5 py-2">
                   <AudioButton text={lesson.english} compact voicePreference={voicePreference} />
                   <div className="text-left leading-tight">
+                    {isPronunciationEnabled && (
+                      <p className={`text-sm md:text-base text-gray-500 ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
+                        {lesson.pronunciation}
+                      </p>
+                    )}
                     <p className={`text-base md:text-lg text-[#3c3c3c] ${isBoldTextEnabled ? 'font-bold' : 'font-medium'}`}>
                       {lesson.english}
                     </p>
                     <p className={`text-base md:text-lg text-[#58cc02] ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
                       {translatedText}
                     </p>
-                    {isPronunciationEnabled && (
-                      <p className={`text-sm md:text-base text-gray-500 ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
-                        {lesson.pronunciation}
-                      </p>
-                    )}
                   </div>
                 </div>
               );
