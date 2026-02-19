@@ -16,7 +16,10 @@ type WelcomeViewProps = {
 
 export const LoadingView: React.FC = () => (
   <div className="flex items-center justify-center min-h-screen">
-    <div className="w-12 h-12 border-4 border-[#58cc02] border-t-transparent rounded-full animate-spin"></div>
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-12 h-12 border-4 border-[#58cc02] border-t-transparent rounded-full animate-spin"></div>
+      <p style={{ color: '#3c3c3c', fontWeight: 700 }}>Loading lessons...</p>
+    </div>
   </div>
 );
 

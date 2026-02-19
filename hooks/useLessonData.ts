@@ -1,6 +1,19 @@
 import { useEffect, useState } from 'react';
-import { ChineseTrack, LearnLanguage } from '../config/appConfig';
+import { LearnLanguage } from '../config/appConfig';
 import { LessonData } from '../types';
+import { readDownloadedLessonsByLanguage } from '../offline/offlineStore';
+
+const LESSON_FETCH_TIMEOUT_MS = 12000;
+
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
 
 type UseLessonDataResult = {
   lessons: LessonData[];
@@ -9,11 +22,7 @@ type UseLessonDataResult = {
   errorMessage: string | null;
 };
 
-export function useLessonData(
-  apiBaseUrl: string,
-  learnLanguage: LearnLanguage,
-  chineseTrack: ChineseTrack,
-): UseLessonDataResult {
+export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage): UseLessonDataResult {
   const [lessons, setLessons] = useState<LessonData[]>([]);
   const [englishReferenceLessons, setEnglishReferenceLessons] = useState<LessonData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,13 +33,9 @@ export function useLessonData(
       try {
         setLoading(true);
         setErrorMessage(null);
-        const lessonQuery =
-          learnLanguage === 'chinese'
-            ? `${apiBaseUrl}/api/lessons?language=chinese&track=${encodeURIComponent(chineseTrack)}`
-            : `${apiBaseUrl}/api/lessons?language=${learnLanguage}`;
         const [response, englishResponse] = await Promise.all([
-          fetch(lessonQuery),
-          fetch(`${apiBaseUrl}/api/lessons?language=english`),
+          fetchWithTimeout(`${apiBaseUrl}/api/lessons?language=${learnLanguage}`, LESSON_FETCH_TIMEOUT_MS),
+          fetchWithTimeout(`${apiBaseUrl}/api/lessons?language=english`, LESSON_FETCH_TIMEOUT_MS),
         ]);
         if (!response.ok) throw new Error(`API responded with ${response.status}`);
         if (!englishResponse.ok) throw new Error(`API responded with ${englishResponse.status}`);
@@ -45,15 +50,29 @@ export function useLessonData(
         setLessons(data);
         setEnglishReferenceLessons(englishData);
       } catch (error) {
-        console.error('Error loading lessons:', error);
-        setErrorMessage('Could not load lessons from the backend API.');
+        console.error('Error loading lessons from API, trying offline packs:', error);
+        const [offlineLearnLessons, offlineEnglishLessons] = await Promise.all([
+          readDownloadedLessonsByLanguage(learnLanguage),
+          readDownloadedLessonsByLanguage('english'),
+        ]);
+
+        if (offlineLearnLessons.length > 0) {
+          setLessons(offlineLearnLessons);
+          setEnglishReferenceLessons(
+            offlineEnglishLessons.length > 0 ? offlineEnglishLessons : offlineLearnLessons,
+          );
+          setErrorMessage(null);
+          return;
+        }
+
+        setErrorMessage('Could not load lessons from backend or offline storage.');
       } finally {
         setLoading(false);
       }
     };
 
     void fetchData();
-  }, [apiBaseUrl, chineseTrack, learnLanguage]);
+  }, [apiBaseUrl, learnLanguage]);
 
   return { lessons, englishReferenceLessons, loading, errorMessage };
 }
