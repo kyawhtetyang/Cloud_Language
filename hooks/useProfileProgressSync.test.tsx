@@ -54,7 +54,6 @@ describe('useProfileProgressSync debounce', () => {
       unlockedLevel: 1,
       streak: 0,
       learnLanguage: 'english' as const,
-      chineseTrack: 'general' as const,
       defaultLanguage: 'burmese' as const,
       isPronunciationEnabled: false,
       textScalePercent: 100,
@@ -70,7 +69,6 @@ describe('useProfileProgressSync debounce', () => {
       setUnlockedLevel: vi.fn(),
       setStreak: vi.fn(),
       setLearnLanguage: vi.fn(),
-      setChineseTrack: vi.fn(),
       setDefaultLanguage: vi.fn(),
       setIsPronunciationEnabled: vi.fn(),
       setTextScalePercent: vi.fn(),
@@ -124,3 +122,4 @@ describe('useProfileProgressSync debounce', () => {
     expect(putCalls.length).toBe(1);
   });
 });
+

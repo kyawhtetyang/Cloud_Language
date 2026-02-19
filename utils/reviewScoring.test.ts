@@ -14,3 +14,4 @@ describe('isPassingScore', () => {
     expect(isPassingScore(3, 4)).toBe(false);
   });
 });
+

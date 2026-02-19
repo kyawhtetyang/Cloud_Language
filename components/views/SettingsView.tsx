@@ -1,8 +1,6 @@
 import React from 'react';
 import { VoicePreference } from '../AudioButton';
 import {
-  CHINESE_TRACK_OPTIONS,
-  ChineseTrack,
   DEFAULT_LANGUAGE_OPTIONS,
   DefaultLanguage,
   LEARN_LANGUAGE_OPTIONS,
@@ -12,7 +10,6 @@ import {
 type SettingsViewProps = {
   defaultLanguage: DefaultLanguage;
   learnLanguage: LearnLanguage;
-  chineseTrack: ChineseTrack;
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
   isRandomLessonOrderEnabled: boolean;
@@ -25,7 +22,6 @@ type SettingsViewProps = {
   pronunciationStyleLabel: string;
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
   onLearnLanguageChange: (value: LearnLanguage) => void;
-  onChineseTrackChange: (value: ChineseTrack) => void;
   onTogglePronunciation: () => void;
   onToggleBoldText: () => void;
   onToggleRandomLessonOrder: () => void;
@@ -70,7 +66,6 @@ const ToggleCard: React.FC<ToggleCardProps> = ({ title, description, isOn, onTog
 export const SettingsView: React.FC<SettingsViewProps> = ({
   defaultLanguage,
   learnLanguage,
-  chineseTrack,
   isPronunciationEnabled,
   isBoldTextEnabled,
   isRandomLessonOrderEnabled,
@@ -83,7 +78,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   pronunciationStyleLabel,
   onDefaultLanguageChange,
   onLearnLanguageChange,
-  onChineseTrackChange,
   onTogglePronunciation,
   onToggleBoldText,
   onToggleRandomLessonOrder,
@@ -99,8 +93,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="space-y-3">
           <div className={sectionCardClass}>
             <p className={sectionTitleClass}>Default Language</p>
-            <p className="text-sm text-gray-600 mt-1 mb-3">Select one: Burmese (default) or English.</p>
-            <div className="grid grid-cols-2 gap-2">
+            <p className="text-sm text-gray-600 mt-1 mb-3">Choose the app interface language.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {DEFAULT_LANGUAGE_OPTIONS.map((option) => (
                 <button
                   key={option.code}
@@ -137,28 +131,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               ))}
             </div>
           </div>
-          {learnLanguage === 'chinese' && (
-            <div className={sectionCardClass}>
-              <p className={sectionTitleClass}>Chinese Track</p>
-              <p className="text-sm text-gray-600 mt-1 mb-3">Choose curriculum style: General or HSK.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {CHINESE_TRACK_OPTIONS.map((option) => (
-                  <button
-                    key={option.code}
-                    type="button"
-                    onClick={() => onChineseTrackChange(option.code)}
-                    className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-                      chineseTrack === option.code
-                        ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
-                        : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </section>
 

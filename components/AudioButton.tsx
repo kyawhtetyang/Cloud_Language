@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 interface AudioButtonProps {
   text: string;
@@ -64,47 +63,40 @@ function pickPreferredVoice(
   return fallbackFemale || pool[0] || null;
 }
 
+export function cancelSpeech(): void {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+}
+
+export function speakText(text: string, voicePreference: VoicePreference = 'young_female'): Promise<void> {
+  if (!('speechSynthesis' in window)) return Promise.resolve();
+  const synth = window.speechSynthesis;
+  const voices = synth.getVoices();
+  const utterance = new SpeechSynthesisUtterance(text);
+  const lang = guessUtteranceLang(text);
+  utterance.lang = lang;
+  const preferredVoice = pickPreferredVoice(voices, lang, voicePreference);
+  if (preferredVoice) utterance.voice = preferredVoice;
+  utterance.rate = 0.9;
+  utterance.pitch = 1.05;
+
+  return new Promise((resolve) => {
+    utterance.onend = () => resolve();
+    utterance.onerror = () => resolve();
+    synth.speak(utterance);
+  });
+}
+
 export const AudioButton: React.FC<AudioButtonProps> = ({
   text,
   onPlay,
   compact = false,
   voicePreference = 'young_female',
 }) => {
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-
-  useEffect(() => {
-    if (!('speechSynthesis' in window)) return;
-    const synth = window.speechSynthesis;
-    const loadVoices = () => {
-      setVoices(synth.getVoices());
-    };
-
-    loadVoices();
-    synth.addEventListener('voiceschanged', loadVoices);
-    return () => {
-      synth.removeEventListener('voiceschanged', loadVoices);
-    };
-  }, []);
-
   const playAudio = () => {
     if ('speechSynthesis' in window) {
-      const synth = window.speechSynthesis;
-      synth.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      const lang = guessUtteranceLang(text);
-      utterance.lang = lang;
-      const preferredVoice = pickPreferredVoice(
-        voices.length > 0 ? voices : synth.getVoices(),
-        lang,
-        voicePreference,
-      );
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-      }
-      utterance.rate = 0.9;
-      utterance.pitch = 1.05;
-      synth.speak(utterance);
-      onPlay?.();
+      cancelSpeech();
+      void speakText(text, voicePreference).then(() => onPlay?.());
     }
   };
 

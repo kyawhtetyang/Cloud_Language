@@ -39,3 +39,4 @@ describe('useProfileProgress', () => {
     expect(localStorage.getItem(profileKey)).toBe('kyawhtet');
   });
 });
+

@@ -38,3 +38,4 @@ export const ResultView: React.FC<ResultViewProps> = ({
   );
 };
 
+

@@ -2,13 +2,10 @@ import { Dispatch, SetStateAction } from 'react';
 import { VoicePreference } from '../components/AudioButton';
 import {
   BOLD_TEXT_ENABLED_KEY,
-  CHINESE_TRACK_KEY,
-  ChineseTrack,
   clampTextScale,
   DEFAULT_LANGUAGE_KEY,
   DefaultLanguage,
   isDefaultLanguage,
-  isChineseTrack,
   isLearnLanguage,
   LEARN_LANGUAGE_KEY,
   LearnLanguage,
@@ -21,7 +18,6 @@ import {
 
 export type SyncedAppSettings = {
   learnLanguage: LearnLanguage;
-  chineseTrack: ChineseTrack;
   defaultLanguage: DefaultLanguage;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
@@ -33,7 +29,6 @@ export type SyncedAppSettings = {
 
 export type SyncedAppSettingsSetters = {
   setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
-  setChineseTrack: Dispatch<SetStateAction<ChineseTrack>>;
   setDefaultLanguage: Dispatch<SetStateAction<DefaultLanguage>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
@@ -45,7 +40,6 @@ export type SyncedAppSettingsSetters = {
 
 const DEFAULT_SYNCED_SETTINGS: SyncedAppSettings = {
   learnLanguage: 'english',
-  chineseTrack: 'general',
   defaultLanguage: 'burmese',
   isPronunciationEnabled: false,
   textScalePercent: 100,
@@ -83,10 +77,6 @@ function parseDefaultLanguage(value: string | null): DefaultLanguage {
   return isDefaultLanguage(value) ? value : 'burmese';
 }
 
-function parseChineseTrack(value: string | null): ChineseTrack {
-  return isChineseTrack(value) ? value : 'general';
-}
-
 function parseVoicePreference(value: string | null): VoicePreference {
   if (value === 'google_female' || value === 'system_default' || value === 'young_female') {
     return value;
@@ -114,7 +104,6 @@ function readWithFallback(baseKey: string, profileStorageId?: string): string | 
 export function readSyncedSettingsFromStorage(profileStorageId?: string): SyncedAppSettings {
   return {
     learnLanguage: parseLearnLanguage(readWithFallback(LEARN_LANGUAGE_KEY, profileStorageId)),
-    chineseTrack: parseChineseTrack(readWithFallback(CHINESE_TRACK_KEY, profileStorageId)),
     defaultLanguage: parseDefaultLanguage(readWithFallback(DEFAULT_LANGUAGE_KEY, profileStorageId)),
     isPronunciationEnabled: parseBoolean(readWithFallback(PRONUNCIATION_ENABLED_KEY, profileStorageId)),
     textScalePercent: parseTextScale(readWithFallback(TEXT_SCALE_PERCENT_KEY, profileStorageId)),
@@ -132,7 +121,6 @@ export function persistSyncedSettingsToStorage(
   const resolveKey = (baseKey: string) =>
     profileStorageId ? toScopedKey(baseKey, profileStorageId) : baseKey;
   safeWrite(resolveKey(LEARN_LANGUAGE_KEY), settings.learnLanguage);
-  safeWrite(resolveKey(CHINESE_TRACK_KEY), settings.chineseTrack);
   safeWrite(resolveKey(DEFAULT_LANGUAGE_KEY), settings.defaultLanguage);
   safeWrite(resolveKey(PRONUNCIATION_ENABLED_KEY), String(settings.isPronunciationEnabled));
   safeWrite(resolveKey(TEXT_SCALE_PERCENT_KEY), String(settings.textScalePercent));
@@ -145,7 +133,6 @@ export function persistSyncedSettingsToStorage(
 export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedAppSettings {
   return {
     learnLanguage: settings.learnLanguage,
-    chineseTrack: settings.chineseTrack,
     defaultLanguage: settings.defaultLanguage,
     isPronunciationEnabled: settings.isPronunciationEnabled,
     textScalePercent: settings.textScalePercent,
@@ -162,9 +149,6 @@ export function applyRemoteSyncedSettings(
 ): void {
   if (isLearnLanguage(remote.learnLanguage)) {
     setters.setLearnLanguage(remote.learnLanguage);
-  }
-  if (isChineseTrack(remote.chineseTrack)) {
-    setters.setChineseTrack(remote.chineseTrack);
   }
   if (isDefaultLanguage(remote.defaultLanguage)) {
     setters.setDefaultLanguage(remote.defaultLanguage);
@@ -192,3 +176,4 @@ export function applyRemoteSyncedSettings(
     setters.setIsReviewQuestionsRemoved(remote.isReviewQuestionsRemoved);
   }
 }
+
