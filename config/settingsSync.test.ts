@@ -14,6 +14,7 @@ describe('settingsSync', () => {
   it('reads defaults when nothing is stored', () => {
     expect(readSyncedSettingsFromStorage()).toEqual({
       learnLanguage: 'english',
+      chineseTrack: 'general',
       defaultLanguage: 'burmese',
       isPronunciationEnabled: false,
       textScalePercent: 100,
@@ -27,6 +28,7 @@ describe('settingsSync', () => {
   it('persists and reads all synced settings consistently', () => {
     const settings = {
       learnLanguage: 'chinese' as const,
+      chineseTrack: 'hsk' as const,
       defaultLanguage: 'english' as const,
       isPronunciationEnabled: true,
       textScalePercent: 115,
@@ -44,6 +46,7 @@ describe('settingsSync', () => {
   it('uses profile-scoped settings with fallback to legacy global keys', () => {
     const legacyGlobal = {
       learnLanguage: 'english' as const,
+      chineseTrack: 'general' as const,
       defaultLanguage: 'burmese' as const,
       isPronunciationEnabled: false,
       textScalePercent: 100,
@@ -54,6 +57,7 @@ describe('settingsSync', () => {
     };
     const profileSettings = {
       learnLanguage: 'chinese' as const,
+      chineseTrack: 'hsk' as const,
       defaultLanguage: 'english' as const,
       isPronunciationEnabled: true,
       textScalePercent: 115,
@@ -74,6 +78,7 @@ describe('settingsSync', () => {
   it('applies only valid remote values to setters', () => {
     const setters = {
       setLearnLanguage: vi.fn(),
+      setChineseTrack: vi.fn(),
       setDefaultLanguage: vi.fn(),
       setIsPronunciationEnabled: vi.fn(),
       setTextScalePercent: vi.fn(),
@@ -86,6 +91,7 @@ describe('settingsSync', () => {
     applyRemoteSyncedSettings(
       {
         learnLanguage: 'chinese',
+        chineseTrack: 'hsk',
         defaultLanguage: 'english',
         isPronunciationEnabled: true,
         textScalePercent: 999,
@@ -98,6 +104,7 @@ describe('settingsSync', () => {
     );
 
     expect(setters.setLearnLanguage).toHaveBeenCalledWith('chinese');
+    expect(setters.setChineseTrack).toHaveBeenCalledWith('hsk');
     expect(setters.setDefaultLanguage).toHaveBeenCalledWith('english');
     expect(setters.setIsPronunciationEnabled).toHaveBeenCalledWith(true);
     expect(setters.setTextScalePercent).toHaveBeenCalledWith(120);

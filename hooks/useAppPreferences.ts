@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  ChineseTrack,
   DefaultLanguage,
   LearnLanguage,
 } from '../config/appConfig';
@@ -11,6 +12,8 @@ type UseAppPreferencesResult = {
   setIsPronunciationEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   learnLanguage: LearnLanguage;
   setLearnLanguage: React.Dispatch<React.SetStateAction<LearnLanguage>>;
+  chineseTrack: ChineseTrack;
+  setChineseTrack: React.Dispatch<React.SetStateAction<ChineseTrack>>;
   defaultLanguage: DefaultLanguage;
   setDefaultLanguage: React.Dispatch<React.SetStateAction<DefaultLanguage>>;
   textScalePercent: number;
@@ -32,6 +35,7 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
   const [hasHydratedSettings, setHasHydratedSettings] = useState(false);
   const [isPronunciationEnabled, setIsPronunciationEnabled] = useState<boolean>(initialSettings.isPronunciationEnabled);
   const [learnLanguage, setLearnLanguage] = useState<LearnLanguage>(initialSettings.learnLanguage);
+  const [chineseTrack, setChineseTrack] = useState<ChineseTrack>(initialSettings.chineseTrack);
   const [defaultLanguage, setDefaultLanguage] = useState<DefaultLanguage>(initialSettings.defaultLanguage);
   const [textScalePercent, setTextScalePercent] = useState<number>(initialSettings.textScalePercent);
   const [voicePreference, setVoicePreference] = useState<VoicePreference>(initialSettings.voicePreference);
@@ -46,6 +50,7 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     }
     const next = readSyncedSettingsFromStorage(profileStorageId);
     setLearnLanguage(next.learnLanguage);
+    setChineseTrack(next.chineseTrack);
     setDefaultLanguage(next.defaultLanguage);
     setIsPronunciationEnabled(next.isPronunciationEnabled);
     setTextScalePercent(next.textScalePercent);
@@ -61,6 +66,8 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setIsPronunciationEnabled,
     learnLanguage,
     setLearnLanguage,
+    chineseTrack,
+    setChineseTrack,
     defaultLanguage,
     setDefaultLanguage,
     textScalePercent,

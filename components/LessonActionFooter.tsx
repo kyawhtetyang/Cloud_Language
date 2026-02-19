@@ -1,10 +1,12 @@
 import React from 'react';
-import { AppMode, LEARN_QUESTIONS_PER_UNIT, QUICK_REVIEW_CHECKPOINTS } from '../config/appConfig';
+import { AppMode } from '../config/appConfig';
 
 type LessonActionFooterProps = {
   mode: AppMode;
   isNextDisabled: boolean;
   learnStep: number;
+  questionsPerUnit: number;
+  quickReviewCheckpoints: number[];
   isReviewQuestionsRemoved: boolean;
   isMatchReviewComplete: boolean;
   onNext: () => void;
@@ -15,6 +17,8 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
   mode,
   isNextDisabled,
   learnStep,
+  questionsPerUnit,
+  quickReviewCheckpoints,
   isReviewQuestionsRemoved,
   isMatchReviewComplete,
   onNext,
@@ -32,8 +36,8 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
             }`}
           >
             {(() => {
-              const nextStep = Math.min(LEARN_QUESTIONS_PER_UNIT, learnStep + 1);
-              if (!QUICK_REVIEW_CHECKPOINTS.includes(nextStep) || isReviewQuestionsRemoved) return 'Next';
+              const nextStep = Math.min(questionsPerUnit, learnStep + 1);
+              if (!quickReviewCheckpoints.includes(nextStep) || isReviewQuestionsRemoved) return 'Next';
               return 'Quick Review';
             })()}
           </button>
@@ -55,4 +59,3 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
     </footer>
   );
 };
-

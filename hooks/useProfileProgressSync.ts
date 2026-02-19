@@ -3,6 +3,7 @@ import { LessonData, ProgressState } from '../types';
 import { VoicePreference } from '../components/AudioButton';
 import {
   AppMode,
+  ChineseTrack,
   DefaultLanguage,
   LearnLanguage,
   PROGRESS_KEY,
@@ -22,6 +23,7 @@ type UseProfileProgressSyncParams = {
   unlockedLevel: number;
   streak: number;
   learnLanguage: LearnLanguage;
+  chineseTrack: ChineseTrack;
   defaultLanguage: DefaultLanguage;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
@@ -37,6 +39,7 @@ type UseProfileProgressSyncParams = {
   setUnlockedLevel: React.Dispatch<React.SetStateAction<number>>;
   setStreak: React.Dispatch<React.SetStateAction<number>>;
   setLearnLanguage: React.Dispatch<React.SetStateAction<LearnLanguage>>;
+  setChineseTrack: React.Dispatch<React.SetStateAction<ChineseTrack>>;
   setDefaultLanguage: React.Dispatch<React.SetStateAction<DefaultLanguage>>;
   setIsPronunciationEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setTextScalePercent: React.Dispatch<React.SetStateAction<number>>;
@@ -55,6 +58,7 @@ export function useProfileProgressSync({
   unlockedLevel,
   streak,
   learnLanguage,
+  chineseTrack,
   defaultLanguage,
   isPronunciationEnabled,
   textScalePercent,
@@ -70,6 +74,7 @@ export function useProfileProgressSync({
   setUnlockedLevel,
   setStreak,
   setLearnLanguage,
+  setChineseTrack,
   setDefaultLanguage,
   setIsPronunciationEnabled,
   setTextScalePercent,
@@ -124,6 +129,7 @@ export function useProfileProgressSync({
           setStreak(remoteStreak);
           applyRemoteSyncedSettings(remote as Record<string, unknown>, {
             setLearnLanguage,
+            setChineseTrack,
             setDefaultLanguage,
             setIsPronunciationEnabled,
             setTextScalePercent,
@@ -152,6 +158,7 @@ export function useProfileProgressSync({
     setCurrentIndex,
     setDefaultLanguage,
     setIsPronunciationEnabled,
+    setChineseTrack,
     setTextScalePercent,
     setVoicePreference,
     setIsBoldTextEnabled,
@@ -203,6 +210,7 @@ export function useProfileProgressSync({
       streak,
       ...buildSyncedSettingsPayload({
         learnLanguage,
+        chineseTrack,
         defaultLanguage,
         isPronunciationEnabled,
         textScalePercent,
@@ -232,6 +240,7 @@ export function useProfileProgressSync({
     apiBaseUrl,
     currentIndex,
     defaultLanguage,
+    chineseTrack,
     hasHydratedProfile,
     isPronunciationEnabled,
     textScalePercent,

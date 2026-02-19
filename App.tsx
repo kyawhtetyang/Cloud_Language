@@ -22,17 +22,14 @@ import { LeaveQuizModal } from './components/modals/LeaveQuizModal';
 import {
   AppMode,
   clampTextScale,
-  LEARN_QUESTIONS_PER_UNIT,
-  LESSONS_PER_BATCH,
+  getLearningFlowConfig,
   MATCH_PAIRS_PER_REVIEW,
   PASS_SCORE,
   PROFILE_NAME_KEY,
   PROGRESS_KEY,
-  QUICK_REVIEW_CHECKPOINTS,
   ReviewResult,
   STREAK_KEY,
   toProfileStorageId,
-  TOTAL_XP_PER_COURSE,
   UNLOCKED_LEVEL_KEY,
 } from './config/appConfig';
 import { LevelsView } from './components/views/LevelsView';
@@ -72,6 +69,8 @@ const App: React.FC = () => {
     setIsPronunciationEnabled,
     learnLanguage,
     setLearnLanguage,
+    chineseTrack,
+    setChineseTrack,
     defaultLanguage,
     setDefaultLanguage,
     textScalePercent,
@@ -115,7 +114,16 @@ const App: React.FC = () => {
   const { lessons, englishReferenceLessons, loading, errorMessage } = useLessonData(
     apiBaseUrl,
     learnLanguage,
+    chineseTrack,
   );
+  const flowConfig = useMemo(
+    () => getLearningFlowConfig(learnLanguage, chineseTrack),
+    [learnLanguage, chineseTrack],
+  );
+  const unitFlowTotal = flowConfig.questionsPerUnit;
+  const lessonsPerBatch = flowConfig.lessonsPerBatch;
+  const quickReviewCheckpoints = flowConfig.quickReviewCheckpoints;
+  const totalXpPerCourse = flowConfig.quickReviewCheckpoints.length;
   const totalLevels = useMemo(
     () => lessons.reduce((max, lesson) => Math.max(max, lesson.level), 1),
     [lessons],
@@ -141,6 +149,7 @@ const App: React.FC = () => {
     unlockedLevel,
     streak,
     learnLanguage,
+    chineseTrack,
     defaultLanguage,
     isPronunciationEnabled,
     textScalePercent,
@@ -156,6 +165,7 @@ const App: React.FC = () => {
     setUnlockedLevel,
     setStreak,
     setLearnLanguage,
+    setChineseTrack,
     setDefaultLanguage,
     setIsPronunciationEnabled,
     setTextScalePercent,
@@ -169,6 +179,7 @@ const App: React.FC = () => {
     profileStorageId,
     enabled: Boolean(profileName) && hasHydratedSettings,
     learnLanguage,
+    chineseTrack,
     defaultLanguage,
     isPronunciationEnabled,
     textScalePercent,
@@ -196,7 +207,6 @@ const App: React.FC = () => {
     sectionEnd,
     sectionTotal,
     unitFlowCurrent,
-    unitFlowTotal,
     currentBatchEntries,
     currentBatchLessonsCount,
   } = useLessonUnitState({
@@ -205,6 +215,8 @@ const App: React.FC = () => {
     currentIndex,
     quizSectionStart,
     learnStep,
+    lessonsPerBatch,
+    questionsPerUnit: unitFlowTotal,
     isRandomLessonOrderEnabled,
     randomOrderVersion,
   });
@@ -229,10 +241,10 @@ const App: React.FC = () => {
     const nextStep = learnStep + 1;
     setLearnStep(nextStep);
 
-    const isCheckpointStep = QUICK_REVIEW_CHECKPOINTS.includes(nextStep);
+    const isCheckpointStep = quickReviewCheckpoints.includes(nextStep);
 
     if (isReviewQuestionsRemoved && isCheckpointStep) {
-      if (nextStep >= LEARN_QUESTIONS_PER_UNIT) {
+      if (nextStep >= unitFlowTotal) {
         const passedLevel = lessons[sectionStart]?.level || 1;
         const nextUnlocked = Math.min(totalLevels, passedLevel + 1);
         setUnlockedLevel((prev) => Math.max(prev, nextUnlocked));
@@ -256,7 +268,7 @@ const App: React.FC = () => {
         setReviewResult(null);
         resetQuizState();
       } else {
-        const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotal;
+        const nextOffset = (nextStep * lessonsPerBatch) % sectionTotal;
         setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
       }
       setIsNextDisabled(false);
@@ -266,11 +278,11 @@ const App: React.FC = () => {
     const needsCheckpoint = isCheckpointStep;
     if (needsCheckpoint) {
       const previousCheckpoint =
-        QUICK_REVIEW_CHECKPOINTS.filter((checkpoint) => checkpoint < nextStep).at(-1) || 0;
+        quickReviewCheckpoints.filter((checkpoint) => checkpoint < nextStep).at(-1) || 0;
       const reviewSourceIndexes = Array.from(
-        { length: (nextStep - previousCheckpoint) * LESSONS_PER_BATCH },
+        { length: (nextStep - previousCheckpoint) * lessonsPerBatch },
         (_, idx) => {
-          const offset = ((previousCheckpoint * LESSONS_PER_BATCH) + idx) % sectionTotal;
+          const offset = ((previousCheckpoint * lessonsPerBatch) + idx) % sectionTotal;
           return orderedUnitIndexes[offset] ?? sectionStart;
         },
       );
@@ -287,7 +299,7 @@ const App: React.FC = () => {
       }
       setMode('quiz');
     } else {
-      const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotal;
+      const nextOffset = (nextStep * lessonsPerBatch) % sectionTotal;
       setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
     }
 
@@ -387,19 +399,19 @@ const App: React.FC = () => {
 
     const isPass = matchMistakes === 0 && matchedPairIds.length === matchPairs.length;
     const gainedXp = isPass ? 1 : 0;
-    const nextXp = Math.min(unitXp + gainedXp, TOTAL_XP_PER_COURSE);
+    const nextXp = Math.min(unitXp + gainedXp, totalXpPerCourse);
     if (isPass) {
       setUnitXp(nextXp);
     }
 
-    if (learnStep >= LEARN_QUESTIONS_PER_UNIT) {
+    if (learnStep >= unitFlowTotal) {
       const passedByScore = isPassingScore(nextXp, PASS_SCORE);
       if (!passedByScore) {
         setStreak(0);
       }
       setReviewResult({
         correct: nextXp,
-        total: TOTAL_XP_PER_COURSE,
+        total: totalXpPerCourse,
         passed: passedByScore,
       });
       setMode('result');
@@ -409,8 +421,8 @@ const App: React.FC = () => {
 
     setMode('learn');
     resetQuizState();
-    if (isPass && learnStep < LEARN_QUESTIONS_PER_UNIT) {
-      const nextOffset = (learnStep * LESSONS_PER_BATCH) % sectionTotal;
+    if (isPass && learnStep < unitFlowTotal) {
+      const nextOffset = (learnStep * lessonsPerBatch) % sectionTotal;
       setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
     } else {
       setStreak(0);
@@ -444,7 +456,7 @@ const App: React.FC = () => {
   const unitsPerLevel = new Set(
     lessons.filter((lesson) => lesson.level === currentLevel).map((lesson) => lesson.unit),
   ).size || 1;
-  const currentUnitProgress = Math.min(learnStep, LEARN_QUESTIONS_PER_UNIT) / LEARN_QUESTIONS_PER_UNIT;
+  const currentUnitProgress = Math.min(learnStep, unitFlowTotal) / unitFlowTotal;
   const levelProgressUnitsRaw = Math.min(unitsPerLevel, Math.max(0, currentUnit - 1 + currentUnitProgress));
   const levelProgressPercent = Math.round((levelProgressUnitsRaw / Math.max(unitsPerLevel, 1)) * 100);
   const levelProgressLabel = `${levelProgressUnitsRaw.toFixed(1)}/${unitsPerLevel}`;
@@ -516,6 +528,7 @@ const App: React.FC = () => {
             <SettingsView
               defaultLanguage={defaultLanguage}
               learnLanguage={learnLanguage}
+              chineseTrack={chineseTrack}
               isPronunciationEnabled={isPronunciationEnabled}
               isBoldTextEnabled={isBoldTextEnabled}
               isRandomLessonOrderEnabled={isRandomLessonOrderEnabled}
@@ -528,6 +541,7 @@ const App: React.FC = () => {
               pronunciationStyleLabel={pronunciationStyleLabel}
               onDefaultLanguageChange={setDefaultLanguage}
               onLearnLanguageChange={setLearnLanguage}
+              onChineseTrackChange={setChineseTrack}
               onTogglePronunciation={() => setIsPronunciationEnabled((prev) => !prev)}
               onToggleBoldText={() => setIsBoldTextEnabled((prev) => !prev)}
               onToggleRandomLessonOrder={() => {
@@ -560,7 +574,7 @@ const App: React.FC = () => {
             <ResultView
               reviewResult={reviewResult}
               unitXp={unitXp}
-              totalXp={TOTAL_XP_PER_COURSE}
+              totalXp={totalXpPerCourse}
               onContinue={handleResultContinue}
             />
           ) : mode === 'completed' ? (
@@ -588,6 +602,8 @@ const App: React.FC = () => {
             mode={mode}
             isNextDisabled={isNextDisabled}
             learnStep={learnStep}
+            questionsPerUnit={unitFlowTotal}
+            quickReviewCheckpoints={quickReviewCheckpoints}
             isReviewQuestionsRemoved={isReviewQuestionsRemoved}
             isMatchReviewComplete={isMatchReviewComplete}
             onNext={handleNext}

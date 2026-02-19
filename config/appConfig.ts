@@ -16,6 +16,7 @@ export const VOICE_PREFERENCE_KEY = 'lingo_burmese_voice_preference';
 export const BOLD_TEXT_ENABLED_KEY = 'lingo_burmese_bold_text_enabled';
 export const RANDOM_LESSON_ORDER_ENABLED_KEY = 'lingo_burmese_random_lesson_order_enabled';
 export const REMOVE_REVIEW_QUESTIONS_ENABLED_KEY = 'lingo_burmese_remove_review_questions_enabled';
+export const CHINESE_TRACK_KEY = 'lingo_burmese_chinese_track';
 export const RELOAD_TO_LESSON_KEY = 'lingo_burmese_reload_to_lesson';
 
 export const LESSONS_PER_BATCH = 3;
@@ -130,6 +131,16 @@ export const DEFAULT_LANGUAGE_OPTIONS = [
   { code: 'english', label: 'English' },
 ] as const;
 export type DefaultLanguage = (typeof DEFAULT_LANGUAGE_OPTIONS)[number]['code'];
+export const CHINESE_TRACK_OPTIONS = [
+  { code: 'general', label: 'General Chinese' },
+  { code: 'hsk', label: 'HSK Chinese' },
+] as const;
+export type ChineseTrack = (typeof CHINESE_TRACK_OPTIONS)[number]['code'];
+export type LearningFlowConfig = {
+  lessonsPerBatch: number;
+  questionsPerUnit: number;
+  quickReviewCheckpoints: number[];
+};
 
 export type ReviewResult = {
   correct: number;
@@ -149,6 +160,30 @@ export function isLearnLanguage(value: unknown): value is LearnLanguage {
 export function isDefaultLanguage(value: unknown): value is DefaultLanguage {
   if (typeof value !== 'string') return false;
   return DEFAULT_LANGUAGE_OPTIONS.some((option) => option.code === value);
+}
+
+export function isChineseTrack(value: unknown): value is ChineseTrack {
+  if (typeof value !== 'string') return false;
+  return CHINESE_TRACK_OPTIONS.some((option) => option.code === value);
+}
+
+export function getLearningFlowConfig(
+  learnLanguage: LearnLanguage,
+  chineseTrack: ChineseTrack,
+): LearningFlowConfig {
+  if (learnLanguage === 'chinese' && chineseTrack === 'hsk') {
+    return {
+      lessonsPerBatch: 2,
+      questionsPerUnit: 10,
+      quickReviewCheckpoints: [2, 4, 6, 8, 10],
+    };
+  }
+
+  return {
+    lessonsPerBatch: LESSONS_PER_BATCH,
+    questionsPerUnit: LEARN_QUESTIONS_PER_UNIT,
+    quickReviewCheckpoints: QUICK_REVIEW_CHECKPOINTS,
+  };
 }
 
 type LessonStageInput = {

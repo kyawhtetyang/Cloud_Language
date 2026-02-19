@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LearnLanguage } from '../config/appConfig';
+import { ChineseTrack, LearnLanguage } from '../config/appConfig';
 import { LessonData } from '../types';
 
 type UseLessonDataResult = {
@@ -9,7 +9,11 @@ type UseLessonDataResult = {
   errorMessage: string | null;
 };
 
-export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage): UseLessonDataResult {
+export function useLessonData(
+  apiBaseUrl: string,
+  learnLanguage: LearnLanguage,
+  chineseTrack: ChineseTrack,
+): UseLessonDataResult {
   const [lessons, setLessons] = useState<LessonData[]>([]);
   const [englishReferenceLessons, setEnglishReferenceLessons] = useState<LessonData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,8 +24,12 @@ export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage):
       try {
         setLoading(true);
         setErrorMessage(null);
+        const lessonQuery =
+          learnLanguage === 'chinese'
+            ? `${apiBaseUrl}/api/lessons?language=chinese&track=${encodeURIComponent(chineseTrack)}`
+            : `${apiBaseUrl}/api/lessons?language=${learnLanguage}`;
         const [response, englishResponse] = await Promise.all([
-          fetch(`${apiBaseUrl}/api/lessons?language=${learnLanguage}`),
+          fetch(lessonQuery),
           fetch(`${apiBaseUrl}/api/lessons?language=english`),
         ]);
         if (!response.ok) throw new Error(`API responded with ${response.status}`);
@@ -45,7 +53,7 @@ export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage):
     };
 
     void fetchData();
-  }, [apiBaseUrl, learnLanguage]);
+  }, [apiBaseUrl, chineseTrack, learnLanguage]);
 
   return { lessons, englishReferenceLessons, loading, errorMessage };
 }

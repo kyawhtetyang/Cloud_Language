@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { VoicePreference } from '../components/AudioButton';
 import {
+  ChineseTrack,
   DefaultLanguage,
   LearnLanguage,
 } from '../config/appConfig';
@@ -10,6 +11,7 @@ type UseSettingsPersistenceParams = {
   profileStorageId: string;
   enabled?: boolean;
   learnLanguage: LearnLanguage;
+  chineseTrack: ChineseTrack;
   defaultLanguage: DefaultLanguage;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
@@ -23,6 +25,7 @@ export function useSettingsPersistence({
   profileStorageId,
   enabled = true,
   learnLanguage,
+  chineseTrack,
   defaultLanguage,
   isPronunciationEnabled,
   textScalePercent,
@@ -35,6 +38,7 @@ export function useSettingsPersistence({
     if (!enabled || !profileStorageId) return;
     persistSyncedSettingsToStorage({
       learnLanguage,
+      chineseTrack,
       defaultLanguage,
       isPronunciationEnabled,
       textScalePercent,
@@ -48,6 +52,7 @@ export function useSettingsPersistence({
     profileStorageId,
     enabled,
     learnLanguage,
+    chineseTrack,
     defaultLanguage,
     isPronunciationEnabled,
     textScalePercent,
