@@ -106,8 +106,13 @@ export function useProfileProgressSync({
     let cancelled = false;
 
     const hydrateProfileProgress = async () => {
-      const saved = localStorage.getItem(progressStorageKey) || localStorage.getItem(PROGRESS_KEY);
-      const restoredIndex = saved ? (JSON.parse(saved) as ProgressState).currentIndex : 0;
+      let restoredIndex = 0;
+      try {
+        const saved = localStorage.getItem(progressStorageKey) || localStorage.getItem(PROGRESS_KEY);
+        restoredIndex = saved ? (JSON.parse(saved) as ProgressState).currentIndex : 0;
+      } catch {
+        restoredIndex = 0;
+      }
       const safeLocalIndex = Math.min(Math.max(restoredIndex, 0), lessons.length - 1);
 
       const savedUnlocked = Number(localStorage.getItem(unlockedStorageKey) || localStorage.getItem(UNLOCKED_LEVEL_KEY) || 1);
