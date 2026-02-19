@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 
@@ -89,4 +89,44 @@ describe('App quick review navigation guard', () => {
     });
     expect(screen.queryByText('Match each sentence')).not.toBeInTheDocument();
   });
+
+
+  it('shows quick review at checkpoint when remove-review toggle is off', async () => {
+    render(<App />);
+
+    await screen.findByText('Welcome back');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
+    await screen.findByRole('button', { name: 'Next' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('button', { name: 'Quick Review' })).toBeInTheDocument();
+  });
+
+  it('skips quick review checkpoints when remove-review toggle is on', async () => {
+    render(<App />);
+
+    await screen.findByText('Welcome back');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Settings' })[0]);
+    await screen.findByText('Default Language');
+
+    const reviewQuestionsLabel = screen.getByText('Review Questions');
+    const reviewQuestionsRow = reviewQuestionsLabel.closest('div')?.parentElement;
+    expect(reviewQuestionsRow).not.toBeNull();
+    const reviewQuestionsToggle = within(reviewQuestionsRow as HTMLElement).getByRole('button', { name: 'On' });
+    fireEvent.click(reviewQuestionsToggle);
+    expect(within(reviewQuestionsRow as HTMLElement).getByRole('button', { name: 'Off' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
+    await screen.findByRole('button', { name: 'Next' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => {
+      expect(screen.queryByText('Match each sentence')).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
+  });
+
 });

@@ -56,6 +56,11 @@ describe('useProfileProgressSync debounce', () => {
       learnLanguage: 'english' as const,
       defaultLanguage: 'burmese' as const,
       isPronunciationEnabled: false,
+      textScalePercent: 100,
+      voicePreference: 'young_female' as const,
+      isBoldTextEnabled: false,
+      isRandomLessonOrderEnabled: false,
+      isReviewQuestionsRemoved: false,
       totalLevels: 12,
       progressStorageKey: 'progress:tester',
       unlockedStorageKey: 'unlocked:tester',
@@ -66,6 +71,11 @@ describe('useProfileProgressSync debounce', () => {
       setLearnLanguage: vi.fn(),
       setDefaultLanguage: vi.fn(),
       setIsPronunciationEnabled: vi.fn(),
+      setTextScalePercent: vi.fn(),
+      setVoicePreference: vi.fn(),
+      setIsBoldTextEnabled: vi.fn(),
+      setIsRandomLessonOrderEnabled: vi.fn(),
+      setIsReviewQuestionsRemoved: vi.fn(),
     };
 
     const { rerender } = renderHook(

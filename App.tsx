@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ProgressBar } from './components/ProgressBar';
 import { LessonData } from './types';
 import { useProfileProgress } from './hooks/useProfileProgress';
@@ -9,6 +9,7 @@ import { useLessonData } from './hooks/useLessonData';
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { useAppPreferences } from './hooks/useAppPreferences';
 import { isPassingScore } from './utils/reviewScoring';
+import { buildLessonReferenceKey } from './utils/lessonReference';
 import { ProfileView } from './components/views/ProfileView';
 import { SettingsView } from './components/views/SettingsView';
 import { LessonView } from './components/views/LessonView';
@@ -80,6 +81,10 @@ const App: React.FC = () => {
     setVoicePreference,
     isBoldTextEnabled,
     setIsBoldTextEnabled,
+    isRandomLessonOrderEnabled,
+    setIsRandomLessonOrderEnabled,
+    isReviewQuestionsRemoved,
+    setIsReviewQuestionsRemoved,
   } = useAppPreferences();
   const [isNextDisabled, setIsNextDisabled] = useState(false);
   const [learnStep, setLearnStep] = useState(0);
@@ -91,6 +96,7 @@ const App: React.FC = () => {
   const [pendingUnitTarget, setPendingUnitTarget] = useState<{ level: number; unit: number } | null>(
     null,
   );
+  const [randomOrderVersion, setRandomOrderVersion] = useState(0);
   const {
     answerChecked,
     matchPairs,
@@ -110,6 +116,13 @@ const App: React.FC = () => {
     apiBaseUrl,
     learnLanguage,
   );
+  const englishReferenceByKey = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const lesson of englishReferenceLessons) {
+      map.set(buildLessonReferenceKey(lesson), lesson.english);
+    }
+    return map;
+  }, [englishReferenceLessons]);
   const profileStorageId = profileName ? toProfileStorageId(profileName) : '';
   const progressStorageKey = profileStorageId ? `${PROGRESS_KEY}:${profileStorageId}` : PROGRESS_KEY;
   const unlockedStorageKey = profileStorageId ? `${UNLOCKED_LEVEL_KEY}:${profileStorageId}` : UNLOCKED_LEVEL_KEY;
@@ -126,6 +139,11 @@ const App: React.FC = () => {
     learnLanguage,
     defaultLanguage,
     isPronunciationEnabled,
+    textScalePercent,
+    voicePreference,
+    isBoldTextEnabled,
+    isRandomLessonOrderEnabled,
+    isReviewQuestionsRemoved,
     totalLevels: CURRICULUM.length,
     progressStorageKey,
     unlockedStorageKey,
@@ -136,6 +154,11 @@ const App: React.FC = () => {
     setLearnLanguage,
     setDefaultLanguage,
     setIsPronunciationEnabled,
+    setTextScalePercent,
+    setVoicePreference,
+    setIsBoldTextEnabled,
+    setIsRandomLessonOrderEnabled,
+    setIsReviewQuestionsRemoved,
   });
 
   useSettingsPersistence({
@@ -145,6 +168,8 @@ const App: React.FC = () => {
     textScalePercent,
     voicePreference,
     isBoldTextEnabled,
+    isRandomLessonOrderEnabled,
+    isReviewQuestionsRemoved,
   });
 
   const totalLevels = CURRICULUM.length;
@@ -173,17 +198,27 @@ const App: React.FC = () => {
     if (lesson.level === currentLevel && lesson.unit === currentUnit) acc.push(idx);
     return acc;
   }, []);
-  const sectionStart = levelIndexes.length > 0 ? levelIndexes[0] : Math.max(0, activeLevelIndex);
-  const sectionEnd = levelIndexes.length > 0 ? levelIndexes[levelIndexes.length - 1] : Math.max(0, activeLevelIndex);
-  const sectionTotal = Math.max(1, sectionEnd - sectionStart + 1);
+  const orderedUnitIndexes = useMemo(() => {
+    if (!isRandomLessonOrderEnabled || levelIndexes.length <= 1) {
+      return levelIndexes;
+    }
+    const shuffled = [...levelIndexes];
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }, [isRandomLessonOrderEnabled, levelIndexes, randomOrderVersion]);
+  const sectionStart = levelIndexes.length > 0 ? Math.min(...levelIndexes) : Math.max(0, activeLevelIndex);
+  const sectionEnd = levelIndexes.length > 0 ? Math.max(...levelIndexes) : Math.max(0, activeLevelIndex);
+  const sectionTotal = Math.max(1, orderedUnitIndexes.length);
   const unitFlowTotal = LEARN_QUESTIONS_PER_UNIT;
-  const batchStartOffset =
-    mode === 'learn' ? (learnStep * LESSONS_PER_BATCH) % Math.max(sectionTotal, 1) : 0;
+  const batchStartOffset = mode === 'learn' ? (learnStep * LESSONS_PER_BATCH) % sectionTotal : 0;
   const currentBatchEntries =
     mode === 'learn'
       ? Array.from({ length: LESSONS_PER_BATCH }, (_, idx) => {
-          const offset = (batchStartOffset + idx) % Math.max(sectionTotal, 1);
-          const lessonIndex = sectionStart + offset;
+          const orderedIndex = (batchStartOffset + idx) % sectionTotal;
+          const lessonIndex = orderedUnitIndexes[orderedIndex] ?? sectionStart;
           const lesson = lessons[lessonIndex];
           return lesson ? { lesson, lessonIndex } : null;
         }).filter((entry): entry is { lesson: LessonData; lessonIndex: number } => Boolean(entry))
@@ -199,6 +234,7 @@ const App: React.FC = () => {
       setUnitXp(0);
       setReviewResult(null);
       setSidebarTab('lesson');
+      setRandomOrderVersion((prev) => prev + 1);
       setIsSidebarOpen(false);
     });
   };
@@ -210,15 +246,66 @@ const App: React.FC = () => {
     const nextStep = learnStep + 1;
     setLearnStep(nextStep);
 
-    const needsCheckpoint = QUICK_REVIEW_CHECKPOINTS.includes(nextStep);
+    const isCheckpointStep = QUICK_REVIEW_CHECKPOINTS.includes(nextStep);
+
+    if (isReviewQuestionsRemoved && isCheckpointStep) {
+      if (nextStep >= LEARN_QUESTIONS_PER_UNIT) {
+        const passedLevel = lessons[sectionStart]?.level || 1;
+        const nextUnlocked = Math.min(totalLevels, passedLevel + 1);
+        setUnlockedLevel((prev) => Math.max(prev, nextUnlocked));
+        setStreak((prev) => prev + 1);
+
+        const nextStart = sectionEnd + 1;
+        if (nextStart >= lessons.length) {
+          setMode('completed');
+          setUnlockedLevel(totalLevels);
+          setReviewResult(null);
+          resetQuizState();
+          setIsNextDisabled(false);
+          return;
+        }
+
+        setMode('learn');
+        setCurrentIndex(nextStart);
+        setLearnStep(0);
+        setRandomOrderVersion((prev) => prev + 1);
+        setUnitXp(0);
+        setReviewResult(null);
+        resetQuizState();
+      } else {
+        const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotal;
+        setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
+      }
+      setIsNextDisabled(false);
+      return;
+    }
+
+    const needsCheckpoint = isCheckpointStep;
     if (needsCheckpoint) {
+      const previousCheckpoint =
+        QUICK_REVIEW_CHECKPOINTS.filter((checkpoint) => checkpoint < nextStep).at(-1) || 0;
+      const reviewSourceIndexes = Array.from(
+        { length: (nextStep - previousCheckpoint) * LESSONS_PER_BATCH },
+        (_, idx) => {
+          const offset = ((previousCheckpoint * LESSONS_PER_BATCH) + idx) % sectionTotal;
+          return orderedUnitIndexes[offset] ?? sectionStart;
+        },
+      );
+      const reviewSourceLessons = reviewSourceIndexes
+        .map((index) => lessons[index])
+        .filter((lesson): lesson is LessonData => Boolean(lesson));
+
       setQuizSectionStart(sectionStart);
       setQuizSectionEnd(sectionEnd);
-      startQuizForLevel(lessons, sectionStart, sectionEnd);
+      if (reviewSourceLessons.length > 0) {
+        startQuizForLevel(reviewSourceLessons, 0, reviewSourceLessons.length - 1);
+      } else {
+        startQuizForLevel(lessons, sectionStart, sectionEnd);
+      }
       setMode('quiz');
     } else {
-      const nextOffset = (nextStep * LESSONS_PER_BATCH) % Math.max(sectionTotal, 1);
-      setCurrentIndex(sectionStart + nextOffset);
+      const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotal;
+      setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
     }
 
     setIsNextDisabled(false);
@@ -234,6 +321,7 @@ const App: React.FC = () => {
     setUnlockedLevel((prev) => Math.max(prev, safeLevel));
     setSidebarTab('lesson');
     setLearnStep(0);
+    setRandomOrderVersion((prev) => prev + 1);
     setUnitXp(0);
     setReviewResult(null);
     resetQuizState();
@@ -266,6 +354,7 @@ const App: React.FC = () => {
     setMode('learn');
     setCurrentIndex(0);
     setLearnStep(0);
+    setRandomOrderVersion((prev) => prev + 1);
     setUnitXp(0);
     setReviewResult(null);
     resetQuizState();
@@ -279,6 +368,7 @@ const App: React.FC = () => {
       setMode('learn');
       setCurrentIndex(quizSectionStart);
       setLearnStep(0);
+      setRandomOrderVersion((prev) => prev + 1);
       setUnitXp(0);
       setReviewResult(null);
       resetQuizState();
@@ -303,6 +393,7 @@ const App: React.FC = () => {
     setMode('learn');
     setCurrentIndex(nextStart);
     setLearnStep(0);
+    setRandomOrderVersion((prev) => prev + 1);
     setUnitXp(0);
     setReviewResult(null);
     resetQuizState();
@@ -336,8 +427,8 @@ const App: React.FC = () => {
     setMode('learn');
     resetQuizState();
     if (isPass && learnStep < LEARN_QUESTIONS_PER_UNIT) {
-      const nextOffset = (learnStep * LESSONS_PER_BATCH) % Math.max(sectionTotal, 1);
-      setCurrentIndex(sectionStart + nextOffset);
+      const nextOffset = (learnStep * LESSONS_PER_BATCH) % sectionTotal;
+      setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
     } else {
       setStreak(0);
     }
@@ -473,6 +564,8 @@ const App: React.FC = () => {
               learnLanguage={learnLanguage}
               isPronunciationEnabled={isPronunciationEnabled}
               isBoldTextEnabled={isBoldTextEnabled}
+              isRandomLessonOrderEnabled={isRandomLessonOrderEnabled}
+              isReviewQuestionsRemoved={isReviewQuestionsRemoved}
               textScalePercent={textScalePercent}
               canDecreaseTextSize={textScalePercent > 90}
               canIncreaseTextSize={textScalePercent < 120}
@@ -483,6 +576,11 @@ const App: React.FC = () => {
               onLearnLanguageChange={setLearnLanguage}
               onTogglePronunciation={() => setIsPronunciationEnabled((prev) => !prev)}
               onToggleBoldText={() => setIsBoldTextEnabled((prev) => !prev)}
+              onToggleRandomLessonOrder={() => {
+                setIsRandomLessonOrderEnabled((prev) => !prev);
+                setRandomOrderVersion((prev) => prev + 1);
+              }}
+              onToggleReviewQuestions={() => setIsReviewQuestionsRemoved((prev) => !prev)}
               onDecreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev - 5))}
               onIncreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev + 5))}
               onVoicePreferenceChange={setVoicePreference}
@@ -522,6 +620,7 @@ const App: React.FC = () => {
               currentBatchEntries={currentBatchEntries}
               currentBatchLessonsCount={currentBatchLessons.length}
               englishReferenceLessons={englishReferenceLessons}
+              englishReferenceByKey={englishReferenceByKey}
               defaultLanguage={defaultLanguage}
               isPronunciationEnabled={isPronunciationEnabled}
               isBoldTextEnabled={isBoldTextEnabled}
@@ -543,7 +642,7 @@ const App: React.FC = () => {
                 >
                   {(() => {
                     const nextStep = Math.min(LEARN_QUESTIONS_PER_UNIT, learnStep + 1);
-                    if (!QUICK_REVIEW_CHECKPOINTS.includes(nextStep)) return 'Next';
+                    if (!QUICK_REVIEW_CHECKPOINTS.includes(nextStep) || isReviewQuestionsRemoved) return 'Next';
                     return 'Quick Review';
                   })()}
                 </button>

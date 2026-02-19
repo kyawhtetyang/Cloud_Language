@@ -9,6 +9,8 @@ type SettingsViewProps = {
   learnLanguage: LearnLanguage;
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
+  isRandomLessonOrderEnabled: boolean;
+  isReviewQuestionsRemoved: boolean;
   textScalePercent: number;
   canDecreaseTextSize: boolean;
   canIncreaseTextSize: boolean;
@@ -19,6 +21,8 @@ type SettingsViewProps = {
   onLearnLanguageChange: (value: LearnLanguage) => void;
   onTogglePronunciation: () => void;
   onToggleBoldText: () => void;
+  onToggleRandomLessonOrder: () => void;
+  onToggleReviewQuestions: () => void;
   onDecreaseTextSize: () => void;
   onIncreaseTextSize: () => void;
   onVoicePreferenceChange: (value: VoicePreference) => void;
@@ -29,6 +33,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   learnLanguage,
   isPronunciationEnabled,
   isBoldTextEnabled,
+  isRandomLessonOrderEnabled,
+  isReviewQuestionsRemoved,
   textScalePercent,
   canDecreaseTextSize,
   canIncreaseTextSize,
@@ -39,6 +45,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onLearnLanguageChange,
   onTogglePronunciation,
   onToggleBoldText,
+  onToggleRandomLessonOrder,
+  onToggleReviewQuestions,
   onDecreaseTextSize,
   onIncreaseTextSize,
   onVoicePreferenceChange,
@@ -136,6 +144,44 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             }`}
           >
             {isBoldTextEnabled ? 'On' : 'Off'}
+          </button>
+        </div>
+      </div>
+      <div className="rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-4 mb-3">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-extrabold uppercase tracking-wide text-[#2f7d01]">Random Lesson Order</p>
+            <p className="text-sm text-gray-600 mt-1">Shuffle question order every time you enter a unit.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onToggleRandomLessonOrder}
+            className={`px-4 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
+              isRandomLessonOrderEnabled
+                ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
+                : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
+            }`}
+          >
+            {isRandomLessonOrderEnabled ? 'On' : 'Off'}
+          </button>
+        </div>
+      </div>
+      <div className="rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-4 mb-3">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-extrabold uppercase tracking-wide text-[#2f7d01]">Review Questions</p>
+            <p className="text-sm text-gray-600 mt-1">Show quick review questions in lesson flow.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onToggleReviewQuestions}
+            className={`px-4 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
+              !isReviewQuestionsRemoved
+                ? 'border-[#46a302] bg-[#58cc02] text-white duo-button-shadow'
+                : 'border-gray-200 bg-white text-gray-600 duo-secondary-shadow'
+            }`}
+          >
+            {isReviewQuestionsRemoved ? 'Off' : 'On'}
           </button>
         </div>
       </div>

@@ -14,6 +14,8 @@ export const DEFAULT_LANGUAGE_KEY = 'lingo_burmese_default_language';
 export const TEXT_SCALE_PERCENT_KEY = 'lingo_burmese_text_scale_percent';
 export const VOICE_PREFERENCE_KEY = 'lingo_burmese_voice_preference';
 export const BOLD_TEXT_ENABLED_KEY = 'lingo_burmese_bold_text_enabled';
+export const RANDOM_LESSON_ORDER_ENABLED_KEY = 'lingo_burmese_random_lesson_order_enabled';
+export const REMOVE_REVIEW_QUESTIONS_ENABLED_KEY = 'lingo_burmese_remove_review_questions_enabled';
 export const RELOAD_TO_LESSON_KEY = 'lingo_burmese_reload_to_lesson';
 
 export const LESSONS_PER_BATCH = 3;
@@ -54,6 +56,11 @@ export const CURRICULUM = [
       'Talking about past weekend',
       'Talking about future plans',
       'Role-play conversations',
+      'Selling and buying',
+      'Selling and buying: price and quantity',
+      'Selling and buying: payment and discount',
+      'Selling and buying: return and exchange',
+      'Selling and buying: market conversation',
     ],
   },
   {

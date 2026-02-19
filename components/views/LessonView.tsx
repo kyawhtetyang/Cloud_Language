@@ -1,6 +1,7 @@
 import React from 'react';
 import { AudioButton, VoicePreference } from '../AudioButton';
 import { LessonData } from '../../types';
+import { buildLessonReferenceKey } from '../../utils/lessonReference';
 
 type LessonEntry = {
   lesson: LessonData;
@@ -15,6 +16,7 @@ type LessonViewProps = {
   currentBatchEntries: LessonEntry[];
   currentBatchLessonsCount: number;
   englishReferenceLessons: LessonData[];
+  englishReferenceByKey: Map<string, string>;
   defaultLanguage: 'burmese' | 'english';
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
@@ -29,6 +31,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   currentBatchEntries,
   currentBatchLessonsCount,
   englishReferenceLessons,
+  englishReferenceByKey,
   defaultLanguage,
   isPronunciationEnabled,
   isBoldTextEnabled,
@@ -48,7 +51,9 @@ export const LessonView: React.FC<LessonViewProps> = ({
         {currentBatchEntries.map(({ lesson, lessonIndex }, idx) => (
           <div key={`${lesson.english}-${currentIndex + idx}`}>
             {(() => {
-              const englishTranslation = englishReferenceLessons[lessonIndex]?.english || lesson.english;
+              const lessonKey = buildLessonReferenceKey(lesson);
+              const englishTranslation =
+                englishReferenceByKey.get(lessonKey) || englishReferenceLessons[lessonIndex]?.english || lesson.english;
               const translatedText = defaultLanguage === 'burmese' ? lesson.burmese : englishTranslation;
               return (
                 <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-2.5 py-2">

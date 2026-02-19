@@ -7,6 +7,8 @@ import {
   LEARN_LANGUAGE_KEY,
   LearnLanguage,
   PRONUNCIATION_ENABLED_KEY,
+  RANDOM_LESSON_ORDER_ENABLED_KEY,
+  REMOVE_REVIEW_QUESTIONS_ENABLED_KEY,
   TEXT_SCALE_PERCENT_KEY,
   VOICE_PREFERENCE_KEY,
 } from '../config/appConfig';
@@ -25,6 +27,10 @@ type UseAppPreferencesResult = {
   setVoicePreference: React.Dispatch<React.SetStateAction<VoicePreference>>;
   isBoldTextEnabled: boolean;
   setIsBoldTextEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  isRandomLessonOrderEnabled: boolean;
+  setIsRandomLessonOrderEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  isReviewQuestionsRemoved: boolean;
+  setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export function useAppPreferences(): UseAppPreferencesResult {
@@ -76,6 +82,22 @@ export function useAppPreferences(): UseAppPreferencesResult {
     }
   });
 
+  const [isRandomLessonOrderEnabled, setIsRandomLessonOrderEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(RANDOM_LESSON_ORDER_ENABLED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [isReviewQuestionsRemoved, setIsReviewQuestionsRemoved] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   return {
     isPronunciationEnabled,
     setIsPronunciationEnabled,
@@ -89,5 +111,9 @@ export function useAppPreferences(): UseAppPreferencesResult {
     setVoicePreference,
     isBoldTextEnabled,
     setIsBoldTextEnabled,
+    isRandomLessonOrderEnabled,
+    setIsRandomLessonOrderEnabled,
+    isReviewQuestionsRemoved,
+    setIsReviewQuestionsRemoved,
   };
 }

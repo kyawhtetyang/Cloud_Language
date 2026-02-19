@@ -7,6 +7,8 @@ import {
   LEARN_LANGUAGE_KEY,
   LearnLanguage,
   PRONUNCIATION_ENABLED_KEY,
+  RANDOM_LESSON_ORDER_ENABLED_KEY,
+  REMOVE_REVIEW_QUESTIONS_ENABLED_KEY,
   TEXT_SCALE_PERCENT_KEY,
   VOICE_PREFERENCE_KEY,
 } from '../config/appConfig';
@@ -18,6 +20,8 @@ type UseSettingsPersistenceParams = {
   textScalePercent: number;
   voicePreference: VoicePreference;
   isBoldTextEnabled: boolean;
+  isRandomLessonOrderEnabled: boolean;
+  isReviewQuestionsRemoved: boolean;
 };
 
 export function useSettingsPersistence({
@@ -27,6 +31,8 @@ export function useSettingsPersistence({
   textScalePercent,
   voicePreference,
   isBoldTextEnabled,
+  isRandomLessonOrderEnabled,
+  isReviewQuestionsRemoved,
 }: UseSettingsPersistenceParams) {
   useEffect(() => {
     localStorage.setItem(LEARN_LANGUAGE_KEY, learnLanguage);
@@ -52,4 +58,12 @@ export function useSettingsPersistence({
   useEffect(() => {
     localStorage.setItem(BOLD_TEXT_ENABLED_KEY, String(isBoldTextEnabled));
   }, [isBoldTextEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem(RANDOM_LESSON_ORDER_ENABLED_KEY, String(isRandomLessonOrderEnabled));
+  }, [isRandomLessonOrderEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY, String(isReviewQuestionsRemoved));
+  }, [isReviewQuestionsRemoved]);
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LessonData, ProgressState } from '../types';
+import { VoicePreference } from '../components/AudioButton';
 import {
   AppMode,
   DefaultLanguage,
@@ -22,6 +23,11 @@ type UseProfileProgressSyncParams = {
   learnLanguage: LearnLanguage;
   defaultLanguage: DefaultLanguage;
   isPronunciationEnabled: boolean;
+  textScalePercent: number;
+  voicePreference: VoicePreference;
+  isBoldTextEnabled: boolean;
+  isRandomLessonOrderEnabled: boolean;
+  isReviewQuestionsRemoved: boolean;
   totalLevels: number;
   progressStorageKey: string;
   unlockedStorageKey: string;
@@ -32,6 +38,11 @@ type UseProfileProgressSyncParams = {
   setLearnLanguage: React.Dispatch<React.SetStateAction<LearnLanguage>>;
   setDefaultLanguage: React.Dispatch<React.SetStateAction<DefaultLanguage>>;
   setIsPronunciationEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  setTextScalePercent: React.Dispatch<React.SetStateAction<number>>;
+  setVoicePreference: React.Dispatch<React.SetStateAction<VoicePreference>>;
+  setIsBoldTextEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsRandomLessonOrderEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export function useProfileProgressSync({
@@ -45,6 +56,11 @@ export function useProfileProgressSync({
   learnLanguage,
   defaultLanguage,
   isPronunciationEnabled,
+  textScalePercent,
+  voicePreference,
+  isBoldTextEnabled,
+  isRandomLessonOrderEnabled,
+  isReviewQuestionsRemoved,
   totalLevels,
   progressStorageKey,
   unlockedStorageKey,
@@ -55,6 +71,11 @@ export function useProfileProgressSync({
   setLearnLanguage,
   setDefaultLanguage,
   setIsPronunciationEnabled,
+  setTextScalePercent,
+  setVoicePreference,
+  setIsBoldTextEnabled,
+  setIsRandomLessonOrderEnabled,
+  setIsReviewQuestionsRemoved,
 }: UseProfileProgressSyncParams) {
   const [hasHydratedProfile, setHasHydratedProfile] = useState(false);
 
@@ -109,6 +130,25 @@ export function useProfileProgressSync({
           if (typeof remote.isPronunciationEnabled === 'boolean') {
             setIsPronunciationEnabled(remote.isPronunciationEnabled);
           }
+          if (typeof remote.textScalePercent === 'number') {
+            setTextScalePercent(Math.min(120, Math.max(90, remote.textScalePercent)));
+          }
+          if (
+            remote.voicePreference === 'young_female' ||
+            remote.voicePreference === 'google_female' ||
+            remote.voicePreference === 'system_default'
+          ) {
+            setVoicePreference(remote.voicePreference);
+          }
+          if (typeof remote.isBoldTextEnabled === 'boolean') {
+            setIsBoldTextEnabled(remote.isBoldTextEnabled);
+          }
+          if (typeof remote.isRandomLessonOrderEnabled === 'boolean') {
+            setIsRandomLessonOrderEnabled(remote.isRandomLessonOrderEnabled);
+          }
+          if (typeof remote.isReviewQuestionsRemoved === 'boolean') {
+            setIsReviewQuestionsRemoved(remote.isReviewQuestionsRemoved);
+          }
         }
       } catch {
         // DB sync is optional; localStorage remains the fallback.
@@ -129,6 +169,11 @@ export function useProfileProgressSync({
     setCurrentIndex,
     setDefaultLanguage,
     setIsPronunciationEnabled,
+    setTextScalePercent,
+    setVoicePreference,
+    setIsBoldTextEnabled,
+    setIsRandomLessonOrderEnabled,
+    setIsReviewQuestionsRemoved,
     setLearnLanguage,
     setStreak,
     setUnlockedLevel,
@@ -176,6 +221,11 @@ export function useProfileProgressSync({
       learnLanguage,
       defaultLanguage,
       isPronunciationEnabled,
+      textScalePercent,
+      voicePreference,
+      isBoldTextEnabled,
+      isRandomLessonOrderEnabled,
+      isReviewQuestionsRemoved,
     };
 
     const timeoutId = window.setTimeout(() => {
@@ -199,6 +249,11 @@ export function useProfileProgressSync({
     defaultLanguage,
     hasHydratedProfile,
     isPronunciationEnabled,
+    textScalePercent,
+    voicePreference,
+    isBoldTextEnabled,
+    isRandomLessonOrderEnabled,
+    isReviewQuestionsRemoved,
     learnLanguage,
     lessons.length,
     profileName,
