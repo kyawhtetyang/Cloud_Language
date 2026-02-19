@@ -49,6 +49,15 @@ import {
   WelcomeView,
 } from './components/views/AppStateViews';
 
+function normalizeApiBaseUrl(rawApiBaseUrl: string | undefined): string {
+  const fallbackBaseUrl = '/api';
+  const candidate = (rawApiBaseUrl?.trim() || fallbackBaseUrl).replace(/\/+$/, '');
+  if (candidate === '/api' || candidate.endsWith('/api')) {
+    return candidate.slice(0, -4);
+  }
+  return candidate;
+}
+
 const App: React.FC = () => {
   const {
     profileName,
@@ -119,7 +128,7 @@ const App: React.FC = () => {
     handleSelectPrompt,
     handleSelectAnswer,
   } = useLessonFlow(MATCH_PAIRS_PER_REVIEW);
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+  const apiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
   const { lessons, englishReferenceLessons, loading, errorMessage } = useLessonData(
     apiBaseUrl,
     learnLanguage,
