@@ -8,6 +8,7 @@ import { useSettingsPersistence } from './hooks/useSettingsPersistence';
 import { useLessonData } from './hooks/useLessonData';
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { useAppPreferences } from './hooks/useAppPreferences';
+import { useLessonUnitState } from './hooks/useLessonUnitState';
 import { isPassingScore } from './utils/reviewScoring';
 import { buildLessonReferenceKey } from './utils/lessonReference';
 import { ProfileView } from './components/views/ProfileView';
@@ -16,12 +17,12 @@ import { LessonView } from './components/views/LessonView';
 import { MatchReviewView } from './components/views/MatchReviewView';
 import { ResultView } from './components/views/ResultView';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { LessonActionFooter } from './components/LessonActionFooter';
+import { LeaveQuizModal } from './components/modals/LeaveQuizModal';
 import {
   AppMode,
-  buildStageUnitsFromLessons,
   clampTextScale,
   CURRICULUM,
-  getLevelTitle,
   LEARN_QUESTIONS_PER_UNIT,
   LESSONS_PER_BATCH,
   MATCH_PAIRS_PER_REVIEW,
@@ -29,7 +30,6 @@ import {
   PROFILE_NAME_KEY,
   PROGRESS_KEY,
   QUICK_REVIEW_CHECKPOINTS,
-  resolveStageCode,
   ReviewResult,
   STREAK_KEY,
   toProfileStorageId,
@@ -181,50 +181,28 @@ const App: React.FC = () => {
   const leaveQuizCancelLabel = defaultLanguage === 'burmese' ? 'မထွက်တော့ပါ' : 'Cancel';
   const leaveQuizConfirmLabel =
     defaultLanguage === 'burmese' ? 'ထွက်မယ်' : 'Leave quick review';
-  const activeLevelIndex =
-    mode === 'quiz' || mode === 'result'
-      ? quizSectionStart
-      : Math.min(currentIndex, Math.max(lessons.length - 1, 0));
-  const fallbackLevel = Math.floor(activeLevelIndex / LEARN_QUESTIONS_PER_UNIT) + 1;
-  const currentLevel = lessons[activeLevelIndex]?.level || fallbackLevel;
-  const currentUnit = lessons[activeLevelIndex]?.unit || 1;
-  const currentStage = resolveStageCode(currentLevel, lessons[activeLevelIndex]?.stage);
-  const currentStageUnits = buildStageUnitsFromLessons(lessons).filter((entry) => entry.stage === currentStage);
-  const currentStageUnitNumber =
-    currentStageUnits.find((entry) => entry.level === currentLevel && entry.unit === currentUnit)
-      ?.stageUnitNumber || 1;
-  const currentCourseCode = `${currentStage} Unit ${currentStageUnitNumber}`;
-  const levelIndexes = lessons.reduce<number[]>((acc, lesson, idx) => {
-    if (lesson.level === currentLevel && lesson.unit === currentUnit) acc.push(idx);
-    return acc;
-  }, []);
-  const orderedUnitIndexes = useMemo(() => {
-    if (!isRandomLessonOrderEnabled || levelIndexes.length <= 1) {
-      return levelIndexes;
-    }
-    const shuffled = [...levelIndexes];
-    for (let i = shuffled.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  }, [isRandomLessonOrderEnabled, levelIndexes, randomOrderVersion]);
-  const sectionStart = levelIndexes.length > 0 ? Math.min(...levelIndexes) : Math.max(0, activeLevelIndex);
-  const sectionEnd = levelIndexes.length > 0 ? Math.max(...levelIndexes) : Math.max(0, activeLevelIndex);
-  const sectionTotal = Math.max(1, orderedUnitIndexes.length);
-  const unitFlowTotal = LEARN_QUESTIONS_PER_UNIT;
-  const batchStartOffset = mode === 'learn' ? (learnStep * LESSONS_PER_BATCH) % sectionTotal : 0;
-  const currentBatchEntries =
-    mode === 'learn'
-      ? Array.from({ length: LESSONS_PER_BATCH }, (_, idx) => {
-          const orderedIndex = (batchStartOffset + idx) % sectionTotal;
-          const lessonIndex = orderedUnitIndexes[orderedIndex] ?? sectionStart;
-          const lesson = lessons[lessonIndex];
-          return lesson ? { lesson, lessonIndex } : null;
-        }).filter((entry): entry is { lesson: LessonData; lessonIndex: number } => Boolean(entry))
-      : [];
-  const currentBatchLessons = currentBatchEntries.map((entry) => entry.lesson);
-  const unitFlowCurrent = Math.min(learnStep, LEARN_QUESTIONS_PER_UNIT);
+  const {
+    currentLevel,
+    currentUnit,
+    currentCourseCode,
+    currentLevelTitle,
+    orderedUnitIndexes,
+    sectionStart,
+    sectionEnd,
+    sectionTotal,
+    unitFlowCurrent,
+    unitFlowTotal,
+    currentBatchEntries,
+    currentBatchLessonsCount,
+  } = useLessonUnitState({
+    lessons,
+    mode,
+    currentIndex,
+    quizSectionStart,
+    learnStep,
+    isRandomLessonOrderEnabled,
+    randomOrderVersion,
+  });
 
   const handleApplyProfileName = () => {
     applyProfileName(() => {
@@ -458,7 +436,6 @@ const App: React.FC = () => {
   const translationLabel = defaultLanguage === 'burmese' ? 'Burmese (Current)' : 'English';
   const pronunciationStyleLabel =
     defaultLanguage === 'burmese' ? 'Burmese style (Current)' : 'English style (Pinyin for Chinese)';
-  const currentLevelTitle = getLevelTitle(currentLevel);
   const unitsPerLevel = new Set(
     lessons.filter((lesson) => lesson.level === currentLevel).map((lesson) => lesson.unit),
   ).size || 1;
@@ -473,43 +450,15 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f1ffe2_0%,#eef8ff_55%,#f5f7fa_100%)] md:flex">
-      {isLeaveQuizModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/40"
-            onClick={handleLeaveQuizCancel}
-            aria-label="Close leave quick review dialog"
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="leave-quiz-title"
-            className="relative w-full max-w-sm rounded-2xl border-2 border-gray-100 bg-white p-5 shadow-xl"
-          >
-            <h3 id="leave-quiz-title" className="text-lg font-extrabold text-[#3c3c3c]">
-              {leaveQuizModalTitle}
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">{leaveQuizConfirmMessage}</p>
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={handleLeaveQuizCancel}
-                className="flex-1 rounded-xl border-2 border-gray-200 bg-white px-3 py-2 text-xs font-extrabold uppercase tracking-wide text-gray-600 duo-secondary-shadow"
-              >
-                {leaveQuizCancelLabel}
-              </button>
-              <button
-                type="button"
-                onClick={handleLeaveQuizConfirm}
-                className="flex-1 rounded-xl border-2 border-[#46a302] bg-[#58cc02] px-3 py-2 text-xs font-extrabold uppercase tracking-wide text-white duo-button-shadow"
-              >
-                {leaveQuizConfirmLabel}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <LeaveQuizModal
+        isOpen={isLeaveQuizModalOpen}
+        title={leaveQuizModalTitle}
+        message={leaveQuizConfirmMessage}
+        cancelLabel={leaveQuizCancelLabel}
+        confirmLabel={leaveQuizConfirmLabel}
+        onCancel={handleLeaveQuizCancel}
+        onConfirm={handleLeaveQuizConfirm}
+      />
 
       {isSidebarOpen && (
         <button
@@ -618,7 +567,7 @@ const App: React.FC = () => {
               unitXp={unitXp}
               currentIndex={currentIndex}
               currentBatchEntries={currentBatchEntries}
-              currentBatchLessonsCount={currentBatchLessons.length}
+              currentBatchLessonsCount={currentBatchLessonsCount}
               englishReferenceLessons={englishReferenceLessons}
               englishReferenceByKey={englishReferenceByKey}
               defaultLanguage={defaultLanguage}
@@ -630,38 +579,15 @@ const App: React.FC = () => {
         </main>
 
         {isLessonView && (
-          <footer className="fixed bottom-16 left-0 right-0 p-3 md:p-6 bg-white/95 backdrop-blur border-t border-gray-100 md:static md:border-none md:bg-transparent">
-            <div className="max-w-md mx-auto flex flex-col gap-2.5 md:gap-3">
-              {mode === 'learn' && (
-                <button
-                  onClick={handleNext}
-                  disabled={isNextDisabled}
-                  className={`w-full py-3 md:py-4 rounded-2xl bg-[#58cc02] text-white font-extrabold text-base md:text-lg uppercase tracking-wide md:tracking-wider duo-button-shadow transition-all ${
-                    isNextDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 active:scale-95'
-                  }`}
-                >
-                  {(() => {
-                    const nextStep = Math.min(LEARN_QUESTIONS_PER_UNIT, learnStep + 1);
-                    if (!QUICK_REVIEW_CHECKPOINTS.includes(nextStep) || isReviewQuestionsRemoved) return 'Next';
-                    return 'Quick Review';
-                  })()}
-                </button>
-              )}
-              {mode === 'quiz' && (
-                <button
-                  onClick={handleQuizNext}
-                  disabled={!isMatchReviewComplete}
-                  className={`w-full py-3 md:py-4 rounded-2xl bg-[#58cc02] text-white font-extrabold text-base md:text-lg uppercase tracking-wide md:tracking-wider duo-button-shadow transition-all ${
-                    !isMatchReviewComplete
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:brightness-110 active:scale-95'
-                  }`}
-                >
-                  Submit Quick Review
-                </button>
-              )}
-            </div>
-          </footer>
+          <LessonActionFooter
+            mode={mode}
+            isNextDisabled={isNextDisabled}
+            learnStep={learnStep}
+            isReviewQuestionsRemoved={isReviewQuestionsRemoved}
+            isMatchReviewComplete={isMatchReviewComplete}
+            onNext={handleNext}
+            onQuizSubmit={handleQuizNext}
+          />
         )}
 
         <MobileBottomNav
