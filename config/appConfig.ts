@@ -21,155 +21,66 @@ export const RELOAD_TO_LESSON_KEY = 'lingo_burmese_reload_to_lesson';
 export const LESSONS_PER_BATCH = 3;
 export const MATCH_PAIRS_PER_REVIEW = 3;
 
-export const CURRICULUM = [
+export const LEVEL_METADATA = [
   {
     level: 1,
     title: 'Sound & Survival Speech',
     stage: 'A1',
-    topics: [
-      'Alphabet sounds & basic pronunciation',
-      'Greeting and introducing yourself',
-      'Saying name, country, job',
-      'Yes/No short answers',
-      'Classroom survival phrases',
-    ],
   },
   {
     level: 2,
     title: 'Basic Daily Speech',
     stage: 'A1',
-    topics: [
-      'Talking about daily routine',
-      'Describing people & objects',
-      'Asking simple questions',
-      'Talking about time & dates',
-      'Giving simple directions',
-    ],
   },
   {
     level: 3,
     title: 'Guided Conversation',
     stage: 'A1',
-    topics: [
-      'Talking about likes & preferences',
-      'Talking about family & friends',
-      'Talking about past weekend',
-      'Talking about future plans',
-      'Role-play conversations',
-      'Selling and buying',
-      'Price and quantity',
-      'Payment and discount',
-      'Return and exchange',
-      'Market conversation',
-    ],
   },
   {
     level: 4,
     title: 'Narrating Events',
     stage: 'A2',
-    topics: [
-      'Telling past stories',
-      'Describing experiences',
-      'Sequencing events clearly',
-      'Comparing things',
-      'Giving short explanations',
-    ],
   },
   {
     level: 5,
     title: 'Functional Interaction',
     stage: 'A2',
-    topics: [
-      'Making requests politely',
-      'Giving advice',
-      'Making suggestions',
-      'Handling simple problems',
-      'Expressing agreement/disagreement',
-    ],
   },
   {
     level: 6,
     title: 'Structured Responses',
     stage: 'A2',
-    topics: [
-      'Giving opinions with reasons',
-      'Explaining cause & effect',
-      'Describing advantages & disadvantages',
-      'Reacting naturally in conversation',
-      'Extending answers confidently',
-    ],
   },
   {
     level: 7,
     title: 'Expanding Fluency',
     stage: 'B1',
-    topics: [
-      'Talking about achievements',
-      'Describing processes',
-      'Hypothetical situations (if...)',
-      'Explaining decisions',
-      'Storytelling techniques',
-    ],
   },
   {
     level: 8,
     title: 'Discussion Skills',
     stage: 'B1',
-    topics: [
-      'Expressing strong opinions',
-      'Supporting arguments',
-      'Comparing viewpoints',
-      'Participating in discussions',
-      'Managing turn-taking',
-    ],
   },
   {
     level: 9,
     title: 'Persuasive Speaking',
     stage: 'B1',
-    topics: [
-      'Presenting arguments',
-      'Convincing others',
-      'Handling objections',
-      'Structured mini-presentations',
-      'Debate practice',
-    ],
   },
   {
     level: 10,
     title: 'Advanced Fluency',
     stage: 'B2',
-    topics: [
-      'Hypothetical & abstract topics',
-      'Nuanced comparisons',
-      'Clarifying complex ideas',
-      'Paraphrasing smoothly',
-      'Emphasis & rhetorical devices',
-    ],
   },
   {
     level: 11,
     title: 'Analytical Discussion',
     stage: 'B2',
-    topics: [
-      'Analyzing social issues',
-      'Evaluating arguments',
-      'Diplomatic disagreement',
-      'Problem-solution discussions',
-      'Critical thinking in speech',
-    ],
   },
   {
     level: 12,
     title: 'Professional Speaking Mastery',
     stage: 'B2',
-    topics: [
-      'Leading meetings',
-      'Formal presentations',
-      'Negotiation techniques',
-      'Handling Q&A sessions',
-      'Executive-level communication',
-    ],
   },
 ] as const;
 
@@ -256,7 +167,7 @@ export type StageUnitRef = {
 };
 
 const LEVEL_STAGE_LOOKUP = new Map<number, StageCode>(
-  CURRICULUM.map((item) => [item.level, item.stage]),
+  LEVEL_METADATA.map((item) => [item.level, item.stage]),
 );
 
 export function isStageCode(value: string | null | undefined): value is StageCode {
@@ -321,7 +232,7 @@ export function getStageUnitRef(
 }
 
 export function getLevelTitle(level: number): string {
-  const row = CURRICULUM.find((item) => item.level === level);
+  const row = LEVEL_METADATA.find((item) => item.level === level);
   return row?.title || `Unit ${level}`;
 }
 

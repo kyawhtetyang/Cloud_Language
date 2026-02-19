@@ -22,7 +22,6 @@ import { LeaveQuizModal } from './components/modals/LeaveQuizModal';
 import {
   AppMode,
   clampTextScale,
-  CURRICULUM,
   LEARN_QUESTIONS_PER_UNIT,
   LESSONS_PER_BATCH,
   MATCH_PAIRS_PER_REVIEW,
@@ -117,6 +116,10 @@ const App: React.FC = () => {
     apiBaseUrl,
     learnLanguage,
   );
+  const totalLevels = useMemo(
+    () => lessons.reduce((max, lesson) => Math.max(max, lesson.level), 1),
+    [lessons],
+  );
   const englishReferenceByKey = useMemo(() => {
     const map = new Map<string, string>();
     for (const lesson of englishReferenceLessons) {
@@ -145,7 +148,7 @@ const App: React.FC = () => {
     isBoldTextEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
-    totalLevels: CURRICULUM.length,
+    totalLevels,
     progressStorageKey,
     unlockedStorageKey,
     streakStorageKey,
@@ -175,7 +178,6 @@ const App: React.FC = () => {
     isReviewQuestionsRemoved,
   });
 
-  const totalLevels = CURRICULUM.length;
   const leaveQuizConfirmMessage =
     defaultLanguage === 'burmese'
       ? 'Quick Review မှ ထွက်မလား? ဒီ review အတွင်း တိုးတက်မှုတွေ ပျက်သွားပါမယ်။'
