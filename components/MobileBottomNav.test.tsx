@@ -9,7 +9,7 @@ describe('MobileBottomNav', () => {
     const settingsButton = screen.getByRole('button', { name: 'Settings' });
     const lessonButton = screen.getByRole('button', { name: 'Lesson' });
 
-    expect(settingsButton.className).toContain('bg-[#58cc02]');
+    expect(settingsButton.className).toContain('bg-[#ecf9df]');
     expect(lessonButton.className).toContain('text-gray-500');
   });
 
@@ -24,4 +24,3 @@ describe('MobileBottomNav', () => {
     expect(onTabChange).toHaveBeenNthCalledWith(2, 'profile');
   });
 });
-
