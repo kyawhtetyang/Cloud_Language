@@ -85,7 +85,8 @@ const App: React.FC = () => {
     setIsRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     setIsReviewQuestionsRemoved,
-  } = useAppPreferences();
+    hasHydratedSettings,
+  } = useAppPreferences(profileName ? toProfileStorageId(profileName) : '');
   const [isNextDisabled, setIsNextDisabled] = useState(false);
   const [learnStep, setLearnStep] = useState(0);
   const [unitXp, setUnitXp] = useState(0);
@@ -162,6 +163,8 @@ const App: React.FC = () => {
   });
 
   useSettingsPersistence({
+    profileStorageId,
+    enabled: Boolean(profileName) && hasHydratedSettings,
     learnLanguage,
     defaultLanguage,
     isPronunciationEnabled,

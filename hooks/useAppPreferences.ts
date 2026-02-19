@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DefaultLanguage,
   LearnLanguage,
@@ -23,11 +23,13 @@ type UseAppPreferencesResult = {
   setIsRandomLessonOrderEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   isReviewQuestionsRemoved: boolean;
   setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
+  hasHydratedSettings: boolean;
 };
 
-export function useAppPreferences(): UseAppPreferencesResult {
-  const initialSettingsRef = useRef(readSyncedSettingsFromStorage());
+export function useAppPreferences(profileStorageId: string): UseAppPreferencesResult {
+  const initialSettingsRef = useRef(readSyncedSettingsFromStorage(profileStorageId));
   const initialSettings = initialSettingsRef.current;
+  const [hasHydratedSettings, setHasHydratedSettings] = useState(false);
   const [isPronunciationEnabled, setIsPronunciationEnabled] = useState<boolean>(initialSettings.isPronunciationEnabled);
   const [learnLanguage, setLearnLanguage] = useState<LearnLanguage>(initialSettings.learnLanguage);
   const [defaultLanguage, setDefaultLanguage] = useState<DefaultLanguage>(initialSettings.defaultLanguage);
@@ -36,6 +38,23 @@ export function useAppPreferences(): UseAppPreferencesResult {
   const [isBoldTextEnabled, setIsBoldTextEnabled] = useState<boolean>(initialSettings.isBoldTextEnabled);
   const [isRandomLessonOrderEnabled, setIsRandomLessonOrderEnabled] = useState<boolean>(initialSettings.isRandomLessonOrderEnabled);
   const [isReviewQuestionsRemoved, setIsReviewQuestionsRemoved] = useState<boolean>(initialSettings.isReviewQuestionsRemoved);
+
+  useEffect(() => {
+    if (!profileStorageId) {
+      setHasHydratedSettings(false);
+      return;
+    }
+    const next = readSyncedSettingsFromStorage(profileStorageId);
+    setLearnLanguage(next.learnLanguage);
+    setDefaultLanguage(next.defaultLanguage);
+    setIsPronunciationEnabled(next.isPronunciationEnabled);
+    setTextScalePercent(next.textScalePercent);
+    setVoicePreference(next.voicePreference);
+    setIsBoldTextEnabled(next.isBoldTextEnabled);
+    setIsRandomLessonOrderEnabled(next.isRandomLessonOrderEnabled);
+    setIsReviewQuestionsRemoved(next.isReviewQuestionsRemoved);
+    setHasHydratedSettings(true);
+  }, [profileStorageId]);
 
   return {
     isPronunciationEnabled,
@@ -54,5 +73,6 @@ export function useAppPreferences(): UseAppPreferencesResult {
     setIsRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     setIsReviewQuestionsRemoved,
+    hasHydratedSettings,
   };
 }

@@ -7,6 +7,8 @@ import {
 import { persistSyncedSettingsToStorage } from '../config/settingsSync';
 
 type UseSettingsPersistenceParams = {
+  profileStorageId: string;
+  enabled?: boolean;
   learnLanguage: LearnLanguage;
   defaultLanguage: DefaultLanguage;
   isPronunciationEnabled: boolean;
@@ -18,6 +20,8 @@ type UseSettingsPersistenceParams = {
 };
 
 export function useSettingsPersistence({
+  profileStorageId,
+  enabled = true,
   learnLanguage,
   defaultLanguage,
   isPronunciationEnabled,
@@ -28,6 +32,7 @@ export function useSettingsPersistence({
   isReviewQuestionsRemoved,
 }: UseSettingsPersistenceParams) {
   useEffect(() => {
+    if (!enabled || !profileStorageId) return;
     persistSyncedSettingsToStorage({
       learnLanguage,
       defaultLanguage,
@@ -37,9 +42,11 @@ export function useSettingsPersistence({
       isBoldTextEnabled,
       isRandomLessonOrderEnabled,
       isReviewQuestionsRemoved,
-    });
+    }, profileStorageId);
     document.documentElement.style.fontSize = `${textScalePercent}%`;
   }, [
+    profileStorageId,
+    enabled,
     learnLanguage,
     defaultLanguage,
     isPronunciationEnabled,

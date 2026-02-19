@@ -41,6 +41,36 @@ describe('settingsSync', () => {
     expect(buildSyncedSettingsPayload(settings)).toEqual(settings);
   });
 
+  it('uses profile-scoped settings with fallback to legacy global keys', () => {
+    const legacyGlobal = {
+      learnLanguage: 'english' as const,
+      defaultLanguage: 'burmese' as const,
+      isPronunciationEnabled: false,
+      textScalePercent: 100,
+      voicePreference: 'young_female' as const,
+      isBoldTextEnabled: false,
+      isRandomLessonOrderEnabled: false,
+      isReviewQuestionsRemoved: false,
+    };
+    const profileSettings = {
+      learnLanguage: 'chinese' as const,
+      defaultLanguage: 'english' as const,
+      isPronunciationEnabled: true,
+      textScalePercent: 115,
+      voicePreference: 'google_female' as const,
+      isBoldTextEnabled: true,
+      isRandomLessonOrderEnabled: true,
+      isReviewQuestionsRemoved: true,
+    };
+
+    persistSyncedSettingsToStorage(legacyGlobal);
+    expect(readSyncedSettingsFromStorage('tester')).toEqual(legacyGlobal);
+
+    persistSyncedSettingsToStorage(profileSettings, 'tester');
+    expect(readSyncedSettingsFromStorage('tester')).toEqual(profileSettings);
+    expect(readSyncedSettingsFromStorage()).toEqual(legacyGlobal);
+  });
+
   it('applies only valid remote values to setters', () => {
     const setters = {
       setLearnLanguage: vi.fn(),
@@ -77,4 +107,3 @@ describe('settingsSync', () => {
     expect(setters.setIsReviewQuestionsRemoved).toHaveBeenCalledWith(true);
   });
 });
-

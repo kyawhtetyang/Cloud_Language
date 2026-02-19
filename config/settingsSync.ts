@@ -49,6 +49,10 @@ const DEFAULT_SYNCED_SETTINGS: SyncedAppSettings = {
   isReviewQuestionsRemoved: false,
 };
 
+function toScopedKey(baseKey: string, profileStorageId: string): string {
+  return `${baseKey}:${profileStorageId}`;
+}
+
 function safeRead(key: string): string | null {
   try {
     return localStorage.getItem(key);
@@ -88,28 +92,42 @@ function parseTextScale(value: string | null): number {
   return clampTextScale(Number(value || DEFAULT_SYNCED_SETTINGS.textScalePercent));
 }
 
-export function readSyncedSettingsFromStorage(): SyncedAppSettings {
+function readWithFallback(baseKey: string, profileStorageId?: string): string | null {
+  if (!profileStorageId) {
+    return safeRead(baseKey);
+  }
+  const scoped = safeRead(toScopedKey(baseKey, profileStorageId));
+  if (scoped !== null) return scoped;
+  return safeRead(baseKey);
+}
+
+export function readSyncedSettingsFromStorage(profileStorageId?: string): SyncedAppSettings {
   return {
-    learnLanguage: parseLearnLanguage(safeRead(LEARN_LANGUAGE_KEY)),
-    defaultLanguage: parseDefaultLanguage(safeRead(DEFAULT_LANGUAGE_KEY)),
-    isPronunciationEnabled: parseBoolean(safeRead(PRONUNCIATION_ENABLED_KEY)),
-    textScalePercent: parseTextScale(safeRead(TEXT_SCALE_PERCENT_KEY)),
-    voicePreference: parseVoicePreference(safeRead(VOICE_PREFERENCE_KEY)),
-    isBoldTextEnabled: parseBoolean(safeRead(BOLD_TEXT_ENABLED_KEY)),
-    isRandomLessonOrderEnabled: parseBoolean(safeRead(RANDOM_LESSON_ORDER_ENABLED_KEY)),
-    isReviewQuestionsRemoved: parseBoolean(safeRead(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY)),
+    learnLanguage: parseLearnLanguage(readWithFallback(LEARN_LANGUAGE_KEY, profileStorageId)),
+    defaultLanguage: parseDefaultLanguage(readWithFallback(DEFAULT_LANGUAGE_KEY, profileStorageId)),
+    isPronunciationEnabled: parseBoolean(readWithFallback(PRONUNCIATION_ENABLED_KEY, profileStorageId)),
+    textScalePercent: parseTextScale(readWithFallback(TEXT_SCALE_PERCENT_KEY, profileStorageId)),
+    voicePreference: parseVoicePreference(readWithFallback(VOICE_PREFERENCE_KEY, profileStorageId)),
+    isBoldTextEnabled: parseBoolean(readWithFallback(BOLD_TEXT_ENABLED_KEY, profileStorageId)),
+    isRandomLessonOrderEnabled: parseBoolean(readWithFallback(RANDOM_LESSON_ORDER_ENABLED_KEY, profileStorageId)),
+    isReviewQuestionsRemoved: parseBoolean(readWithFallback(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY, profileStorageId)),
   };
 }
 
-export function persistSyncedSettingsToStorage(settings: SyncedAppSettings): void {
-  safeWrite(LEARN_LANGUAGE_KEY, settings.learnLanguage);
-  safeWrite(DEFAULT_LANGUAGE_KEY, settings.defaultLanguage);
-  safeWrite(PRONUNCIATION_ENABLED_KEY, String(settings.isPronunciationEnabled));
-  safeWrite(TEXT_SCALE_PERCENT_KEY, String(settings.textScalePercent));
-  safeWrite(VOICE_PREFERENCE_KEY, settings.voicePreference);
-  safeWrite(BOLD_TEXT_ENABLED_KEY, String(settings.isBoldTextEnabled));
-  safeWrite(RANDOM_LESSON_ORDER_ENABLED_KEY, String(settings.isRandomLessonOrderEnabled));
-  safeWrite(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY, String(settings.isReviewQuestionsRemoved));
+export function persistSyncedSettingsToStorage(
+  settings: SyncedAppSettings,
+  profileStorageId?: string,
+): void {
+  const resolveKey = (baseKey: string) =>
+    profileStorageId ? toScopedKey(baseKey, profileStorageId) : baseKey;
+  safeWrite(resolveKey(LEARN_LANGUAGE_KEY), settings.learnLanguage);
+  safeWrite(resolveKey(DEFAULT_LANGUAGE_KEY), settings.defaultLanguage);
+  safeWrite(resolveKey(PRONUNCIATION_ENABLED_KEY), String(settings.isPronunciationEnabled));
+  safeWrite(resolveKey(TEXT_SCALE_PERCENT_KEY), String(settings.textScalePercent));
+  safeWrite(resolveKey(VOICE_PREFERENCE_KEY), settings.voicePreference);
+  safeWrite(resolveKey(BOLD_TEXT_ENABLED_KEY), String(settings.isBoldTextEnabled));
+  safeWrite(resolveKey(RANDOM_LESSON_ORDER_ENABLED_KEY), String(settings.isRandomLessonOrderEnabled));
+  safeWrite(resolveKey(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY), String(settings.isReviewQuestionsRemoved));
 }
 
 export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedAppSettings {
