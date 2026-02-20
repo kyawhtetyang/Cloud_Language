@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ProgressBar } from './components/ProgressBar';
 import { LessonData } from './types';
 import { useProfileProgress } from './hooks/useProfileProgress';
 import { useLessonFlow } from './hooks/useLessonFlow';
@@ -39,6 +38,7 @@ import {
   toProfileStorageId,
   TOTAL_XP_PER_COURSE,
   UNLOCKED_LEVEL_KEY,
+  resolveStageCode,
 } from './config/appConfig';
 import { LevelsView } from './components/views/LevelsView';
 import { AppSidebar } from './components/layout/AppSidebar';
@@ -57,6 +57,8 @@ function normalizeApiBaseUrl(rawApiBaseUrl: string | undefined): string {
   }
   return candidate;
 }
+
+type RepeatMode = 'off' | 'all' | 'one';
 
 const App: React.FC = () => {
   const {
@@ -109,9 +111,11 @@ const App: React.FC = () => {
   const [quizSectionEnd, setQuizSectionEnd] = useState(0);
   const [isLeaveQuizModalOpen, setIsLeaveQuizModalOpen] = useState(false);
   const [isReading, setIsReading] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   const [pendingUnitTarget, setPendingUnitTarget] = useState<{ level: number; unit: number } | null>(
     null,
   );
+  const [roadmapSelectedAlbumKey, setRoadmapSelectedAlbumKey] = useState<string | null>(null);
   const readSessionRef = useRef(0);
   const [randomOrderVersion, setRandomOrderVersion] = useState(0);
   const {
@@ -231,6 +235,24 @@ const App: React.FC = () => {
     isRandomLessonOrderEnabled,
     randomOrderVersion,
   });
+  const currentStageCode = useMemo(() => {
+    const anchor = lessons[sectionStart] ?? lessons[currentIndex];
+    if (!anchor) return resolveStageCode(currentLevel);
+    return resolveStageCode(getLessonOrderIndex(anchor), anchor.stage);
+  }, [currentIndex, currentLevel, lessons, sectionStart]);
+  const currentStageRange = useMemo(() => {
+    const indexes = lessons.reduce<number[]>((acc, lesson, idx) => {
+      const stageCode = resolveStageCode(getLessonOrderIndex(lesson), lesson.stage);
+      if (stageCode === currentStageCode) {
+        acc.push(idx);
+      }
+      return acc;
+    }, []);
+    if (indexes.length === 0) {
+      return { start: 0, end: Math.max(0, lessons.length - 1) };
+    }
+    return { start: indexes[0], end: indexes[indexes.length - 1] };
+  }, [currentStageCode, lessons]);
 
   const handleApplyProfileName = () => {
     applyProfileName(() => {
@@ -307,11 +329,35 @@ const App: React.FC = () => {
         setStreak((prev) => prev + 1);
 
         const nextStart = sectionEnd + 1;
-        if (nextStart >= lessons.length) {
-          setMode('completed');
-          setUnlockedLevel(totalLevels);
+        if (repeatMode === 'one') {
+          setMode('learn');
+          setCurrentIndex(sectionStart);
+          setLearnStep(0);
+          setRandomOrderVersion((prev) => prev + 1);
+          setUnitXp(0);
           setReviewResult(null);
           resetQuizState();
+          setIsNextDisabled(false);
+          return;
+        }
+        const isBeyondCurrentStage =
+          nextStart >= lessons.length
+          || resolveStageCode(getLessonOrderIndex(lessons[nextStart]), lessons[nextStart]?.stage) !== currentStageCode;
+        if (isBeyondCurrentStage) {
+          if (repeatMode === 'all') {
+            setMode('learn');
+            setCurrentIndex(currentStageRange.start);
+            setLearnStep(0);
+            setRandomOrderVersion((prev) => prev + 1);
+            setUnitXp(0);
+            setReviewResult(null);
+            resetQuizState();
+          } else {
+            setMode('completed');
+            setUnlockedLevel(totalLevels);
+            setReviewResult(null);
+            resetQuizState();
+          }
           setIsNextDisabled(false);
           return;
         }
@@ -363,7 +409,7 @@ const App: React.FC = () => {
   };
 
   const handlePrevious = () => {
-    if (mode !== 'learn' || isNextDisabled || learnStep <= 0) return;
+    if (mode !== 'learn' || isNextDisabled) return;
 
     if (isReading) {
       readSessionRef.current += 1;
@@ -372,6 +418,70 @@ const App: React.FC = () => {
     }
 
     setIsNextDisabled(true);
+
+    if (learnStep <= 0) {
+      if (repeatMode === 'one') {
+        setCurrentIndex(sectionStart);
+        setLearnStep(LEARN_QUESTIONS_PER_UNIT - 1);
+        setIsNextDisabled(false);
+        return;
+      }
+
+      if (sectionStart <= 0) {
+        if (repeatMode !== 'all') {
+          setIsNextDisabled(false);
+          return;
+        }
+        const lastLessonIndex = currentStageRange.end;
+        const lastLesson = lessons[lastLessonIndex];
+        if (!lastLesson) {
+          setIsNextDisabled(false);
+          return;
+        }
+        const lastLevel = getLessonOrderIndex(lastLesson);
+        const lastUnit = getLessonUnitId(lastLesson);
+        const lastUnitIndexes = lessons.reduce<number[]>((acc, lesson, idx) => {
+          if (getLessonOrderIndex(lesson) === lastLevel && getLessonUnitId(lesson) === lastUnit) {
+            acc.push(idx);
+          }
+          return acc;
+        }, []);
+        setCurrentIndex(lastUnitIndexes[0] ?? lastLessonIndex);
+        setLearnStep(LEARN_QUESTIONS_PER_UNIT - 1);
+        setIsNextDisabled(false);
+        return;
+      }
+
+      let previousUnitAnchor = sectionStart - 1;
+      if (repeatMode === 'all') {
+        const previousStageCode = lessons[previousUnitAnchor]
+          ? resolveStageCode(getLessonOrderIndex(lessons[previousUnitAnchor]), lessons[previousUnitAnchor]?.stage)
+          : currentStageCode;
+        if (previousUnitAnchor < 0 || previousStageCode !== currentStageCode) {
+          previousUnitAnchor = currentStageRange.end;
+        }
+      }
+      const previousUnitLesson = lessons[previousUnitAnchor];
+      if (!previousUnitLesson) {
+        setIsNextDisabled(false);
+        return;
+      }
+
+      const previousLevel = getLessonOrderIndex(previousUnitLesson);
+      const previousUnit = getLessonUnitId(previousUnitLesson);
+      const previousUnitIndexes = lessons.reduce<number[]>((acc, lesson, idx) => {
+        if (getLessonOrderIndex(lesson) === previousLevel && getLessonUnitId(lesson) === previousUnit) {
+          acc.push(idx);
+        }
+        return acc;
+      }, []);
+
+      setCurrentIndex(previousUnitIndexes[0] ?? previousUnitAnchor);
+      setLearnStep(LEARN_QUESTIONS_PER_UNIT - 1);
+      setIsNextDisabled(false);
+      return;
+    }
+
     const previousStep = Math.max(0, learnStep - 1);
     setLearnStep(previousStep);
     const previousOffset = (previousStep * LESSONS_PER_BATCH) % sectionTotal;
@@ -379,13 +489,16 @@ const App: React.FC = () => {
     setIsNextDisabled(false);
   };
 
-  const navigateToLevelUnit = (level: number, unit: number) => {
+  const navigateToLevelUnit = (level: number, unit: number, albumKey?: string | null) => {
     const safeLevel = Math.min(Math.max(level, 1), totalLevels);
     const safeUnit = Math.max(1, unit);
     const target = lessons.findIndex(
       (lesson) => getLessonOrderIndex(lesson) === safeLevel && getLessonUnitId(lesson) === safeUnit,
     );
     if (target < 0) return;
+    if (albumKey !== undefined) {
+      setRoadmapSelectedAlbumKey(albumKey);
+    }
     setMode('learn');
     setCurrentIndex(target);
     setUnlockedLevel((prev) => Math.max(prev, safeLevel));
@@ -398,13 +511,13 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   };
 
-  const goToLevelUnit = (level: number, unit: number) => {
+  const goToLevelUnit = (level: number, unit: number, albumKey?: string | null) => {
     if (mode === 'quiz') {
       setPendingUnitTarget({ level, unit });
       setIsLeaveQuizModalOpen(true);
       return;
     }
-    navigateToLevelUnit(level, unit);
+    navigateToLevelUnit(level, unit, albumKey);
   };
 
   const handleLeaveQuizCancel = () => {
@@ -458,11 +571,34 @@ const App: React.FC = () => {
     setStreak((prev) => prev + 1);
 
     const nextStart = quizSectionEnd + 1;
-    if (nextStart >= lessons.length) {
-      setMode('completed');
-      setUnlockedLevel(totalLevels);
+    if (repeatMode === 'one') {
+      setMode('learn');
+      setCurrentIndex(quizSectionStart);
+      setLearnStep(0);
+      setRandomOrderVersion((prev) => prev + 1);
+      setUnitXp(0);
       setReviewResult(null);
       resetQuizState();
+      return;
+    }
+    const isBeyondCurrentStage =
+      nextStart >= lessons.length
+      || resolveStageCode(getLessonOrderIndex(lessons[nextStart]), lessons[nextStart]?.stage) !== currentStageCode;
+    if (isBeyondCurrentStage) {
+      if (repeatMode === 'all') {
+        setMode('learn');
+        setCurrentIndex(currentStageRange.start);
+        setLearnStep(0);
+        setRandomOrderVersion((prev) => prev + 1);
+        setUnitXp(0);
+        setReviewResult(null);
+        resetQuizState();
+      } else {
+        setMode('completed');
+        setUnlockedLevel(totalLevels);
+        setReviewResult(null);
+        resetQuizState();
+      }
       return;
     }
 
@@ -473,6 +609,19 @@ const App: React.FC = () => {
     setUnitXp(0);
     setReviewResult(null);
     resetQuizState();
+  };
+
+  const handleToggleShuffle = () => {
+    setIsRandomLessonOrderEnabled((prev) => !prev);
+    setRandomOrderVersion((prev) => prev + 1);
+  };
+
+  const handleToggleRepeat = () => {
+    setRepeatMode((prev) => {
+      if (prev === 'off') return 'all';
+      if (prev === 'all') return 'one';
+      return 'off';
+    });
   };
 
   const handleQuizNext = () => {
@@ -579,12 +728,8 @@ const App: React.FC = () => {
       />
 
       <div className="flex-1 flex flex-col min-h-screen pb-36 md:pb-0">
-        {isLessonView && <ProgressBar unitCurrent={unitFlowCurrent} unitTotal={unitFlowTotal} />}
-
         <main
-          className={`flex-1 flex justify-center p-4 md:p-6 ${
-            isLessonView ? 'items-start pt-1 md:items-center md:pt-6' : 'items-start pt-6 md:pt-8'
-          }`}
+          className="flex-1 flex items-start justify-center p-4 pt-6 md:p-6 md:pt-8"
         >
           {isProfileView ? (
             <ProfileView
@@ -607,6 +752,8 @@ const App: React.FC = () => {
               lessons={lessons}
               defaultLanguage={defaultLanguage}
               onSelectUnit={goToLevelUnit}
+              selectedAlbumKey={roadmapSelectedAlbumKey}
+              onSelectedAlbumKeyChange={setRoadmapSelectedAlbumKey}
               completedUnitKeys={completedRoadmapKeys}
               activeUnitKey={activeUnitKey}
               downloadedUnitKeys={downloadedUnitKeys}
@@ -620,7 +767,6 @@ const App: React.FC = () => {
               learnLanguage={learnLanguage}
               isPronunciationEnabled={isPronunciationEnabled}
               isBoldTextEnabled={isBoldTextEnabled}
-              isRandomLessonOrderEnabled={isRandomLessonOrderEnabled}
               isReviewQuestionsRemoved={isReviewQuestionsRemoved}
               textScalePercent={textScalePercent}
               canDecreaseTextSize={textScalePercent > 90}
@@ -632,10 +778,6 @@ const App: React.FC = () => {
               onLearnLanguageChange={setLearnLanguage}
               onTogglePronunciation={() => setIsPronunciationEnabled((prev) => !prev)}
               onToggleBoldText={() => setIsBoldTextEnabled((prev) => !prev)}
-              onToggleRandomLessonOrder={() => {
-                setIsRandomLessonOrderEnabled((prev) => !prev);
-                setRandomOrderVersion((prev) => prev + 1);
-              }}
               onToggleReviewQuestions={() => setIsReviewQuestionsRemoved((prev) => !prev)}
               onDecreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev - 5))}
               onIncreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev + 5))}
@@ -669,6 +811,11 @@ const App: React.FC = () => {
             <CompletedView onRestart={handleReview} />
           ) : (
             <LessonView
+              onBackToRoadmap={() => {
+                setSidebarTab('levels');
+                setIsSidebarOpen(false);
+              }}
+              progressLabel={`${Math.min(LEARN_QUESTIONS_PER_UNIT, learnStep + 1)}/${LEARN_QUESTIONS_PER_UNIT}`}
               currentCourseCode={currentCourseCode}
               currentLevelTitle={currentLevelTitle}
               unitXp={unitXp}
@@ -689,12 +836,20 @@ const App: React.FC = () => {
           <LessonActionFooter
             mode={mode}
             isNextDisabled={isNextDisabled}
-            isPreviousDisabled={mode !== 'learn' || isNextDisabled || learnStep <= 0}
+            isPreviousDisabled={
+              mode !== 'learn'
+              || isNextDisabled
+              || (learnStep <= 0 && sectionStart <= 0 && repeatMode !== 'all' && repeatMode !== 'one')
+            }
             isReadDisabled={mode !== 'learn' || currentBatchEntries.length === 0}
             isReading={isReading}
+            isShuffleEnabled={isRandomLessonOrderEnabled}
+            repeatMode={repeatMode}
             learnStep={learnStep}
             isReviewQuestionsRemoved={isReviewQuestionsRemoved}
             isMatchReviewComplete={isMatchReviewComplete}
+            onToggleShuffle={handleToggleShuffle}
+            onToggleRepeat={handleToggleRepeat}
             onPrevious={handlePrevious}
             onRead={() => { void handleReadCurrentBatch(); }}
             onNext={handleNext}

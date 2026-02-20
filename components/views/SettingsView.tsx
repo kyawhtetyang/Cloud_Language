@@ -12,7 +12,6 @@ type SettingsViewProps = {
   learnLanguage: LearnLanguage;
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
-  isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
   textScalePercent: number;
   canDecreaseTextSize: boolean;
@@ -24,7 +23,6 @@ type SettingsViewProps = {
   onLearnLanguageChange: (value: LearnLanguage) => void;
   onTogglePronunciation: () => void;
   onToggleBoldText: () => void;
-  onToggleRandomLessonOrder: () => void;
   onToggleReviewQuestions: () => void;
   onDecreaseTextSize: () => void;
   onIncreaseTextSize: () => void;
@@ -32,7 +30,7 @@ type SettingsViewProps = {
 };
 
 const sectionTitleClass = 'text-sm font-extrabold uppercase tracking-wide text-[#2f7d01]';
-const sectionCardClass = 'rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-4';
+const sectionCardClass = 'rounded-xl px-1 py-1';
 
 type ToggleCardProps = {
   title: string;
@@ -68,7 +66,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   learnLanguage,
   isPronunciationEnabled,
   isBoldTextEnabled,
-  isRandomLessonOrderEnabled,
   isReviewQuestionsRemoved,
   textScalePercent,
   canDecreaseTextSize,
@@ -80,14 +77,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onLearnLanguageChange,
   onTogglePronunciation,
   onToggleBoldText,
-  onToggleRandomLessonOrder,
   onToggleReviewQuestions,
   onDecreaseTextSize,
   onIncreaseTextSize,
   onVoicePreferenceChange,
 }) => {
   return (
-    <div className="w-full max-w-2xl">
+    <div className="w-full max-w-2xl rounded-[24px] border-2 border-gray-100 bg-white p-4 shadow-xl md:p-5">
       <section className="mb-4">
         <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] text-gray-500 mb-2">Language</h3>
         <div className="space-y-3">
@@ -134,15 +130,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      <section className="mb-4">
+      <section className="mb-4 border-t border-gray-100 pt-4">
         <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] text-gray-500 mb-2">Learning Flow</h3>
         <div className="space-y-3">
-          <ToggleCard
-            title="Random Lesson Order"
-            description="Shuffle question order every time you enter a unit."
-            isOn={isRandomLessonOrderEnabled}
-            onToggle={onToggleRandomLessonOrder}
-          />
           <ToggleCard
             title="Review Questions"
             description="Show quick review questions in lesson flow."
@@ -152,7 +142,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      <section className="mb-4">
+      <section className="mb-4 border-t border-gray-100 pt-4">
         <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] text-gray-500 mb-2">Display</h3>
         <div className="space-y-3">
           <ToggleCard
@@ -203,7 +193,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      <section className="mb-4">
+      <section className="mb-4 border-t border-gray-100 pt-4">
         <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] text-gray-500 mb-2">Audio</h3>
         <div className="space-y-3">
           <ToggleCard
@@ -254,17 +244,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      <section>
+      <section className="border-t border-gray-100 pt-4">
         <div className={sectionCardClass}>
           <p className={sectionTitleClass}>Current Mapping</p>
-        <div className="mt-3 space-y-1.5 text-xs">
-          <p className="text-gray-600 font-bold">
-            <span className="text-[#2f7d01] uppercase tracking-wide">Translation:</span> {translationLabel}
-          </p>
-          <p className="text-gray-600 font-bold">
-            <span className="text-[#2f7d01] uppercase tracking-wide">Pronunciation:</span> {pronunciationStyleLabel}
-          </p>
-        </div>
+          <div className="mt-3 space-y-1.5 text-xs">
+            <p className="text-gray-600 font-bold">
+              <span className="text-[#2f7d01] uppercase tracking-wide">Translation:</span> {translationLabel}
+            </p>
+            <p className="text-gray-600 font-bold">
+              <span className="text-[#2f7d01] uppercase tracking-wide">Pronunciation:</span> {pronunciationStyleLabel}
+            </p>
+          </div>
         </div>
       </section>
     </div>

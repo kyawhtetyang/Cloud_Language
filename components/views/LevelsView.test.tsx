@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LevelsView } from './LevelsView';
 import { LessonData } from '../../types';
@@ -18,12 +18,14 @@ const lessons: LessonData[] = [
 describe('LevelsView topic localization', () => {
   it('localizes known roadmap topic labels when default language is burmese', () => {
     render(<LevelsView lessons={lessons} defaultLanguage="burmese" onSelectUnit={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /open album/i }));
 
     expect(screen.getByRole('button', { name: /မြန်မာ စကားလုံးများ/i })).toBeInTheDocument();
   });
 
   it('keeps original topic labels when default language is english', () => {
     render(<LevelsView lessons={lessons} defaultLanguage="english" onSelectUnit={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /open album/i }));
 
     expect(screen.getByRole('button', { name: /Burmese words/i })).toBeInTheDocument();
   });
@@ -37,6 +39,7 @@ describe('LevelsView topic localization', () => {
         completedUnitKeys={new Set(['1:1'])}
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: /open album/i }));
 
     const unitButton = screen.getByRole('button', { name: /Burmese words/i });
     const unitCard = unitButton.closest('div.rounded-lg');

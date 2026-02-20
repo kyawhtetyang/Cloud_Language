@@ -44,12 +44,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl border-2 border-[#dbe8cb] bg-[#f7ffef] p-3">
+        <div className="mt-4 border-t border-gray-100 pt-4">
           <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-wide text-[#2f7d01]">
             <span>Overall Progress</span>
             <span>{progressPercent}%</span>
           </div>
-          <div className="mt-2 h-3 bg-[#d9ecc8] rounded-full overflow-hidden">
+          <div className="mt-2 h-3 rounded-full overflow-hidden bg-[#edf6e4]">
             <div
               className="h-full bg-[#58cc02] rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
@@ -88,18 +88,20 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="rounded-2xl border-2 border-[#c5eb9f] bg-[#f7ffef] p-4">
-          <p className="text-[11px] text-[#2f7d01] font-extrabold uppercase tracking-wide">Current Course</p>
-          <p className="text-xl md:text-2xl font-extrabold text-[#3c3c3c] mt-1">{currentCourseCode}</p>
-        </div>
-        <div className="rounded-2xl border-2 border-[#c5eb9f] bg-[#f7ffef] p-4">
-          <p className="text-[11px] text-[#2f7d01] font-extrabold uppercase tracking-wide">Unlocked Groups</p>
-          <p className="text-xl md:text-2xl font-extrabold text-[#3c3c3c] mt-1">{unlockedUnits}/{totalUnits}</p>
-        </div>
-        <div className="rounded-2xl border-2 border-[#ffe5b4] bg-[#fff8ea] p-4">
-          <p className="text-[11px] text-[#f59e0b] font-extrabold uppercase tracking-wide">Streak</p>
-          <p className="text-xl md:text-2xl font-extrabold text-[#3c3c3c] mt-1">{streak}</p>
+      <section className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-5 md:p-7">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="sm:border-r sm:border-gray-100 sm:pr-3">
+            <p className="text-[11px] text-[#2f7d01] font-extrabold uppercase tracking-wide">Current Course</p>
+            <p className="mt-1 text-xl md:text-2xl font-extrabold text-[#3c3c3c]">{currentCourseCode}</p>
+          </div>
+          <div className="border-t border-gray-100 pt-3 sm:border-t-0 sm:border-r sm:border-gray-100 sm:pt-0 sm:px-3">
+            <p className="text-[11px] text-[#2f7d01] font-extrabold uppercase tracking-wide">Unlocked Groups</p>
+            <p className="mt-1 text-xl md:text-2xl font-extrabold text-[#3c3c3c]">{unlockedUnits}/{totalUnits}</p>
+          </div>
+          <div className="border-t border-gray-100 pt-3 sm:border-t-0 sm:pl-3">
+            <p className="text-[11px] text-[#f59e0b] font-extrabold uppercase tracking-wide">Streak</p>
+            <p className="mt-1 text-xl md:text-2xl font-extrabold text-[#3c3c3c]">{streak}</p>
+          </div>
         </div>
       </section>
     </div>

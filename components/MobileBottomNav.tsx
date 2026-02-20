@@ -13,23 +13,23 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 }) => {
   const tabs: Array<{ key: SidebarTab; label: string; icon: React.ReactNode }> = [
     {
-      key: 'lesson',
-      label: 'Lesson',
-      icon: (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path
-            d="M6 4h12v14H8a2 2 0 0 1-2-2V4Zm0 12h12M9 8h6"
-          />
-        </svg>
-      ),
-    },
-    {
       key: 'levels',
       label: 'Road Map',
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path
             d="M4 7h6v6H4zM14 4h6v6h-6zM14 14h6v6h-6zM4 14h6"
+          />
+        </svg>
+      ),
+    },
+    {
+      key: 'lesson',
+      label: 'Lesson',
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path
+            d="M6 4h12v14H8a2 2 0 0 1-2-2V4Zm0 12h12M9 8h6"
           />
         </svg>
       ),

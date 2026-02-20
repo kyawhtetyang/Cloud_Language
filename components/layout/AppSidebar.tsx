@@ -57,16 +57,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
         <div className="mb-4 flex flex-col gap-2">
           <button
-            onClick={() => onSelectTab('lesson')}
-            className={navClass(sidebarTab === 'lesson')}
-          >
-            Lesson
-          </button>
-          <button
             onClick={() => onSelectTab('levels')}
             className={navClass(sidebarTab === 'levels')}
           >
             Road Map
+          </button>
+          <button
+            onClick={() => onSelectTab('lesson')}
+            className={navClass(sidebarTab === 'lesson')}
+          >
+            Lesson
           </button>
           <button
             onClick={() => onSelectTab('settings')}
@@ -92,4 +92,3 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     </aside>
   );
 };
-
