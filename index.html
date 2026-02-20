@@ -5,10 +5,140 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LingoBurmese - Learn Language</title>
+  <script>
+    window.tailwind = {
+      config: {
+        theme: {
+          fontSize: {
+            xs: ['var(--type-xs)', { lineHeight: 'var(--type-xs-line)' }],
+            sm: ['var(--type-sm)', { lineHeight: 'var(--type-sm-line)' }],
+            base: ['var(--type-base)', { lineHeight: 'var(--type-base-line)' }],
+            lg: ['var(--type-lg)', { lineHeight: 'var(--type-lg-line)' }],
+            xl: ['var(--type-xl)', { lineHeight: 'var(--type-xl-line)' }],
+            '2xl': ['var(--type-2xl)', { lineHeight: 'var(--type-2xl-line)' }],
+            '3xl': ['var(--type-3xl)', { lineHeight: 'var(--type-3xl-line)' }],
+          },
+          fontWeight: {
+            normal: 'var(--weight-normal)',
+            medium: 'var(--weight-medium)',
+            semibold: 'var(--weight-semibold)',
+            bold: 'var(--weight-bold)',
+            extrabold: 'var(--weight-extrabold)',
+            black: 'var(--weight-black)',
+          },
+          extend: {
+            colors: {
+              brand: 'var(--color-brand)',
+              'brand-dark': 'var(--color-brand-dark)',
+              'brand-ink': 'var(--color-brand-ink)',
+              'brand-soft': 'var(--color-brand-soft)',
+              'brand-pale': 'var(--color-brand-pale)',
+              'brand-pale-alt': 'var(--color-brand-pale-alt)',
+              'brand-paler': 'var(--color-brand-paler)',
+              'brand-light': 'var(--color-brand-light)',
+              'brand-stroke': 'var(--color-brand-stroke)',
+              'brand-track': 'var(--color-brand-track)',
+              'brand-border': 'var(--color-brand-border)',
+              ink: 'var(--color-ink)',
+              'ink-strong': 'var(--color-ink-strong)',
+              'ink-muted': 'var(--color-ink-muted)',
+              'ink-subtle': 'var(--color-ink-subtle)',
+              app: 'var(--color-app-bg)',
+              danger: 'var(--color-danger)',
+              warning: 'var(--color-warning)',
+              'warning-ink': 'var(--color-warning-ink)',
+              'warning-soft': 'var(--color-warning-soft)',
+            },
+            backgroundImage: {
+              'app-radial': 'radial-gradient(circle at top,var(--color-bg-grad-1) 0%,var(--color-bg-grad-2) 55%,var(--color-bg-grad-3) 100%)',
+            },
+          },
+        },
+      },
+    };
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
       font-family: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+      --type-xs: 0.75rem;
+      --type-xs-line: 1rem;
+      --type-sm: 0.875rem;
+      --type-sm-line: 1.25rem;
+      --type-base: 1rem;
+      --type-base-line: 1.5rem;
+      --type-lg: 1.125rem;
+      --type-lg-line: 1.75rem;
+      --type-xl: 1.25rem;
+      --type-xl-line: 1.75rem;
+      --type-2xl: 1.5rem;
+      --type-2xl-line: 2rem;
+      --type-3xl: 1.875rem;
+      --type-3xl-line: 2.25rem;
+      --weight-normal: 400;
+      --weight-medium: 500;
+      --weight-semibold: 600;
+      --weight-bold: 700;
+      --weight-extrabold: 800;
+      --weight-black: 900;
+      --color-brand: #ff9f0a;
+      --color-brand-dark: #d98200;
+      --color-brand-ink: #7a4a00;
+      --color-brand-soft: #fff4e5;
+      --color-brand-pale: #fff8ef;
+      --color-brand-pale-alt: #fffaf3;
+      --color-brand-paler: #fffcf7;
+      --color-brand-light: #ffe3bf;
+      --color-brand-stroke: #f6c27a;
+      --color-brand-track: #fff1dc;
+      --color-brand-border: #f2dec2;
+      --color-ink: #3c3c3c;
+      --color-ink-strong: #1d1d1f;
+      --color-ink-muted: #86868b;
+      --color-ink-subtle: #6a6a6a;
+      --color-app-bg: #f6f7f8;
+      --color-danger: #b91c1c;
+      --color-warning: #f59e0b;
+      --color-warning-ink: #a16207;
+      --color-warning-soft: #fff7e8;
+      --color-bg-grad-1: #fffaf2;
+      --color-bg-grad-2: #f7f5f2;
+      --color-bg-grad-3: #f6f6f5;
+      --color-shadow-secondary: #e5e7eb;
+    }
+    html[data-app-theme='apple_notes'] {
+      --color-brand: #ff9f0a;
+      --color-brand-dark: #d98200;
+      --color-brand-ink: #7a4a00;
+      --color-brand-soft: #fff4e5;
+      --color-brand-pale: #fff8ef;
+      --color-brand-pale-alt: #fffaf3;
+      --color-brand-paler: #fffcf7;
+      --color-brand-light: #ffe3bf;
+      --color-brand-stroke: #f6c27a;
+      --color-brand-track: #fff1dc;
+      --color-brand-border: #f2dec2;
+      --color-app-bg: #f6f6f5;
+      --color-bg-grad-1: #fffaf2;
+      --color-bg-grad-2: #f7f5f2;
+      --color-bg-grad-3: #f6f6f5;
+    }
+    html[data-app-theme='duolingo'] {
+      --color-brand: #58cc02;
+      --color-brand-dark: #46a302;
+      --color-brand-ink: #2f7d01;
+      --color-brand-soft: #ecf9df;
+      --color-brand-pale: #f0ffe0;
+      --color-brand-pale-alt: #f0ffe5;
+      --color-brand-paler: #f7ffef;
+      --color-brand-light: #d9f8b7;
+      --color-brand-stroke: #9ad56a;
+      --color-brand-track: #edf6e4;
+      --color-brand-border: #dbe8cb;
+      --color-app-bg: #f5f7fa;
+      --color-bg-grad-1: #f1ffe2;
+      --color-bg-grad-2: #eef8ff;
+      --color-bg-grad-3: #f5f7fa;
     }
     html,
     body,
@@ -21,19 +151,71 @@
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
     }
+    .lang-burmese,
+    .lang-burmese button,
+    .lang-burmese input,
+    .lang-burmese select,
+    .lang-burmese textarea {
+      font-family: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Myanmar Sangam MN", "Noto Sans Myanmar", "Padauk", "Tharlon", "Pyidaungsu", sans-serif;
+    }
+    .lang-burmese p,
+    .lang-burmese h1,
+    .lang-burmese h2,
+    .lang-burmese h3,
+    .lang-burmese h4,
+    .lang-burmese h5,
+    .lang-burmese h6,
+    .lang-burmese button,
+    .lang-burmese span,
+    .lang-burmese label,
+    .lang-burmese li {
+      line-height: 1.45;
+    }
     .duo-button-shadow {
-      box-shadow: 0 4px 0 0 #46a302;
+      box-shadow: 0 4px 0 0 var(--color-brand-dark);
     }
     .duo-button-shadow:active {
       box-shadow: none;
       transform: translateY(2px);
     }
     .duo-secondary-shadow {
-      box-shadow: 0 4px 0 0 #e5e7eb;
+      box-shadow: 0 4px 0 0 var(--color-shadow-secondary);
     }
     .duo-secondary-shadow:active {
       box-shadow: none;
       transform: translateY(2px);
+    }
+    .btn-selected {
+      border-color: var(--color-brand-dark);
+      background: var(--color-brand);
+      color: #fff;
+      box-shadow: 0 4px 0 0 var(--color-brand-dark);
+    }
+    .btn-selected:active {
+      box-shadow: none;
+      transform: translateY(2px);
+    }
+    .btn-selected-flat {
+      border-color: var(--color-brand-dark);
+      background: var(--color-brand);
+      color: #fff;
+      box-shadow: none;
+    }
+    .btn-unselected {
+      border-color: #e5e7eb;
+      background: #fff;
+      color: #4b5563;
+      box-shadow: 0 4px 0 0 var(--color-shadow-secondary);
+    }
+    .btn-unselected:hover {
+      background: #f9fafb;
+    }
+    .btn-unselected:active {
+      box-shadow: none;
+      transform: translateY(2px);
+    }
+    .text-brand {
+      color: var(--color-brand);
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -42,10 +224,47 @@
     .animate-fade {
       animation: fadeIn 0.4s ease-out forwards;
     }
+    *::selection {
+      background: var(--color-brand-light);
+      color: var(--color-brand-dark);
+    }
+    *::-moz-selection {
+      background: var(--color-brand-light);
+      color: var(--color-brand-dark);
+    }
+    input::selection,
+    textarea::selection,
+    button::selection,
+    span::selection,
+    p::selection,
+    h1::selection,
+    h2::selection,
+    h3::selection,
+    h4::selection,
+    h5::selection,
+    h6::selection {
+      background: var(--color-brand-light);
+      color: var(--color-brand-dark);
+    }
+    input::-moz-selection,
+    textarea::-moz-selection,
+    button::-moz-selection,
+    span::-moz-selection,
+    p::-moz-selection,
+    h1::-moz-selection,
+    h2::-moz-selection,
+    h3::-moz-selection,
+    h4::-moz-selection,
+    h5::-moz-selection,
+    h6::-moz-selection {
+      background: var(--color-brand-light);
+      color: var(--color-brand-dark);
+    }
   </style>
 </head>
-<body class="bg-[#f5f7fa] min-h-screen">
+<body class="bg-app min-h-screen">
   <div id="root"></div>
 <script type="module" src="/index.tsx"></script>
 </body>
 </html>
+

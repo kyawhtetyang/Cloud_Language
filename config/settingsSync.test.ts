@@ -21,6 +21,7 @@ describe('settingsSync', () => {
       isBoldTextEnabled: false,
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
+      appTheme: 'apple_notes',
     });
   });
 
@@ -34,6 +35,7 @@ describe('settingsSync', () => {
       isBoldTextEnabled: true,
       isRandomLessonOrderEnabled: true,
       isReviewQuestionsRemoved: true,
+      appTheme: 'duolingo' as const,
     };
 
     persistSyncedSettingsToStorage(settings);
@@ -51,6 +53,7 @@ describe('settingsSync', () => {
       isBoldTextEnabled: false,
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
+      appTheme: 'apple_notes' as const,
     };
     const profileSettings = {
       learnLanguage: 'chinese' as const,
@@ -61,6 +64,7 @@ describe('settingsSync', () => {
       isBoldTextEnabled: true,
       isRandomLessonOrderEnabled: true,
       isReviewQuestionsRemoved: true,
+      appTheme: 'duolingo' as const,
     };
 
     persistSyncedSettingsToStorage(legacyGlobal);
@@ -81,6 +85,7 @@ describe('settingsSync', () => {
       setIsBoldTextEnabled: vi.fn(),
       setIsRandomLessonOrderEnabled: vi.fn(),
       setIsReviewQuestionsRemoved: vi.fn(),
+      setAppTheme: vi.fn(),
     };
 
     applyRemoteSyncedSettings(
@@ -93,6 +98,7 @@ describe('settingsSync', () => {
         isBoldTextEnabled: true,
         isRandomLessonOrderEnabled: true,
         isReviewQuestionsRemoved: true,
+        appTheme: 'duolingo',
       },
       setters,
     );
@@ -105,6 +111,7 @@ describe('settingsSync', () => {
     expect(setters.setIsBoldTextEnabled).toHaveBeenCalledWith(true);
     expect(setters.setIsRandomLessonOrderEnabled).toHaveBeenCalledWith(true);
     expect(setters.setIsReviewQuestionsRemoved).toHaveBeenCalledWith(true);
+    expect(setters.setAppTheme).toHaveBeenCalledWith('duolingo');
   });
 });
 

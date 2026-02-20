@@ -8,7 +8,9 @@ import { useLessonData } from './hooks/useLessonData';
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { useAppPreferences } from './hooks/useAppPreferences';
 import { useLessonUnitState } from './hooks/useLessonUnitState';
+import { useLessonBatchGroups } from './hooks/useLessonBatchGroups';
 import { useOfflineLessonPacks } from './hooks/useOfflineLessonPacks';
+import { useAppTheme } from './hooks/useAppTheme';
 import { isPassingScore } from './utils/reviewScoring';
 import { buildLessonReferenceKey } from './utils/lessonReference';
 import { ProfileView } from './components/views/ProfileView';
@@ -40,6 +42,7 @@ import {
   UNLOCKED_LEVEL_KEY,
   resolveStageCode,
 } from './config/appConfig';
+import { getLessonModalText } from './config/lessonModalText';
 import { LevelsView } from './components/views/LevelsView';
 import { AppSidebar } from './components/layout/AppSidebar';
 import {
@@ -59,6 +62,7 @@ function normalizeApiBaseUrl(rawApiBaseUrl: string | undefined): string {
 }
 
 type RepeatMode = 'off' | 'all' | 'one';
+type PendingUnitTarget = { level: number; unit: number; albumKey?: string | null };
 
 const App: React.FC = () => {
   const {
@@ -100,6 +104,8 @@ const App: React.FC = () => {
     setIsRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     setIsReviewQuestionsRemoved,
+    appTheme,
+    setAppTheme,
     hasHydratedSettings,
   } = useAppPreferences(profileName ? toProfileStorageId(profileName) : '');
   const [isNextDisabled, setIsNextDisabled] = useState(false);
@@ -110,11 +116,12 @@ const App: React.FC = () => {
   const [quizSectionStart, setQuizSectionStart] = useState(0);
   const [quizSectionEnd, setQuizSectionEnd] = useState(0);
   const [isLeaveQuizModalOpen, setIsLeaveQuizModalOpen] = useState(false);
+  const [isLeaveCompletedUnitModalOpen, setIsLeaveCompletedUnitModalOpen] = useState(false);
+  const [isUnitCompleteModalOpen, setIsUnitCompleteModalOpen] = useState(false);
+  const [isLessonUnitBoundaryModalOpen, setIsLessonUnitBoundaryModalOpen] = useState(false);
   const [isReading, setIsReading] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
-  const [pendingUnitTarget, setPendingUnitTarget] = useState<{ level: number; unit: number } | null>(
-    null,
-  );
+  const [pendingUnitTarget, setPendingUnitTarget] = useState<PendingUnitTarget | null>(null);
   const [roadmapSelectedAlbumKey, setRoadmapSelectedAlbumKey] = useState<string | null>(null);
   const readSessionRef = useRef(0);
   const [randomOrderVersion, setRandomOrderVersion] = useState(0);
@@ -175,6 +182,7 @@ const App: React.FC = () => {
     isBoldTextEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
+    appTheme,
     totalLevels,
     progressStorageKey,
     unlockedStorageKey,
@@ -190,6 +198,7 @@ const App: React.FC = () => {
     setIsBoldTextEnabled,
     setIsRandomLessonOrderEnabled,
     setIsReviewQuestionsRemoved,
+    setAppTheme,
   });
 
   useSettingsPersistence({
@@ -203,16 +212,27 @@ const App: React.FC = () => {
     isBoldTextEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
+    appTheme,
   });
 
-  const leaveQuizConfirmMessage =
-    defaultLanguage === 'burmese'
-      ? 'Quick Review မှ ထွက်မလား? ဒီ review အတွင်း တိုးတက်မှုတွေ ပျက်သွားပါမယ်။'
-      : 'Leave quick review? Progress in this review will be lost.';
-  const leaveQuizModalTitle = defaultLanguage === 'burmese' ? 'Quick Review မှ ထွက်ရန်' : 'Leave quick review?';
-  const leaveQuizCancelLabel = defaultLanguage === 'burmese' ? 'မထွက်တော့ပါ' : 'Cancel';
-  const leaveQuizConfirmLabel =
-    defaultLanguage === 'burmese' ? 'ထွက်မယ်' : 'Leave quick review';
+  const {
+    leaveQuizConfirmMessage,
+    leaveQuizModalTitle,
+    leaveQuizCancelLabel,
+    leaveQuizConfirmLabel,
+    leaveCompletedUnitModalTitle,
+    leaveCompletedUnitConfirmMessage,
+    leaveCompletedUnitCancelLabel,
+    leaveCompletedUnitConfirmLabel,
+    unitCompleteModalTitle,
+    unitCompleteModalMessage,
+    unitCompleteModalCancelLabel,
+    unitCompleteModalConfirmLabel,
+    lessonUnitBoundaryModalTitle,
+    lessonUnitBoundaryModalMessage,
+    lessonUnitBoundaryModalCancelLabel,
+    lessonUnitBoundaryModalConfirmLabel,
+  } = getLessonModalText(defaultLanguage);
   const {
     currentLevel,
     currentUnit,
@@ -222,10 +242,7 @@ const App: React.FC = () => {
     sectionStart,
     sectionEnd,
     sectionTotal,
-    unitFlowCurrent,
-    unitFlowTotal,
     currentBatchEntries,
-    currentBatchLessonsCount,
   } = useLessonUnitState({
     lessons,
     mode,
@@ -253,6 +270,12 @@ const App: React.FC = () => {
     }
     return { start: indexes[0], end: indexes[indexes.length - 1] };
   }, [currentStageCode, lessons]);
+  const lessonBatchGroups = useLessonBatchGroups({
+    lessons,
+    orderedUnitIndexes,
+    sectionStart,
+    sectionTotal,
+  });
 
   const handleApplyProfileName = () => {
     applyProfileName(() => {
@@ -274,6 +297,24 @@ const App: React.FC = () => {
       cancelSpeech();
     }
   }, [isReading, mode]);
+
+  useEffect(() => {
+    document.body.classList.toggle('lang-burmese', defaultLanguage === 'burmese');
+    document.documentElement.lang = defaultLanguage === 'burmese' ? 'my' : 'en';
+  }, [defaultLanguage]);
+
+  useAppTheme(appTheme);
+
+  const previousSidebarTabRef = useRef(sidebarTab);
+  useEffect(() => {
+    const movedIntoLessonTab = previousSidebarTabRef.current !== 'lesson' && sidebarTab === 'lesson';
+    if (movedIntoLessonTab && isReading) {
+      readSessionRef.current += 1;
+      setIsReading(false);
+      cancelSpeech();
+    }
+    previousSidebarTabRef.current = sidebarTab;
+  }, [isReading, sidebarTab]);
 
   const handleReadCurrentBatch = async () => {
     if (mode !== 'learn') return;
@@ -306,6 +347,149 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSelectLessonStep = (step: number) => {
+    if (mode !== 'learn') return;
+    const safeStep = Math.max(0, Math.min(LEARN_QUESTIONS_PER_UNIT - 1, step));
+    if (isReading) {
+      readSessionRef.current += 1;
+      setIsReading(false);
+      cancelSpeech();
+    }
+    setLearnStep(safeStep);
+    const nextOffset = (safeStep * LESSONS_PER_BATCH) % sectionTotal;
+    setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
+  };
+
+  const handleReadRoadmapAlbum = async (
+    units: Array<{ level: number; unit: number }>,
+    albumKey?: string | null,
+  ) => {
+    if (mode !== 'learn') return;
+    if (units.length === 0) return;
+
+    const firstUnit = units[0];
+    const safeLevel = Math.min(Math.max(firstUnit.level, 1), totalLevels);
+    const safeUnit = Math.max(1, firstUnit.unit);
+    const target = lessons.findIndex(
+      (lesson) => getLessonOrderIndex(lesson) === safeLevel && getLessonUnitId(lesson) === safeUnit,
+    );
+    if (target < 0) return;
+
+    if (albumKey !== undefined) {
+      setRoadmapSelectedAlbumKey(albumKey);
+    }
+    setCurrentIndex(target);
+    setLearnStep(0);
+    setUnlockedLevel((prev) => Math.max(prev, safeLevel));
+
+    if (isReading) {
+      readSessionRef.current += 1;
+      setIsReading(false);
+      cancelSpeech();
+    }
+
+    const unitKeySet = new Set(units.map((item) => `${Math.max(1, item.level)}:${Math.max(1, item.unit)}`));
+    const texts = lessons
+      .filter((lesson) => {
+        const key = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
+        return unitKeySet.has(key) && typeof lesson.english === 'string' && lesson.english.trim().length > 0;
+      })
+      .map((lesson) => lesson.english);
+
+    if (texts.length === 0) return;
+
+    const sessionId = readSessionRef.current + 1;
+    readSessionRef.current = sessionId;
+    setIsReading(true);
+    cancelSpeech();
+
+    for (const text of texts) {
+      if (readSessionRef.current !== sessionId) break;
+      await speakText(text, voicePreference);
+    }
+
+    if (readSessionRef.current === sessionId) {
+      setIsReading(false);
+    }
+  };
+
+  const proceedUnitCompletionWithoutReview = () => {
+    const completedUnitKey = lessons[sectionStart]
+      ? `${getLessonOrderIndex(lessons[sectionStart])}:${getLessonUnitId(lessons[sectionStart])}`
+      : null;
+    if (completedUnitKey) {
+      setCompletedUnitKeys((prev) => new Set([...prev, completedUnitKey]));
+    }
+    const passedLevel = lessons[sectionStart] ? getLessonOrderIndex(lessons[sectionStart]) : 1;
+    const nextUnlocked = Math.min(totalLevels, passedLevel + 1);
+    setUnlockedLevel((prev) => Math.max(prev, nextUnlocked));
+    setStreak((prev) => prev + 1);
+
+    const nextStart = sectionEnd + 1;
+    if (repeatMode === 'one') {
+      setMode('learn');
+      setCurrentIndex(sectionStart);
+      setLearnStep(0);
+      setRandomOrderVersion((prev) => prev + 1);
+      setUnitXp(0);
+      setReviewResult(null);
+      resetQuizState();
+      return;
+    }
+    const isBeyondCurrentStage =
+      nextStart >= lessons.length
+      || resolveStageCode(getLessonOrderIndex(lessons[nextStart]), lessons[nextStart]?.stage) !== currentStageCode;
+    if (isBeyondCurrentStage) {
+      if (repeatMode === 'all') {
+        setMode('learn');
+        setCurrentIndex(currentStageRange.start);
+        setLearnStep(0);
+        setRandomOrderVersion((prev) => prev + 1);
+        setUnitXp(0);
+        setReviewResult(null);
+        resetQuizState();
+      } else {
+        setMode('completed');
+        setUnlockedLevel(totalLevels);
+        setReviewResult(null);
+        resetQuizState();
+      }
+      return;
+    }
+
+    setMode('learn');
+    setCurrentIndex(nextStart);
+    setLearnStep(0);
+    setRandomOrderVersion((prev) => prev + 1);
+    setUnitXp(0);
+    setReviewResult(null);
+    resetQuizState();
+  };
+
+  const startCheckpointQuizForStep = (nextStep: number) => {
+    const previousCheckpoint =
+      QUICK_REVIEW_CHECKPOINTS.filter((checkpoint) => checkpoint < nextStep).at(-1) || 0;
+    const reviewSourceIndexes = Array.from(
+      { length: (nextStep - previousCheckpoint) * LESSONS_PER_BATCH },
+      (_, idx) => {
+        const offset = ((previousCheckpoint * LESSONS_PER_BATCH) + idx) % sectionTotal;
+        return orderedUnitIndexes[offset] ?? sectionStart;
+      },
+    );
+    const reviewSourceLessons = reviewSourceIndexes
+      .map((index) => lessons[index])
+      .filter((lesson): lesson is LessonData => Boolean(lesson));
+
+    setQuizSectionStart(sectionStart);
+    setQuizSectionEnd(sectionEnd);
+    if (reviewSourceLessons.length > 0) {
+      startQuizForLevel(reviewSourceLessons, 0, reviewSourceLessons.length - 1);
+    } else {
+      startQuizForLevel(lessons, sectionStart, sectionEnd);
+    }
+    setMode('quiz');
+  };
+
   const handleNext = () => {
     if (isNextDisabled || mode !== 'learn') return;
 
@@ -313,93 +497,17 @@ const App: React.FC = () => {
     const nextStep = learnStep + 1;
     setLearnStep(nextStep);
 
-    const isCheckpointStep = QUICK_REVIEW_CHECKPOINTS.includes(nextStep);
+    const isCheckpointStep = false;
 
-    if (isReviewQuestionsRemoved && isCheckpointStep) {
-      if (nextStep >= LEARN_QUESTIONS_PER_UNIT) {
-        const completedUnitKey = lessons[sectionStart]
-          ? `${getLessonOrderIndex(lessons[sectionStart])}:${getLessonUnitId(lessons[sectionStart])}`
-          : null;
-        if (completedUnitKey) {
-          setCompletedUnitKeys((prev) => new Set([...prev, completedUnitKey]));
-        }
-        const passedLevel = lessons[sectionStart] ? getLessonOrderIndex(lessons[sectionStart]) : 1;
-        const nextUnlocked = Math.min(totalLevels, passedLevel + 1);
-        setUnlockedLevel((prev) => Math.max(prev, nextUnlocked));
-        setStreak((prev) => prev + 1);
-
-        const nextStart = sectionEnd + 1;
-        if (repeatMode === 'one') {
-          setMode('learn');
-          setCurrentIndex(sectionStart);
-          setLearnStep(0);
-          setRandomOrderVersion((prev) => prev + 1);
-          setUnitXp(0);
-          setReviewResult(null);
-          resetQuizState();
-          setIsNextDisabled(false);
-          return;
-        }
-        const isBeyondCurrentStage =
-          nextStart >= lessons.length
-          || resolveStageCode(getLessonOrderIndex(lessons[nextStart]), lessons[nextStart]?.stage) !== currentStageCode;
-        if (isBeyondCurrentStage) {
-          if (repeatMode === 'all') {
-            setMode('learn');
-            setCurrentIndex(currentStageRange.start);
-            setLearnStep(0);
-            setRandomOrderVersion((prev) => prev + 1);
-            setUnitXp(0);
-            setReviewResult(null);
-            resetQuizState();
-          } else {
-            setMode('completed');
-            setUnlockedLevel(totalLevels);
-            setReviewResult(null);
-            resetQuizState();
-          }
-          setIsNextDisabled(false);
-          return;
-        }
-
-        setMode('learn');
-        setCurrentIndex(nextStart);
-        setLearnStep(0);
-        setRandomOrderVersion((prev) => prev + 1);
-        setUnitXp(0);
-        setReviewResult(null);
-        resetQuizState();
-      } else {
-        const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotal;
-        setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
-      }
+    if (nextStep >= LEARN_QUESTIONS_PER_UNIT) {
+      setIsLessonUnitBoundaryModalOpen(true);
       setIsNextDisabled(false);
       return;
     }
 
     const needsCheckpoint = isCheckpointStep;
     if (needsCheckpoint) {
-      const previousCheckpoint =
-        QUICK_REVIEW_CHECKPOINTS.filter((checkpoint) => checkpoint < nextStep).at(-1) || 0;
-      const reviewSourceIndexes = Array.from(
-        { length: (nextStep - previousCheckpoint) * LESSONS_PER_BATCH },
-        (_, idx) => {
-          const offset = ((previousCheckpoint * LESSONS_PER_BATCH) + idx) % sectionTotal;
-          return orderedUnitIndexes[offset] ?? sectionStart;
-        },
-      );
-      const reviewSourceLessons = reviewSourceIndexes
-        .map((index) => lessons[index])
-        .filter((lesson): lesson is LessonData => Boolean(lesson));
-
-      setQuizSectionStart(sectionStart);
-      setQuizSectionEnd(sectionEnd);
-      if (reviewSourceLessons.length > 0) {
-        startQuizForLevel(reviewSourceLessons, 0, reviewSourceLessons.length - 1);
-      } else {
-        startQuizForLevel(lessons, sectionStart, sectionEnd);
-      }
-      setMode('quiz');
+      startCheckpointQuizForStep(nextStep);
     } else {
       const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotal;
       setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
@@ -496,6 +604,11 @@ const App: React.FC = () => {
       (lesson) => getLessonOrderIndex(lesson) === safeLevel && getLessonUnitId(lesson) === safeUnit,
     );
     if (target < 0) return;
+    if (isReading) {
+      readSessionRef.current += 1;
+      setIsReading(false);
+      cancelSpeech();
+    }
     if (albumKey !== undefined) {
       setRoadmapSelectedAlbumKey(albumKey);
     }
@@ -512,11 +625,28 @@ const App: React.FC = () => {
   };
 
   const goToLevelUnit = (level: number, unit: number, albumKey?: string | null) => {
+    const targetUnitKey = `${Math.max(1, level)}:${Math.max(1, unit)}`;
+    const isSwitchingUnit = targetUnitKey !== `${currentLevel}:${currentUnit}`;
+    const currentUnitKey = `${currentLevel}:${currentUnit}`;
+    const isCurrentUnitAlreadyCompleted = completedUnitKeys.has(currentUnitKey);
+    const isUnitLearnStepCompleted = mode === 'learn' && learnStep >= LEARN_QUESTIONS_PER_UNIT - 1;
+
     if (mode === 'quiz') {
-      setPendingUnitTarget({ level, unit });
+      setPendingUnitTarget({ level, unit, albumKey });
       setIsLeaveQuizModalOpen(true);
       return;
     }
+
+    if (
+      isSwitchingUnit
+      && isUnitLearnStepCompleted
+      && !isCurrentUnitAlreadyCompleted
+    ) {
+      setPendingUnitTarget({ level, unit, albumKey });
+      setIsLeaveCompletedUnitModalOpen(true);
+      return;
+    }
+
     navigateToLevelUnit(level, unit, albumKey);
   };
 
@@ -527,38 +657,28 @@ const App: React.FC = () => {
 
   const handleLeaveQuizConfirm = () => {
     if (pendingUnitTarget) {
-      navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit);
+      navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
     }
     setIsLeaveQuizModalOpen(false);
     setPendingUnitTarget(null);
   };
 
-  const handleReview = () => {
-    setMode('learn');
-    setCurrentIndex(0);
-    setLearnStep(0);
-    setRandomOrderVersion((prev) => prev + 1);
-    setUnitXp(0);
-    setReviewResult(null);
-    resetQuizState();
+  const handleLeaveCompletedUnitCancel = () => {
+    setIsLeaveCompletedUnitModalOpen(false);
+    setPendingUnitTarget(null);
+    setSidebarTab('lesson');
     setIsSidebarOpen(false);
   };
 
-  const handleResultContinue = () => {
-    if (!reviewResult) return;
-
-    if (!reviewResult.passed) {
-      setMode('learn');
-      setCurrentIndex(quizSectionStart);
-      setLearnStep(0);
-      setRandomOrderVersion((prev) => prev + 1);
-      setUnitXp(0);
-      setReviewResult(null);
-      resetQuizState();
-      setStreak(0);
-      return;
+  const handleLeaveCompletedUnitConfirm = () => {
+    if (pendingUnitTarget) {
+      navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
     }
+    setIsLeaveCompletedUnitModalOpen(false);
+    setPendingUnitTarget(null);
+  };
 
+  const continueFromPassedResult = () => {
     const passedLevel = lessons[quizSectionStart] ? getLessonOrderIndex(lessons[quizSectionStart]) : 1;
     const completedUnitKey = lessons[quizSectionStart]
       ? `${getLessonOrderIndex(lessons[quizSectionStart])}:${getLessonUnitId(lessons[quizSectionStart])}`
@@ -609,6 +729,55 @@ const App: React.FC = () => {
     setUnitXp(0);
     setReviewResult(null);
     resetQuizState();
+  };
+
+  const handleReview = () => {
+    setMode('learn');
+    setCurrentIndex(0);
+    setLearnStep(0);
+    setRandomOrderVersion((prev) => prev + 1);
+    setUnitXp(0);
+    setReviewResult(null);
+    resetQuizState();
+    setIsSidebarOpen(false);
+  };
+
+  const handleResultContinue = () => {
+    if (!reviewResult) return;
+
+    if (!reviewResult.passed) {
+      setMode('learn');
+      setCurrentIndex(quizSectionStart);
+      setLearnStep(0);
+      setRandomOrderVersion((prev) => prev + 1);
+      setUnitXp(0);
+      setReviewResult(null);
+      resetQuizState();
+      setStreak(0);
+      return;
+    }
+
+    setIsUnitCompleteModalOpen(true);
+  };
+
+  const handleUnitCompleteStay = () => {
+    setIsUnitCompleteModalOpen(false);
+  };
+
+  const handleUnitCompleteContinue = () => {
+    setIsUnitCompleteModalOpen(false);
+    continueFromPassedResult();
+  };
+
+  const handleLessonUnitBoundaryStay = () => {
+    setIsLessonUnitBoundaryModalOpen(false);
+    setIsNextDisabled(false);
+  };
+
+  const handleLessonUnitBoundaryContinue = () => {
+    setIsLessonUnitBoundaryModalOpen(false);
+    setIsNextDisabled(false);
+    proceedUnitCompletionWithoutReview();
   };
 
   const handleToggleShuffle = () => {
@@ -700,7 +869,7 @@ const App: React.FC = () => {
   const isSettingsView = sidebarTab === 'settings';
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f1ffe2_0%,#eef8ff_55%,#f5f7fa_100%)] md:flex">
+    <div className="min-h-screen bg-app-radial md:flex">
       <LeaveQuizModal
         isOpen={isLeaveQuizModalOpen}
         title={leaveQuizModalTitle}
@@ -709,6 +878,33 @@ const App: React.FC = () => {
         confirmLabel={leaveQuizConfirmLabel}
         onCancel={handleLeaveQuizCancel}
         onConfirm={handleLeaveQuizConfirm}
+      />
+      <LeaveQuizModal
+        isOpen={isLeaveCompletedUnitModalOpen}
+        title={leaveCompletedUnitModalTitle}
+        message={leaveCompletedUnitConfirmMessage}
+        cancelLabel={leaveCompletedUnitCancelLabel}
+        confirmLabel={leaveCompletedUnitConfirmLabel}
+        onCancel={handleLeaveCompletedUnitCancel}
+        onConfirm={handleLeaveCompletedUnitConfirm}
+      />
+      <LeaveQuizModal
+        isOpen={isUnitCompleteModalOpen}
+        title={unitCompleteModalTitle}
+        message={unitCompleteModalMessage}
+        cancelLabel={unitCompleteModalCancelLabel}
+        confirmLabel={unitCompleteModalConfirmLabel}
+        onCancel={handleUnitCompleteStay}
+        onConfirm={handleUnitCompleteContinue}
+      />
+      <LeaveQuizModal
+        isOpen={isLessonUnitBoundaryModalOpen}
+        title={lessonUnitBoundaryModalTitle}
+        message={lessonUnitBoundaryModalMessage}
+        cancelLabel={lessonUnitBoundaryModalCancelLabel}
+        confirmLabel={lessonUnitBoundaryModalConfirmLabel}
+        onCancel={handleLessonUnitBoundaryStay}
+        onConfirm={handleLessonUnitBoundaryContinue}
       />
 
       {isSidebarOpen && (
@@ -727,7 +923,7 @@ const App: React.FC = () => {
         onReload={reloadApp}
       />
 
-      <div className="flex-1 flex flex-col min-h-screen pb-36 md:pb-0">
+      <div className="flex-1 flex flex-col min-h-screen pb-36 md:pb-32">
         <main
           className="flex-1 flex items-start justify-center p-4 pt-6 md:p-6 md:pt-8"
         >
@@ -752,6 +948,7 @@ const App: React.FC = () => {
               lessons={lessons}
               defaultLanguage={defaultLanguage}
               onSelectUnit={goToLevelUnit}
+              onReadAlbum={(units, albumKey) => { void handleReadRoadmapAlbum(units, albumKey); }}
               selectedAlbumKey={roadmapSelectedAlbumKey}
               onSelectedAlbumKeyChange={setRoadmapSelectedAlbumKey}
               completedUnitKeys={completedRoadmapKeys}
@@ -767,21 +964,21 @@ const App: React.FC = () => {
               learnLanguage={learnLanguage}
               isPronunciationEnabled={isPronunciationEnabled}
               isBoldTextEnabled={isBoldTextEnabled}
-              isReviewQuestionsRemoved={isReviewQuestionsRemoved}
               textScalePercent={textScalePercent}
               canDecreaseTextSize={textScalePercent > 90}
               canIncreaseTextSize={textScalePercent < 120}
               voicePreference={voicePreference}
               translationLabel={translationLabel}
               pronunciationStyleLabel={pronunciationStyleLabel}
+              appTheme={appTheme}
               onDefaultLanguageChange={setDefaultLanguage}
               onLearnLanguageChange={setLearnLanguage}
               onTogglePronunciation={() => setIsPronunciationEnabled((prev) => !prev)}
               onToggleBoldText={() => setIsBoldTextEnabled((prev) => !prev)}
-              onToggleReviewQuestions={() => setIsReviewQuestionsRemoved((prev) => !prev)}
               onDecreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev - 5))}
               onIncreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev + 5))}
               onVoicePreferenceChange={setVoicePreference}
+              onAppThemeChange={setAppTheme}
             />
           ) : mode === 'quiz' ? (
             <MatchReviewView
@@ -816,12 +1013,12 @@ const App: React.FC = () => {
                 setIsSidebarOpen(false);
               }}
               progressLabel={`${Math.min(LEARN_QUESTIONS_PER_UNIT, learnStep + 1)}/${LEARN_QUESTIONS_PER_UNIT}`}
-              currentCourseCode={currentCourseCode}
-              currentLevelTitle={currentLevelTitle}
-              unitXp={unitXp}
               currentIndex={currentIndex}
               currentBatchEntries={currentBatchEntries}
-              currentBatchLessonsCount={currentBatchLessonsCount}
+              allBatchGroups={lessonBatchGroups}
+              currentStep={learnStep}
+              isReading={isReading}
+              onSelectStep={handleSelectLessonStep}
               englishReferenceLessons={englishReferenceLessons}
               englishReferenceByKey={englishReferenceByKey}
               defaultLanguage={defaultLanguage}
@@ -845,15 +1042,11 @@ const App: React.FC = () => {
             isReading={isReading}
             isShuffleEnabled={isRandomLessonOrderEnabled}
             repeatMode={repeatMode}
-            learnStep={learnStep}
-            isReviewQuestionsRemoved={isReviewQuestionsRemoved}
-            isMatchReviewComplete={isMatchReviewComplete}
             onToggleShuffle={handleToggleShuffle}
             onToggleRepeat={handleToggleRepeat}
             onPrevious={handlePrevious}
             onRead={() => { void handleReadCurrentBatch(); }}
             onNext={handleNext}
-            onQuizSubmit={handleQuizNext}
           />
         )}
 
@@ -867,3 +1060,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

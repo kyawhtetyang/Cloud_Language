@@ -76,3 +76,4 @@ export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage):
 
   return { lessons, englishReferenceLessons, loading, errorMessage };
 }
+

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { LessonData, ProgressState } from '../types';
 import { VoicePreference } from '../components/AudioButton';
 import {
+  AppTheme,
   AppMode,
   DefaultLanguage,
   getLessonOrderIndex,
@@ -35,6 +36,7 @@ type UseProfileProgressSyncParams = {
   isBoldTextEnabled: boolean;
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
+  appTheme: AppTheme;
   totalLevels: number;
   progressStorageKey: string;
   unlockedStorageKey: string;
@@ -50,6 +52,7 @@ type UseProfileProgressSyncParams = {
   setIsBoldTextEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setIsRandomLessonOrderEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
+  setAppTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
 };
 
 export function useProfileProgressSync({
@@ -68,6 +71,7 @@ export function useProfileProgressSync({
   isBoldTextEnabled,
   isRandomLessonOrderEnabled,
   isReviewQuestionsRemoved,
+  appTheme,
   totalLevels,
   progressStorageKey,
   unlockedStorageKey,
@@ -83,6 +87,7 @@ export function useProfileProgressSync({
   setIsBoldTextEnabled,
   setIsRandomLessonOrderEnabled,
   setIsReviewQuestionsRemoved,
+  setAppTheme,
 }: UseProfileProgressSyncParams) {
   const [hasHydratedProfile, setHasHydratedProfile] = useState(false);
   const isFlushingQueueRef = useRef(false);
@@ -153,6 +158,7 @@ export function useProfileProgressSync({
             setIsBoldTextEnabled,
             setIsRandomLessonOrderEnabled,
             setIsReviewQuestionsRemoved,
+            setAppTheme,
           });
         }
       } catch {
@@ -179,6 +185,7 @@ export function useProfileProgressSync({
     setIsBoldTextEnabled,
     setIsRandomLessonOrderEnabled,
     setIsReviewQuestionsRemoved,
+    setAppTheme,
     setLearnLanguage,
     setStreak,
     setUnlockedLevel,
@@ -246,6 +253,7 @@ export function useProfileProgressSync({
         isBoldTextEnabled,
         isRandomLessonOrderEnabled,
         isReviewQuestionsRemoved,
+        appTheme,
       }),
     };
 
@@ -284,6 +292,7 @@ export function useProfileProgressSync({
     isBoldTextEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
+    appTheme,
     learnLanguage,
     lessons.length,
     profileName,
@@ -294,3 +303,4 @@ export function useProfileProgressSync({
 
   return { markHydrationStale };
 }
+

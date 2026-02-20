@@ -6,3 +6,4 @@ export function buildLessonReferenceKey(
 ): string {
   return `${getLessonOrderIndex(lesson)}|${getLessonUnitId(lesson)}|${lesson.topic}|${lesson.burmese}`;
 }
+

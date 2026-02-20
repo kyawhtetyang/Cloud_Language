@@ -42,7 +42,8 @@ describe('LevelsView topic localization', () => {
     fireEvent.click(screen.getByRole('button', { name: /open album/i }));
 
     const unitButton = screen.getByRole('button', { name: /Burmese words/i });
-    const unitCard = unitButton.closest('div.rounded-lg');
+    const unitCard = unitButton.closest('button.rounded-lg');
     expect(unitCard?.className).toContain('bg-gray-100');
   });
 });
+

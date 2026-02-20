@@ -9,7 +9,7 @@ describe('MobileBottomNav', () => {
     const settingsButton = screen.getByRole('button', { name: 'Settings' });
     const lessonButton = screen.getByRole('button', { name: 'Lesson' });
 
-    expect(settingsButton.className).toContain('bg-[#ecf9df]');
+    expect(settingsButton.className).toContain('text-brand');
     expect(lessonButton.className).toContain('text-gray-500');
   });
 
@@ -17,10 +17,11 @@ describe('MobileBottomNav', () => {
     const onTabChange = vi.fn();
     render(<MobileBottomNav activeTab="lesson" onTabChange={onTabChange} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Road Map' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Library' }));
     fireEvent.click(screen.getByRole('button', { name: 'Profile' }));
 
     expect(onTabChange).toHaveBeenNthCalledWith(1, 'levels');
     expect(onTabChange).toHaveBeenNthCalledWith(2, 'profile');
   });
 });
+

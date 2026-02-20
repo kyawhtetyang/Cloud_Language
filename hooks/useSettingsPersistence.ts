@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { VoicePreference } from '../components/AudioButton';
 import {
+  AppTheme,
   DefaultLanguage,
   LearnLanguage,
 } from '../config/appConfig';
@@ -17,6 +18,7 @@ type UseSettingsPersistenceParams = {
   isBoldTextEnabled: boolean;
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
+  appTheme: AppTheme;
 };
 
 export function useSettingsPersistence({
@@ -30,6 +32,7 @@ export function useSettingsPersistence({
   isBoldTextEnabled,
   isRandomLessonOrderEnabled,
   isReviewQuestionsRemoved,
+  appTheme,
 }: UseSettingsPersistenceParams) {
   useEffect(() => {
     if (!enabled || !profileStorageId) return;
@@ -42,6 +45,7 @@ export function useSettingsPersistence({
       isBoldTextEnabled,
       isRandomLessonOrderEnabled,
       isReviewQuestionsRemoved,
+      appTheme,
     }, profileStorageId);
     document.documentElement.style.fontSize = `${textScalePercent}%`;
   }, [
@@ -55,6 +59,7 @@ export function useSettingsPersistence({
     isBoldTextEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
+    appTheme,
   ]);
 }
 

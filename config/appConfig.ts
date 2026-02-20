@@ -17,6 +17,7 @@ export const BOLD_TEXT_ENABLED_KEY = 'lingo_burmese_bold_text_enabled';
 export const RANDOM_LESSON_ORDER_ENABLED_KEY = 'lingo_burmese_random_lesson_order_enabled';
 export const REMOVE_REVIEW_QUESTIONS_ENABLED_KEY = 'lingo_burmese_remove_review_questions_enabled';
 export const RELOAD_TO_LESSON_KEY = 'lingo_burmese_reload_to_lesson';
+export const APP_THEME_KEY = 'lingo_burmese_app_theme';
 
 export const LESSONS_PER_BATCH = 3;
 export const MATCH_PAIRS_PER_REVIEW = 3;
@@ -91,29 +92,29 @@ export const STAGE_META = {
     label: 'Beginner (A1)',
     levelCardClass: 'border-[#c5eb9f] bg-[#f7ffef]',
     topicCardClass: 'border-[#dbe8cb] bg-white/85 hover:border-[#9ad56a]',
-    badgeClass: 'bg-[#e9f7dc] text-[#2f7d01]',
-    titleClass: 'text-[#2f7d01]',
+    badgeClass: 'bg-brand-soft text-brand',
+    titleClass: 'text-brand',
   },
   A2: {
     label: 'Pre-Intermediate (A2)',
     levelCardClass: 'border-[#facc15] bg-[#fff9e8]',
     topicCardClass: 'border-[#f5d564] bg-white/90 hover:border-[#eab308]',
-    badgeClass: 'bg-[#fff1c4] text-[#a16207]',
-    titleClass: 'text-[#a16207]',
+    badgeClass: 'bg-brand-soft text-brand',
+    titleClass: 'text-brand',
   },
   B1: {
     label: 'Intermediate (B1)',
     levelCardClass: 'border-[#93c5fd] bg-[#eff6ff]',
     topicCardClass: 'border-[#bfdbfe] bg-white/90 hover:border-[#60a5fa]',
-    badgeClass: 'bg-[#dbeafe] text-[#1d4ed8]',
-    titleClass: 'text-[#1d4ed8]',
+    badgeClass: 'bg-brand-soft text-brand',
+    titleClass: 'text-brand',
   },
   B2: {
     label: 'Upper-Intermediate (B2)',
     levelCardClass: 'border-[#fbcfe8] bg-[#fff1f9]',
     topicCardClass: 'border-[#f9a8d4] bg-white/90 hover:border-[#ec4899]',
-    badgeClass: 'bg-[#fce7f3] text-[#be185d]',
-    titleClass: 'text-[#be185d]',
+    badgeClass: 'bg-brand-soft text-brand',
+    titleClass: 'text-brand',
   },
 } as const;
 
@@ -126,10 +127,17 @@ export const LEARN_LANGUAGE_OPTIONS = [
 export type LearnLanguage = (typeof LEARN_LANGUAGE_OPTIONS)[number]['code'];
 
 export const DEFAULT_LANGUAGE_OPTIONS = [
-  { code: 'burmese', label: 'Burmese (Default)' },
+  { code: 'burmese', label: 'Burmese' },
   { code: 'english', label: 'English' },
 ] as const;
 export type DefaultLanguage = (typeof DEFAULT_LANGUAGE_OPTIONS)[number]['code'];
+
+export const APP_THEME_OPTIONS = [
+  { code: 'apple_notes', label: 'Apple Notes' },
+  { code: 'duolingo', label: 'Duolingo' },
+  { code: 'system', label: 'System' },
+] as const;
+export type AppTheme = (typeof APP_THEME_OPTIONS)[number]['code'];
 
 export type ReviewResult = {
   correct: number;
@@ -149,6 +157,11 @@ export function isLearnLanguage(value: unknown): value is LearnLanguage {
 export function isDefaultLanguage(value: unknown): value is DefaultLanguage {
   if (typeof value !== 'string') return false;
   return DEFAULT_LANGUAGE_OPTIONS.some((option) => option.code === value);
+}
+
+export function isAppTheme(value: unknown): value is AppTheme {
+  if (typeof value !== 'string') return false;
+  return APP_THEME_OPTIONS.some((option) => option.code === value);
 }
 
 export type CoreLessonRef = {
@@ -259,3 +272,4 @@ export function toProfileStorageId(name: string): string {
       .replace(/^_+|_+$/g, '') || 'user'
   );
 }
+

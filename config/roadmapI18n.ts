@@ -8,7 +8,7 @@ export type RoadmapTextPack = {
 };
 
 const ROADMAP_TEXT_ENGLISH: RoadmapTextPack = {
-  roadmap: 'Road Map',
+  roadmap: 'Library',
   unitPrefix: 'Unit',
   groupPrefix: 'Units',
   stageLabels: {
@@ -22,7 +22,7 @@ const ROADMAP_TEXT_ENGLISH: RoadmapTextPack = {
 const ROADMAP_TEXT_BY_LANGUAGE: Record<string, RoadmapTextPack> = {
   english: ROADMAP_TEXT_ENGLISH,
   burmese: {
-    roadmap: 'လေ့လာမှုမြေပုံ',
+    roadmap: 'စာကြည့်တိုက်',
     unitPrefix: 'ယူနစ်',
     groupPrefix: 'ယူနစ်များ',
     stageLabels: {
@@ -36,6 +36,7 @@ const ROADMAP_TEXT_BY_LANGUAGE: Record<string, RoadmapTextPack> = {
 
 const ROADMAP_TOPIC_REPLACEMENTS_BY_LANGUAGE: Record<string, Record<string, string>> = {
   burmese: {
+    'common phrases for beginners': 'အခြေခံ အသုံးများသော စကားစုများ',
     'alphabet sounds & basic pronunciation': 'အက္ခရာအသံများနှင့် အခြေခံအသံထွက်',
     'greeting and introducing yourself': 'နှုတ်ဆက်ခြင်းနှင့် မိမိကိုယ်ကို မိတ်ဆက်ခြင်း',
     'saying name, country, job': 'နာမည်၊ နိုင်ငံ၊ အလုပ် ပြောခြင်း',
@@ -122,3 +123,4 @@ export function localizeRoadmapTopic(topic: string, defaultLanguage: DefaultLang
   }
   return localized;
 }
+

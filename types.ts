@@ -16,3 +16,4 @@ export interface ProgressState {
   currentIndex: number;
   completedCount: number;
 }
+

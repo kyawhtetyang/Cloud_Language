@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 
@@ -112,79 +112,64 @@ describe('App quick review navigation guard', () => {
     vi.restoreAllMocks();
   });
 
-  it('keeps quiz state when user cancels leave confirmation', async () => {
+  it('shows 10/10 completion modal at unit boundary', async () => {
     render(<App />);
 
     await screen.findByRole('button', { name: 'Next' });
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Quick Review' }));
-    await screen.findByText('Match each sentence');
-
-    fireEvent.click(screen.getAllByRole('button', { name: 'Road Map' })[0]);
-    await screen.findByRole('heading', { name: 'Road Map' });
-    fireEvent.click(screen.getAllByRole('button', { name: /open album group/i })[0]);
-    fireEvent.click(screen.getAllByRole('button', { name: /Unit Topic/i })[0]);
-    await screen.findByRole('dialog');
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
-    expect(await screen.findByText('Match each sentence')).toBeInTheDocument();
+    for (let i = 0; i < 10; i += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    }
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText(/10\/10 Complete|10\/10 ပြီးပါပြီ/i)).toBeInTheDocument();
   });
 
-  it('leaves quiz and navigates to selected unit when user confirms', async () => {
-    render(<App />);
-
-    await screen.findByRole('button', { name: 'Next' });
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Quick Review' }));
-    await screen.findByText('Match each sentence');
-
-    fireEvent.click(screen.getAllByRole('button', { name: 'Road Map' })[0]);
-    await screen.findByRole('heading', { name: 'Road Map' });
-    fireEvent.click(screen.getAllByRole('button', { name: /open album group/i })[0]);
-    fireEvent.click(screen.getAllByRole('button', { name: /Unit Topic/i })[0]);
-    await screen.findByRole('dialog');
-    fireEvent.click(screen.getByRole('button', { name: 'Leave quick review' }));
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
+  it('continues to next unit when confirming boundary modal', async () => {
+    const twoUnitLessons = createTwoUnitLessons();
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/lessons')) {
+        return Promise.resolve(mockJsonResponse(twoUnitLessons));
+      }
+      if (url.includes('/api/progress?profileName=')) {
+        return Promise.resolve(mockJsonResponse({ message: 'not found' }, 404));
+      }
+      if (url.includes('/api/progress') && init?.method === 'PUT') {
+        return Promise.resolve(mockJsonResponse({ ok: true }));
+      }
+      return Promise.resolve(mockJsonResponse({}));
     });
-    expect(screen.queryByText('Match each sentence')).not.toBeInTheDocument();
+
+    render(<App />);
+
+    await screen.findByRole('button', { name: 'Next' });
+    for (let i = 0; i < 10; i += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    }
+    await screen.findByRole('dialog');
+    fireEvent.click(screen.getByRole('button', { name: /Continue to next unit|နောက်ယူနစ်သို့ ဆက်မယ်/i }));
+
+    expect((await screen.findAllByText('English 11')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('English 12')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('English 13')).length).toBeGreaterThan(0);
   });
 
 
-  it('shows quick review at checkpoint when remove-review toggle is off', async () => {
+  it('keeps next button label as Next through lesson flow', async () => {
     render(<App />);
 
     await screen.findByRole('button', { name: 'Next' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getByRole('button', { name: 'Quick Review' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
   });
 
-  it('skips quick review checkpoints when remove-review toggle is on', async () => {
+  it('does not show review toggle in settings', async () => {
     render(<App />);
 
     await screen.findByRole('button', { name: 'Next' });
     fireEvent.click(screen.getAllByRole('button', { name: 'Settings' })[0]);
     await screen.findByText('Default Language');
-
-    const reviewQuestionsLabel = screen.getByText('Review Questions');
-    const reviewQuestionsRow = reviewQuestionsLabel.closest('div')?.parentElement;
-    expect(reviewQuestionsRow).not.toBeNull();
-    const reviewQuestionsToggle = within(reviewQuestionsRow as HTMLElement).getByRole('button', { name: 'On' });
-    fireEvent.click(reviewQuestionsToggle);
-    expect(within(reviewQuestionsRow as HTMLElement).getByRole('button', { name: 'Off' })).toBeInTheDocument();
-
-    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
-    await screen.findByRole('button', { name: 'Next' });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    await waitFor(() => {
-      expect(screen.queryByText('Match each sentence')).not.toBeInTheDocument();
-    });
-    expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
+    expect(screen.queryByText('Review Questions')).not.toBeInTheDocument();
   });
 
   it('moves back to previous learn batch when previous is clicked', async () => {
@@ -224,10 +209,11 @@ describe('App quick review navigation guard', () => {
     render(<App />);
     await screen.findByRole('button', { name: 'Next' });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Road Map' })[0]);
-    await screen.findByRole('heading', { name: 'Road Map' });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Library' })[0]);
+    await screen.findAllByRole('button', { name: /open album group/i });
     fireEvent.click(screen.getAllByRole('button', { name: /open album group/i })[0]);
     fireEvent.click(screen.getAllByRole('button', { name: /Unit 2 Topic/i })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
 
     expect((await screen.findAllByText('English 11')).length).toBeGreaterThan(0);
     expect((await screen.findAllByText('English 12')).length).toBeGreaterThan(0);
@@ -246,16 +232,6 @@ describe('App quick review navigation guard', () => {
     expect((await screen.findAllByText('English 1')).length).toBeGreaterThan(0);
     expect((await screen.findAllByText('English 2')).length).toBeGreaterThan(0);
     expect((await screen.findAllByText('English 3')).length).toBeGreaterThan(0);
-
-    fireEvent.click(screen.getAllByRole('button', { name: 'Settings' })[0]);
-    await screen.findByText('Default Language');
-    const reviewQuestionsLabel = screen.getByText('Review Questions');
-    const reviewQuestionsRow = reviewQuestionsLabel.closest('div')?.parentElement;
-    expect(reviewQuestionsRow).not.toBeNull();
-    const reviewQuestionsToggle = within(reviewQuestionsRow as HTMLElement).getByRole('button', { name: 'On' });
-    fireEvent.click(reviewQuestionsToggle);
-    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
-    await screen.findByRole('button', { name: 'Next' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Enable repeat all' }));
     fireEvent.click(screen.getByRole('button', { name: 'Enable repeat one' }));
@@ -293,10 +269,11 @@ describe('App quick review navigation guard', () => {
     render(<App />);
     await screen.findByRole('button', { name: 'Next' });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Road Map' })[0]);
-    await screen.findByRole('heading', { name: 'Road Map' });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Library' })[0]);
+    await screen.findAllByRole('button', { name: /open album group/i });
     fireEvent.click(screen.getAllByRole('button', { name: /open album group/i })[1]);
     fireEvent.click(screen.getAllByRole('button', { name: /A2 Unit 1 Topic/i })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
 
     expect((await screen.findAllByText('English 21')).length).toBeGreaterThan(0);
     expect((await screen.findAllByText('English 22')).length).toBeGreaterThan(0);
@@ -311,3 +288,4 @@ describe('App quick review navigation guard', () => {
   });
 
 });
+

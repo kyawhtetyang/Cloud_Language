@@ -16,3 +16,4 @@ This is the frontend client for LingoBurmese.
 4. `npm run dev`
 
 Default local frontend URL: `http://localhost:3000`
+

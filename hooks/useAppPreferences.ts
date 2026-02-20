@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  AppTheme,
   DefaultLanguage,
   LearnLanguage,
 } from '../config/appConfig';
@@ -23,6 +24,8 @@ type UseAppPreferencesResult = {
   setIsRandomLessonOrderEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   isReviewQuestionsRemoved: boolean;
   setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
+  appTheme: AppTheme;
+  setAppTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
   hasHydratedSettings: boolean;
 };
 
@@ -38,6 +41,7 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
   const [isBoldTextEnabled, setIsBoldTextEnabled] = useState<boolean>(initialSettings.isBoldTextEnabled);
   const [isRandomLessonOrderEnabled, setIsRandomLessonOrderEnabled] = useState<boolean>(initialSettings.isRandomLessonOrderEnabled);
   const [isReviewQuestionsRemoved, setIsReviewQuestionsRemoved] = useState<boolean>(initialSettings.isReviewQuestionsRemoved);
+  const [appTheme, setAppTheme] = useState<AppTheme>(initialSettings.appTheme);
 
   useEffect(() => {
     if (!profileStorageId) {
@@ -53,6 +57,7 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setIsBoldTextEnabled(next.isBoldTextEnabled);
     setIsRandomLessonOrderEnabled(next.isRandomLessonOrderEnabled);
     setIsReviewQuestionsRemoved(next.isReviewQuestionsRemoved);
+    setAppTheme(next.appTheme);
     setHasHydratedSettings(true);
   }, [profileStorageId]);
 
@@ -73,6 +78,8 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setIsRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     setIsReviewQuestionsRemoved,
+    appTheme,
+    setAppTheme,
     hasHydratedSettings,
   };
 }

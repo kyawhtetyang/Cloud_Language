@@ -3,11 +3,11 @@ import { getRoadmapText, localizeRoadmapTopic } from './roadmapI18n';
 
 describe('roadmapI18n', () => {
   it('returns burmese roadmap text for burmese default language', () => {
-    expect(getRoadmapText('burmese').roadmap).toBe('လေ့လာမှုမြေပုံ');
+    expect(getRoadmapText('burmese').roadmap).toBe('စာကြည့်တိုက်');
   });
 
   it('falls back to english roadmap text when language pack is missing', () => {
-    expect(getRoadmapText('french' as never).roadmap).toBe('Road Map');
+    expect(getRoadmapText('french' as never).roadmap).toBe('Library');
   });
 
   it('localizes full roadmap unit titles for burmese', () => {
@@ -22,3 +22,4 @@ describe('roadmapI18n', () => {
     );
   });
 });
+

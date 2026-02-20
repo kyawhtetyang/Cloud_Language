@@ -1,6 +1,9 @@
 import { Dispatch, SetStateAction } from 'react';
 import { VoicePreference } from '../components/AudioButton';
 import {
+  APP_THEME_KEY,
+  AppTheme,
+  isAppTheme,
   BOLD_TEXT_ENABLED_KEY,
   clampTextScale,
   DEFAULT_LANGUAGE_KEY,
@@ -25,6 +28,7 @@ export type SyncedAppSettings = {
   isBoldTextEnabled: boolean;
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
+  appTheme: AppTheme;
 };
 
 export type SyncedAppSettingsSetters = {
@@ -36,6 +40,7 @@ export type SyncedAppSettingsSetters = {
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
   setIsRandomLessonOrderEnabled: Dispatch<SetStateAction<boolean>>;
   setIsReviewQuestionsRemoved: Dispatch<SetStateAction<boolean>>;
+  setAppTheme: Dispatch<SetStateAction<AppTheme>>;
 };
 
 const DEFAULT_SYNCED_SETTINGS: SyncedAppSettings = {
@@ -47,6 +52,7 @@ const DEFAULT_SYNCED_SETTINGS: SyncedAppSettings = {
   isBoldTextEnabled: false,
   isRandomLessonOrderEnabled: false,
   isReviewQuestionsRemoved: false,
+  appTheme: 'apple_notes',
 };
 
 function toScopedKey(baseKey: string, profileStorageId: string): string {
@@ -92,6 +98,10 @@ function parseTextScale(value: string | null): number {
   return clampTextScale(Number(value || DEFAULT_SYNCED_SETTINGS.textScalePercent));
 }
 
+function parseAppTheme(value: string | null): AppTheme {
+  return isAppTheme(value) ? value : 'apple_notes';
+}
+
 function readWithFallback(baseKey: string, profileStorageId?: string): string | null {
   if (!profileStorageId) {
     return safeRead(baseKey);
@@ -111,6 +121,7 @@ export function readSyncedSettingsFromStorage(profileStorageId?: string): Synced
     isBoldTextEnabled: parseBoolean(readWithFallback(BOLD_TEXT_ENABLED_KEY, profileStorageId)),
     isRandomLessonOrderEnabled: parseBoolean(readWithFallback(RANDOM_LESSON_ORDER_ENABLED_KEY, profileStorageId)),
     isReviewQuestionsRemoved: parseBoolean(readWithFallback(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY, profileStorageId)),
+    appTheme: parseAppTheme(readWithFallback(APP_THEME_KEY, profileStorageId)),
   };
 }
 
@@ -128,6 +139,7 @@ export function persistSyncedSettingsToStorage(
   safeWrite(resolveKey(BOLD_TEXT_ENABLED_KEY), String(settings.isBoldTextEnabled));
   safeWrite(resolveKey(RANDOM_LESSON_ORDER_ENABLED_KEY), String(settings.isRandomLessonOrderEnabled));
   safeWrite(resolveKey(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY), String(settings.isReviewQuestionsRemoved));
+  safeWrite(resolveKey(APP_THEME_KEY), settings.appTheme);
 }
 
 export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedAppSettings {
@@ -140,6 +152,7 @@ export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedA
     isBoldTextEnabled: settings.isBoldTextEnabled,
     isRandomLessonOrderEnabled: settings.isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved: settings.isReviewQuestionsRemoved,
+    appTheme: settings.appTheme,
   };
 }
 
@@ -174,6 +187,9 @@ export function applyRemoteSyncedSettings(
   }
   if (typeof remote.isReviewQuestionsRemoved === 'boolean') {
     setters.setIsReviewQuestionsRemoved(remote.isReviewQuestionsRemoved);
+  }
+  if (isAppTheme(remote.appTheme)) {
+    setters.setAppTheme(remote.appTheme);
   }
 }
 

@@ -13,6 +13,7 @@ type LevelsViewProps = {
   lessons: LessonData[];
   defaultLanguage: DefaultLanguage;
   onSelectUnit: (level: number, unit: number, albumKey?: string | null) => void;
+  onReadAlbum?: (units: Array<{ level: number; unit: number }>, albumKey?: string | null) => void;
   selectedAlbumKey?: string | null;
   onSelectedAlbumKeyChange?: (key: string | null) => void;
   completedUnitKeys?: Set<string>;
@@ -32,37 +33,6 @@ type AlbumGroup = {
   coverUrl: string;
 };
 
-const ALBUM_COVER_URLS: Record<StageCode, string[]> = {
-  A1: [
-    'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=800&q=60',
-  ],
-  A2: [
-    'https://images.unsplash.com/photo-1457305237443-44c3d5a30b89?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1484807352052-23338990c6c6?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=60',
-  ],
-  B1: [
-    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1492724441997-5dc865305da7?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=800&q=60',
-  ],
-  B2: [
-    'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=800&q=60',
-    'https://images.unsplash.com/photo-1515168833906-d2a3b82b302a?auto=format&fit=crop&w=800&q=60',
-  ],
-};
-
 function shortenLabel(text: string, max = 56): string {
   if (text.length <= max) return text;
   return `${text.slice(0, max - 1).trim()}...`;
@@ -80,92 +50,6 @@ function buildUnitKey(level: number, unit: number): string {
   return `${level}:${unit}`;
 }
 
-function getAlbumCoverUrl(stage: StageCode, groupIndex: number): string {
-  const covers = ALBUM_COVER_URLS[stage];
-  return covers[groupIndex % covers.length];
-}
-
-const TOPIC_COVER_URLS: Record<string, string> = {
-  'selling and buying': 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=900&q=60',
-  'market conversation': 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=900&q=60',
-  'payment and discount': 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&q=60',
-  'return and exchange': 'https://images.unsplash.com/photo-1557821552-17105176677c?auto=format&fit=crop&w=900&q=60',
-  'price and quantity': 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=60',
-  'leading meetings': 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=60',
-  'formal presentations': 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=900&q=60',
-  'negotiation techniques': 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=60',
-  'handling q&a sessions': 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=60',
-  'executive-level communication': 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=60',
-};
-
-const THEME_COVER_POOLS: Array<{ keywords: string[]; urls: string[] }> = [
-  {
-    keywords: ['alphabet', 'pronunciation', 'word', 'classroom', 'question', 'answer'],
-    urls: [
-      'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=900&q=60',
-    ],
-  },
-  {
-    keywords: ['greeting', 'introducing', 'family', 'friend', 'conversation', 'discussion', 'turn-taking'],
-    urls: [
-      'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1475724017904-b712052c192a?auto=format&fit=crop&w=900&q=60',
-    ],
-  },
-  {
-    keywords: ['daily', 'routine', 'time', 'date', 'future', 'weekend', 'plan', 'story'],
-    urls: [
-      'https://images.unsplash.com/photo-1506784365847-bbad939e9335?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=60',
-    ],
-  },
-  {
-    keywords: ['sell', 'buy', 'market', 'price', 'quantity', 'payment', 'discount', 'return', 'exchange'],
-    urls: [
-      'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1557821552-17105176677c?auto=format&fit=crop&w=900&q=60',
-    ],
-  },
-  {
-    keywords: ['compare', 'opinion', 'advantage', 'disadvantage', 'cause', 'effect', 'explanation', 'process'],
-    urls: [
-      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=60',
-    ],
-  },
-  {
-    keywords: ['advice', 'suggestion', 'request', 'objection', 'problem', 'solution', 'diplomatic'],
-    urls: [
-      'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=60',
-    ],
-  },
-  {
-    keywords: ['presentation', 'meeting', 'negotiation', 'executive', 'q&a', 'argument', 'debate', 'persuasive'],
-    urls: [
-      'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=900&q=60',
-    ],
-  },
-  {
-    keywords: ['social', 'critical', 'abstract', 'hypothetical', 'analysis', 'evaluate', 'thinking'],
-    urls: [
-      'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1484807352052-23338990c6c6?auto=format&fit=crop&w=900&q=60',
-      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=60',
-    ],
-  },
-];
-
 function stableHash(input: string): number {
   let hash = 0;
   for (let i = 0; i < input.length; i += 1) {
@@ -174,24 +58,81 @@ function stableHash(input: string): number {
   return Math.abs(hash);
 }
 
-function getRelevantAlbumCover(topic: string, stage: StageCode, groupIndex: number): string {
-  const normalized = topic.trim().toLowerCase();
-  if (TOPIC_COVER_URLS[normalized]) {
-    return TOPIC_COVER_URLS[normalized];
-  }
-  for (const pool of THEME_COVER_POOLS) {
-    if (pool.keywords.some((keyword) => normalized.includes(keyword))) {
-      const pick = stableHash(normalized) % pool.urls.length;
-      return pool.urls[pick];
-    }
-  }
+const REAL_PHOTO_POOL = [
+  'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&w=600&h=800&q=80',
+  'https://images.unsplash.com/photo-1515165562835-c3b8c8d1f18f?auto=format&fit=crop&w=600&h=800&q=80',
+];
 
-  return getAlbumCoverUrl(stage, groupIndex);
+const PHOTO_CATEGORY_POOL: Record<string, string[]> = {
+  commerce: [
+    'https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=600&h=800&q=80',
+    'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&w=600&h=800&q=80',
+  ],
+  family: [
+    'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=600&h=800&q=80',
+    'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=600&h=800&q=80',
+  ],
+  daily: [
+    'https://images.unsplash.com/photo-1531545514256-b1400bc00f31?auto=format&fit=crop&w=600&h=800&q=80',
+    'https://images.unsplash.com/photo-1494172961521-33799ddd43a5?auto=format&fit=crop&w=600&h=800&q=80',
+  ],
+  map: [
+    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=600&h=800&q=80',
+    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=600&h=800&q=80',
+  ],
+  work: [
+    'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=600&h=800&q=80',
+    'https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=600&h=800&q=80',
+  ],
+  debate: [
+    'https://images.unsplash.com/photo-1515187029135-18ee286d815b?auto=format&fit=crop&w=600&h=800&q=80',
+    'https://images.unsplash.com/photo-1560439514-4e9645039924?auto=format&fit=crop&w=600&h=800&q=80',
+  ],
+};
+
+function getTopicPhotoUrl(topic: string, seed: string): string {
+  const lower = topic.toLowerCase();
+  let category: keyof typeof PHOTO_CATEGORY_POOL | null = null;
+  if (/buy|sell|price|payment|discount|return|exchange|market/.test(lower)) {
+    category = 'commerce';
+  } else if (/family|friends/.test(lower)) {
+    category = 'family';
+  } else if (/time|date|daily|weekend|future|past/.test(lower)) {
+    category = 'daily';
+  } else if (/directions|map/.test(lower)) {
+    category = 'map';
+  } else if (/meeting|presentation|negotiation|executive|q&a/.test(lower)) {
+    category = 'work';
+  } else if (/debate|argument|opinions|discussion|viewpoints/.test(lower)) {
+    category = 'debate';
+  }
+  const pool = category ? PHOTO_CATEGORY_POOL[category] : REAL_PHOTO_POOL;
+  const pick = stableHash(seed) % pool.length;
+  return pool[pick];
+}
+
+function getGroupCoverUrl(stage: StageCode, groupIndex: number, topic: string): string {
+  return getTopicPhotoUrl(topic, `${stage}:group:${groupIndex + 1}`);
 }
 
 function getConciseTopicTitle(rawTopic: string, defaultLanguage: DefaultLanguage): string {
   const topic = rawTopic.trim().toLowerCase();
   const conciseEnglish: Record<string, string> = {
+    'common phrases for beginners': 'Common Phrases',
     'alphabet sounds & basic pronunciation': 'Pronunciation',
     'greeting and introducing yourself': 'Greetings',
     'saying name, country, job': 'Name & Intro',
@@ -259,6 +200,7 @@ function getConciseTopicTitle(rawTopic: string, defaultLanguage: DefaultLanguage
     'executive-level communication': 'Executive Comms',
   };
   const conciseBurmese: Record<string, string> = {
+    'common phrases for beginners': 'အခြေခံစကားစု',
     'alphabet sounds & basic pronunciation': 'အသံထွက်',
     'greeting and introducing yourself': 'နှုတ်ဆက်/မိတ်ဆက်',
     'saying name, country, job': 'နာမည်/နိုင်ငံ/အလုပ်',
@@ -361,6 +303,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
   lessons,
   defaultLanguage,
   onSelectUnit,
+  onReadAlbum,
   selectedAlbumKey,
   onSelectedAlbumKeyChange,
   completedUnitKeys,
@@ -380,6 +323,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
     setInternalSelectedAlbumKey(key);
   };
   const text = getRoadmapText(defaultLanguage);
+  const playAllLabel = defaultLanguage === 'burmese' ? 'အားလုံးဖတ်' : 'Play All';
   const stageUnits = buildStageUnitsFromLessons(lessons);
   const groupsByStage = useMemo(() => {
     return STAGE_ORDER.reduce<Record<StageCode, AlbumGroup[]>>((acc, stage) => {
@@ -390,7 +334,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
         groupIndex,
         units,
         firstTopicConcise: units[0] ? getConciseTopicTitle(units[0].topic, defaultLanguage) : '',
-        coverUrl: units[0] ? getRelevantAlbumCover(units[0].topic, stage, groupIndex) : getAlbumCoverUrl(stage, groupIndex),
+        coverUrl: getGroupCoverUrl(stage, groupIndex, units[0]?.topic || `${stage} unit`),
       }));
       acc[stage] = grouped;
       return acc;
@@ -439,9 +383,9 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
         title={groupDownloadLabel}
         className={`h-8 w-8 inline-flex items-center justify-center rounded-full border transition-all ${
           isGroupDownloaded
-            ? 'border-[#46a302] bg-[#f0ffe0] text-[#2f7d01]'
+            ? 'border-brand-dark bg-brand-pale text-brand-ink'
             : isGroupPartial
-              ? 'border-[#f59e0b] bg-[#fff7e8] text-[#a16207]'
+              ? 'border-warning bg-warning-soft text-warning-ink'
               : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
         } ${isGroupDownloading ? 'opacity-70 cursor-wait' : ''}`}
       >
@@ -494,72 +438,85 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_6px_22px_rgba(0,0,0,0.07)]">
           <div className={`p-4 ${stageUi.levelCardClass}`}>
             <div className="flex items-center gap-3">
-              <div className={`relative aspect-square w-[132px] shrink-0 overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-white/70 to-black/5 ${stageUi.badgeClass}`}>
+              <div className={`relative aspect-[3/4] w-[112px] shrink-0 overflow-hidden rounded-xl ${stageUi.badgeClass}`}>
+                <div className="absolute inset-y-0 left-0 z-10 w-2 bg-black/12" aria-hidden="true" />
                 <img
                   src={selectedAlbum.coverUrl}
                   alt=""
                   aria-hidden="true"
                   loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover"
+                  className="absolute inset-0 h-full w-full object-cover object-center"
                 />
-                <div className="absolute inset-0 bg-black/25" />
-                <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle_at_25%_20%,white_0%,transparent_55%)]" />
-                <div className="absolute bottom-2 left-2 right-2 text-[12px] font-black tracking-wide text-black/75">
+                <div className={`absolute bottom-2 left-2 right-2 text-xs font-black tracking-wide ${stageUi.titleClass}`}>
                   {selectedAlbum.stage} · {selectedAlbum.groupIndex + 1}
                 </div>
               </div>
               <div className="min-w-0">
-                <p className={`text-[11px] font-black uppercase tracking-[0.14em] ${stageUi.titleClass}`}>
+                <p className={`text-xs font-black uppercase tracking-[0.14em] ${stageUi.titleClass}`}>
                   {text.groupPrefix} {selectedAlbum.groupIndex + 1}
                 </p>
-                <h3 className="text-[20px] font-extrabold leading-tight text-[#1d1d1f]">
+                <h3 className="text-xl font-extrabold leading-tight text-ink-strong">
                   {shortenLabel(selectedAlbum.firstTopicConcise, 58)}
                 </h3>
-                <p className="mt-0.5 text-[13px] font-medium text-[#86868b]">
+                <p className="mt-0.5 text-sm font-medium text-ink-muted">
                   {selectedAlbum.units.length} {selectedAlbum.units.length > 1 ? 'units' : 'unit'} · {text.stageLabels[selectedAlbum.stage]}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => onReadAlbum?.(
+                    selectedAlbum.units.map((entry) => ({ level: entry.level, unit: entry.unit })),
+                    activeSelectedAlbumKey,
+                  )}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-brand-stroke bg-brand-paler px-2.5 py-1.5 text-xs font-black uppercase tracking-wide text-brand-ink"
+                  aria-label={playAllLabel}
+                  title={playAllLabel}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M10 9.5v5l4-2.5z" fill="currentColor" stroke="none" />
+                  </svg>
+                  <span>{playAllLabel}</span>
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="grid gap-2.5 p-3">
+          <div className="divide-y divide-gray-100 p-1.5">
             {selectedAlbum.units.map((entry, albumIndex) => {
               const unitKey = buildUnitKey(entry.level, entry.unit);
               const albumUnitNumber = albumIndex + 1;
               const isCompleted = completedUnitKeys?.has(unitKey) ?? false;
               const isActive = activeUnitKey === unitKey;
-              const rowClass = isCompleted
-                ? 'border-gray-300 bg-gray-100 text-gray-500'
-                : isActive
-                  ? 'border-[#46a302] bg-[#f0ffe0] text-[#2f7d01]'
-                  : `${stageUi.topicCardClass} text-gray-700`;
-              const badgeClass = isCompleted
-                ? 'bg-gray-200 text-gray-500'
-                : isActive
-                  ? 'bg-[#d9f8b7] text-[#2f7d01]'
+              const rowClass = isActive
+                ? 'btn-selected-flat'
+                : isCompleted
+                  ? 'bg-gray-100/80 text-gray-500'
+                  : 'bg-white text-gray-700';
+              const badgeClass = isActive
+                ? 'bg-brand text-white'
+                : isCompleted
+                  ? 'bg-brand-soft text-brand'
                   : stageUi.badgeClass;
 
               return (
-                <div
+                <button
                   key={`${entry.stage}-${entry.level}-${entry.unit}`}
-                  className={`w-full rounded-lg border px-3 py-2.5 text-sm md:text-[15px] font-bold transition-all ${rowClass}`}
+                  type="button"
+                  onClick={() => onSelectUnit(entry.level, entry.unit, activeSelectedAlbumKey)}
+                  className={`w-full rounded-lg px-3 py-3 text-sm md:text-base font-bold transition-colors ${rowClass}`}
                 >
                   <div className="flex items-center gap-2.5">
                     <span
-                      className={`inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-[10px] font-extrabold ${badgeClass}`}
+                      className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md px-1.5 text-xs font-extrabold ${badgeClass}`}
                       aria-label={`${text.unitPrefix} ${albumUnitNumber}`}
                     >
                       {albumUnitNumber}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => onSelectUnit(entry.level, entry.unit, activeSelectedAlbumKey)}
-                      className="w-full text-left"
-                    >
+                    <span className={`min-w-0 flex-1 truncate text-left ${isActive ? 'text-white' : ''}`}>
                       {localizeRoadmapTopic(entry.topic, defaultLanguage)}
-                    </button>
+                    </span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -570,56 +527,59 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
 
   return (
     <div className="w-full max-w-2xl">
-      <h2 className="mb-4 text-2xl font-extrabold text-[#3c3c3c] md:text-3xl">{text.roadmap}</h2>
-
       {STAGE_ORDER.map((stage) => {
         const stageGroups = groupsByStage[stage];
         if (stageGroups.length === 0) return null;
         const stageUi = STAGE_META[stage];
 
         return (
-          <div key={stage} className="mb-6 last:mb-0">
-            <p className={`mb-2 text-sm font-extrabold uppercase tracking-wide md:text-base ${stageUi.titleClass}`}>
-              {text.stageLabels[stage]}
-            </p>
-            <div className="grid grid-cols-1 gap-y-3 sm:grid-cols-3 sm:gap-x-3 sm:gap-y-4 md:grid-cols-4">
+          <div
+            key={stage}
+            className="mb-6 last:mb-0 overflow-hidden rounded-2xl border border-gray-200/85 bg-white shadow-[0_4px_14px_rgba(0,0,0,0.08)]"
+          >
+            <div className={`px-3 py-2.5 border-b border-gray-200/70 ${stageUi.levelCardClass}`}>
+              <p className={`text-sm font-extrabold uppercase tracking-wide md:text-base ${stageUi.titleClass}`}>
+                {text.stageLabels[stage]}
+              </p>
+            </div>
+            <div className="divide-y divide-gray-100">
               {stageGroups.map((group) => (
-                <div key={group.key} className="group">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedAlbumKey(group.key)}
-                    aria-label={`Open album group ${group.groupIndex + 1}`}
-                    className="w-full text-left"
-                  >
-                    <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-2 shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition-all duration-200 group-hover:border-gray-300 group-hover:bg-gray-50 sm:block">
-                      <div className={`relative aspect-square w-[68px] shrink-0 overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-white/70 to-black/5 shadow-[0_4px_14px_rgba(0,0,0,0.08)] transition-transform duration-200 group-hover:scale-[1.015] sm:w-full ${stageUi.badgeClass}`}>
-                        <img
-                          src={group.coverUrl}
-                          alt=""
-                          aria-hidden="true"
-                          loading="lazy"
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/25" />
-                        <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle_at_25%_20%,white_0%,transparent_55%)]" />
-                        <div className="absolute bottom-2 left-2 right-2 text-[11px] font-black tracking-wide text-black/75">
-                          {stage} · {group.groupIndex + 1}
-                        </div>
-                      </div>
-                      <div className="min-w-0 flex-1 sm:hidden">
-                        <p className="truncate text-sm font-semibold text-[#1d1d1f]">
-                          {shortenLabel(group.firstTopicConcise, 44)}
-                        </p>
-                        <p className="mt-0.5 text-xs font-medium text-[#86868b]">
-                          {text.groupPrefix} {group.groupIndex + 1}
-                        </p>
-                      </div>
+                <button
+                  key={group.key}
+                  type="button"
+                  onClick={() => setSelectedAlbumKey(group.key)}
+                  aria-label={`Open album group ${group.groupIndex + 1}`}
+                  className="w-full text-left px-3 py-3 transition-colors hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg">
+                      <div className="absolute inset-y-0 left-0 z-10 w-1 bg-black/12" aria-hidden="true" />
+                      <img
+                        src={group.coverUrl}
+                        alt=""
+                        aria-hidden="true"
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover object-center"
+                      />
                     </div>
-                  </button>
-                  <p className="mt-1.5 hidden truncate text-xs font-semibold text-[#3c3c3c] sm:block">
-                    {shortenLabel(group.firstTopicConcise, 22)}
-                  </p>
-                </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-xs font-black uppercase tracking-[0.12em] ${stageUi.titleClass}`}>
+                        {stage} · {text.groupPrefix} {group.groupIndex + 1}
+                      </p>
+                      <p className="mt-0.5 truncate text-base font-extrabold text-ink-strong">
+                        {shortenLabel(group.firstTopicConcise, 48)}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-ink-muted">
+                        {group.units.length} {group.units.length > 1 ? 'units' : 'unit'} · {text.stageLabels[stage]}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 ${stageUi.titleClass}`} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 6l6 6-6 6" />
+                      </svg>
+                    </span>
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -628,3 +588,4 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
     </div>
   );
 };
+

@@ -103,7 +103,7 @@ export const AudioButton: React.FC<AudioButtonProps> = ({
   return (
     <button
       onClick={playAudio}
-      className={`rounded-2xl bg-[#58cc02] border-2 border-[#46a302] duo-button-shadow flex items-center justify-center text-white hover:bg-[#46a302] transition-colors group ${
+      className={`rounded-2xl bg-brand border-2 border-brand-dark duo-button-shadow flex items-center justify-center text-white hover:bg-brand-dark transition-colors group ${
         compact ? 'w-11 h-11 rounded-xl shrink-0' : 'w-16 h-16'
       }`}
     >
@@ -122,3 +122,4 @@ export const AudioButton: React.FC<AudioButtonProps> = ({
     </button>
   );
 };
+

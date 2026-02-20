@@ -58,3 +58,4 @@ export function useAppNavigation(): UseAppNavigationResult {
     reloadApp,
   };
 }
+

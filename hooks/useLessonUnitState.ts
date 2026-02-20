@@ -36,10 +36,7 @@ export type UseLessonUnitStateResult = {
   sectionStart: number;
   sectionEnd: number;
   sectionTotal: number;
-  unitFlowCurrent: number;
-  unitFlowTotal: number;
   currentBatchEntries: LessonBatchEntry[];
-  currentBatchLessonsCount: number;
 };
 
 export function useLessonUnitState({
@@ -89,7 +86,6 @@ export function useLessonUnitState({
   const sectionStart = levelIndexes.length > 0 ? Math.min(...levelIndexes) : Math.max(0, activeLevelIndex);
   const sectionEnd = levelIndexes.length > 0 ? Math.max(...levelIndexes) : Math.max(0, activeLevelIndex);
   const sectionTotal = Math.max(1, orderedUnitIndexes.length);
-  const unitFlowTotal = LEARN_QUESTIONS_PER_UNIT;
   const batchStartOffset = mode === 'learn' ? (learnStep * LESSONS_PER_BATCH) % sectionTotal : 0;
   const currentBatchEntries =
     mode === 'learn'
@@ -100,8 +96,6 @@ export function useLessonUnitState({
           return lesson ? { lesson, lessonIndex } : null;
         }).filter((entry): entry is LessonBatchEntry => Boolean(entry))
       : [];
-  const unitFlowCurrent = Math.min(learnStep, LEARN_QUESTIONS_PER_UNIT);
-
   return {
     currentLevel,
     currentUnit,
@@ -112,10 +106,7 @@ export function useLessonUnitState({
     sectionStart,
     sectionEnd,
     sectionTotal,
-    unitFlowCurrent,
-    unitFlowTotal,
     currentBatchEntries,
-    currentBatchLessonsCount: currentBatchEntries.length,
   };
 }
 

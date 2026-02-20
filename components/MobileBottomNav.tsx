@@ -14,12 +14,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const tabs: Array<{ key: SidebarTab; label: string; icon: React.ReactNode }> = [
     {
       key: 'levels',
-      label: 'Road Map',
+      label: 'Library',
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path
-            d="M4 7h6v6H4zM14 4h6v6h-6zM14 14h6v6h-6zM4 14h6"
-          />
+          <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H11v15H5.5A2.5 2.5 0 0 0 3 21.5z" />
+          <path d="M21 6.5A2.5 2.5 0 0 0 18.5 4H13v15h5.5a2.5 2.5 0 0 1 2.5 2.5z" />
         </svg>
       ),
     },
@@ -28,9 +27,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       label: 'Lesson',
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path
-            d="M6 4h12v14H8a2 2 0 0 1-2-2V4Zm0 12h12M9 8h6"
-          />
+          <circle cx="12" cy="12" r="9" />
+          <path d="M10 9.5v5l4-2.5z" fill="currentColor" stroke="none" />
         </svg>
       ),
     },
@@ -39,8 +37,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       label: 'Settings',
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3.5" />
-          <path d="M19 12a7 7 0 0 0-.06-.94l2.01-1.57-1.6-2.77-2.38.96a7 7 0 0 0-1.63-.95l-.36-2.49h-3.2l-.36 2.49a7 7 0 0 0-1.63.95l-2.38-.96-1.6 2.77 2.01 1.57A7 7 0 0 0 5 12c0 .32.02.63.06.94l-2.01 1.57 1.6 2.77 2.38-.96c.5.41 1.05.73 1.63.95l.36 2.49h3.2l.36-2.49c.58-.22 1.13-.54 1.63-.95l2.38.96 1.6-2.77-2.01-1.57c.04-.31.06-.62.06-.94Z" />
+          <path d="M10.4 2.8h3.2l.5 2.3c.4.1.8.3 1.2.5l2.2-1.1 2.2 2.2-1.1 2.2c.2.4.3.8.5 1.2l2.3.5v3.2l-2.3.5c-.1.4-.3.8-.5 1.2l1.1 2.2-2.2 2.2-2.2-1.1c-.4.2-.8.3-1.2.5l-.5 2.3h-3.2l-.5-2.3c-.4-.1-.8-.3-1.2-.5l-2.2 1.1-2.2-2.2 1.1-2.2c-.2-.4-.3-.8-.5-1.2l-2.3-.5v-3.2l2.3-.5c.1-.4.3-.8.5-1.2l-1.1-2.2 2.2-2.2 2.2 1.1c.4-.2.8-.3 1.2-.5z" />
+          <circle cx="12" cy="12" r="3.2" />
         </svg>
       ),
     },
@@ -68,20 +66,22 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             title={tab.label}
             className={`flex flex-col items-center justify-center gap-1 rounded-xl py-1.5 transition-all ${
               activeTab === tab.key
-                ? 'bg-[#ecf9df] text-[#2f7d01]'
+                ? 'bg-transparent text-brand'
                 : 'bg-transparent text-gray-500'
             }`}
           >
             <span
               className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
-                activeTab === tab.key ? 'bg-[#58cc02] text-white' : 'bg-gray-100 text-gray-500'
+                activeTab === tab.key
+                  ? 'bg-brand-soft text-brand shadow-none'
+                  : 'bg-gray-100 text-gray-500'
               }`}
             >
               {tab.icon}
             </span>
             <span
-              className={`text-[10px] font-bold leading-none ${
-                activeTab === tab.key ? 'text-[#2f7d01]' : 'text-gray-500'
+              className={`text-xs font-bold leading-none ${
+                activeTab === tab.key ? 'text-brand' : 'text-gray-500'
               }`}
             >
               {tab.label}
@@ -92,3 +92,4 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     </nav>
   );
 };
+
