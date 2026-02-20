@@ -5,6 +5,7 @@ import {
   persistSyncedSettingsToStorage,
   readSyncedSettingsFromStorage,
 } from './settingsSync';
+import { VOICE_PREFERENCE_KEY } from './appConfig';
 
 describe('settingsSync', () => {
   beforeEach(() => {
@@ -22,6 +23,7 @@ describe('settingsSync', () => {
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
       appTheme: 'apple_notes',
+      lessonLayoutDefault: 'list',
     });
   });
 
@@ -36,6 +38,7 @@ describe('settingsSync', () => {
       isRandomLessonOrderEnabled: true,
       isReviewQuestionsRemoved: true,
       appTheme: 'duolingo' as const,
+      lessonLayoutDefault: 'paged' as const,
     };
 
     persistSyncedSettingsToStorage(settings);
@@ -54,24 +57,30 @@ describe('settingsSync', () => {
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
       appTheme: 'apple_notes' as const,
+      lessonLayoutDefault: 'list' as const,
     };
     const profileSettings = {
       learnLanguage: 'chinese' as const,
       defaultLanguage: 'english' as const,
       isPronunciationEnabled: true,
       textScalePercent: 115,
-      voicePreference: 'google_female' as const,
+      voicePreference: 'system_default' as const,
       isBoldTextEnabled: true,
       isRandomLessonOrderEnabled: true,
       isReviewQuestionsRemoved: true,
       appTheme: 'duolingo' as const,
+      lessonLayoutDefault: 'paged' as const,
     };
 
     persistSyncedSettingsToStorage(legacyGlobal);
     expect(readSyncedSettingsFromStorage('tester')).toEqual(legacyGlobal);
 
     persistSyncedSettingsToStorage(profileSettings, 'tester');
-    expect(readSyncedSettingsFromStorage('tester')).toEqual(profileSettings);
+    localStorage.setItem(`${VOICE_PREFERENCE_KEY}:tester`, 'google_female');
+    expect(readSyncedSettingsFromStorage('tester')).toEqual({
+      ...profileSettings,
+      voicePreference: 'system_default',
+    });
     expect(readSyncedSettingsFromStorage()).toEqual(legacyGlobal);
   });
 
@@ -86,6 +95,7 @@ describe('settingsSync', () => {
       setIsRandomLessonOrderEnabled: vi.fn(),
       setIsReviewQuestionsRemoved: vi.fn(),
       setAppTheme: vi.fn(),
+      setLessonLayoutDefault: vi.fn(),
     };
 
     applyRemoteSyncedSettings(
@@ -99,6 +109,7 @@ describe('settingsSync', () => {
         isRandomLessonOrderEnabled: true,
         isReviewQuestionsRemoved: true,
         appTheme: 'duolingo',
+        lessonLayoutDefault: 'paged',
       },
       setters,
     );
@@ -107,11 +118,11 @@ describe('settingsSync', () => {
     expect(setters.setDefaultLanguage).toHaveBeenCalledWith('english');
     expect(setters.setIsPronunciationEnabled).toHaveBeenCalledWith(true);
     expect(setters.setTextScalePercent).toHaveBeenCalledWith(120);
-    expect(setters.setVoicePreference).toHaveBeenCalledWith('google_female');
+    expect(setters.setVoicePreference).toHaveBeenCalledWith('system_default');
     expect(setters.setIsBoldTextEnabled).toHaveBeenCalledWith(true);
     expect(setters.setIsRandomLessonOrderEnabled).toHaveBeenCalledWith(true);
     expect(setters.setIsReviewQuestionsRemoved).toHaveBeenCalledWith(true);
     expect(setters.setAppTheme).toHaveBeenCalledWith('duolingo');
+    expect(setters.setLessonLayoutDefault).toHaveBeenCalledWith('paged');
   });
 });
-

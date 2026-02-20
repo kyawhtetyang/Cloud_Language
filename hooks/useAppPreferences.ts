@@ -3,6 +3,7 @@ import {
   AppTheme,
   DefaultLanguage,
   LearnLanguage,
+  LessonLayoutMode,
 } from '../config/appConfig';
 import { VoicePreference } from '../components/AudioButton';
 import { readSyncedSettingsFromStorage } from '../config/settingsSync';
@@ -26,6 +27,8 @@ type UseAppPreferencesResult = {
   setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
   appTheme: AppTheme;
   setAppTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
+  lessonLayoutDefault: LessonLayoutMode;
+  setLessonLayoutDefault: React.Dispatch<React.SetStateAction<LessonLayoutMode>>;
   hasHydratedSettings: boolean;
 };
 
@@ -42,6 +45,7 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
   const [isRandomLessonOrderEnabled, setIsRandomLessonOrderEnabled] = useState<boolean>(initialSettings.isRandomLessonOrderEnabled);
   const [isReviewQuestionsRemoved, setIsReviewQuestionsRemoved] = useState<boolean>(initialSettings.isReviewQuestionsRemoved);
   const [appTheme, setAppTheme] = useState<AppTheme>(initialSettings.appTheme);
+  const [lessonLayoutDefault, setLessonLayoutDefault] = useState<LessonLayoutMode>(initialSettings.lessonLayoutDefault);
 
   useEffect(() => {
     if (!profileStorageId) {
@@ -58,6 +62,7 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setIsRandomLessonOrderEnabled(next.isRandomLessonOrderEnabled);
     setIsReviewQuestionsRemoved(next.isReviewQuestionsRemoved);
     setAppTheme(next.appTheme);
+    setLessonLayoutDefault(next.lessonLayoutDefault);
     setHasHydratedSettings(true);
   }, [profileStorageId]);
 
@@ -80,7 +85,8 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setIsReviewQuestionsRemoved,
     appTheme,
     setAppTheme,
+    lessonLayoutDefault,
+    setLessonLayoutDefault,
     hasHydratedSettings,
   };
 }
-

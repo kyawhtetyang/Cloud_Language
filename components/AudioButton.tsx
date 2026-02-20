@@ -7,7 +7,7 @@ interface AudioButtonProps {
   voicePreference?: VoicePreference;
 }
 
-export type VoicePreference = 'young_female' | 'google_female' | 'system_default';
+export type VoicePreference = 'young_female' | 'system_default';
 
 const YOUNG_FEMALE_VOICE_HINTS = [
   'aria',
@@ -40,20 +40,8 @@ function pickPreferredVoice(
     // Let the browser/system choose the true default voice.
     return null;
   }
-  const googleFemale = pool.find((voice) => {
-    const name = voice.name.toLowerCase();
-    return name.includes('google') && (name.includes('female') || name.includes('aria') || name.includes('jenny'));
-  });
-  if (voicePreference === 'google_female') {
-    if (googleFemale) return googleFemale;
-    const fallbackFemale = pool.find((voice) =>
-      YOUNG_FEMALE_VOICE_HINTS.some((hint) => voice.name.toLowerCase().includes(hint)),
-    );
-    return fallbackFemale || null;
-  }
   const youngFemaleMatch = pool.find((voice) => {
     const name = voice.name.toLowerCase();
-    if (name.includes('google')) return false;
     return YOUNG_FEMALE_VOICE_HINTS.some((hint) => name.includes(hint));
   });
   if (youngFemaleMatch) return youngFemaleMatch;
@@ -122,4 +110,3 @@ export const AudioButton: React.FC<AudioButtonProps> = ({
     </button>
   );
 };
-

@@ -33,7 +33,7 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, A
             <button
               type="button"
               onClick={this.handleReload}
-              className="w-full py-3 rounded-xl bg-brand border-2 border-brand-dark text-white font-extrabold uppercase tracking-wide duo-button-shadow"
+              className="w-full py-3 rounded-xl border-2 font-extrabold uppercase tracking-wide btn-selected"
             >
               Reload
             </button>
@@ -45,4 +45,3 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, A
     return this.props.children;
   }
 }
-

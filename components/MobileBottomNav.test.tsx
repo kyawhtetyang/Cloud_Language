@@ -8,9 +8,12 @@ describe('MobileBottomNav', () => {
 
     const settingsButton = screen.getByRole('button', { name: 'Settings' });
     const lessonButton = screen.getByRole('button', { name: 'Lesson' });
+    const settingsIconWrap = settingsButton.querySelector('span');
 
     expect(settingsButton.className).toContain('text-brand');
     expect(lessonButton.className).toContain('text-gray-500');
+    expect(settingsIconWrap?.className).toContain('bg-transparent');
+    expect(settingsIconWrap?.className).toContain('text-brand');
   });
 
   it('calls onTabChange when buttons are clicked', () => {
@@ -24,4 +27,3 @@ describe('MobileBottomNav', () => {
     expect(onTabChange).toHaveBeenNthCalledWith(2, 'profile');
   });
 });
-

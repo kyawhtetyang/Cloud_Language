@@ -7,6 +7,7 @@ import {
   DefaultLanguage,
   getLessonOrderIndex,
   LearnLanguage,
+  LessonLayoutMode,
   PROGRESS_KEY,
   STREAK_KEY,
   UNLOCKED_LEVEL_KEY,
@@ -37,6 +38,7 @@ type UseProfileProgressSyncParams = {
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
   appTheme: AppTheme;
+  lessonLayoutDefault: LessonLayoutMode;
   totalLevels: number;
   progressStorageKey: string;
   unlockedStorageKey: string;
@@ -53,6 +55,7 @@ type UseProfileProgressSyncParams = {
   setIsRandomLessonOrderEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
   setAppTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
+  setLessonLayoutDefault: React.Dispatch<React.SetStateAction<LessonLayoutMode>>;
 };
 
 export function useProfileProgressSync({
@@ -72,6 +75,7 @@ export function useProfileProgressSync({
   isRandomLessonOrderEnabled,
   isReviewQuestionsRemoved,
   appTheme,
+  lessonLayoutDefault,
   totalLevels,
   progressStorageKey,
   unlockedStorageKey,
@@ -88,6 +92,7 @@ export function useProfileProgressSync({
   setIsRandomLessonOrderEnabled,
   setIsReviewQuestionsRemoved,
   setAppTheme,
+  setLessonLayoutDefault,
 }: UseProfileProgressSyncParams) {
   const [hasHydratedProfile, setHasHydratedProfile] = useState(false);
   const isFlushingQueueRef = useRef(false);
@@ -159,6 +164,7 @@ export function useProfileProgressSync({
             setIsRandomLessonOrderEnabled,
             setIsReviewQuestionsRemoved,
             setAppTheme,
+            setLessonLayoutDefault,
           });
         }
       } catch {
@@ -186,6 +192,7 @@ export function useProfileProgressSync({
     setIsRandomLessonOrderEnabled,
     setIsReviewQuestionsRemoved,
     setAppTheme,
+    setLessonLayoutDefault,
     setLearnLanguage,
     setStreak,
     setUnlockedLevel,
@@ -254,6 +261,7 @@ export function useProfileProgressSync({
         isRandomLessonOrderEnabled,
         isReviewQuestionsRemoved,
         appTheme,
+        lessonLayoutDefault,
       }),
     };
 
@@ -293,6 +301,7 @@ export function useProfileProgressSync({
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     appTheme,
+    lessonLayoutDefault,
     learnLanguage,
     lessons.length,
     profileName,
@@ -303,4 +312,3 @@ export function useProfileProgressSync({
 
   return { markHydrationStale };
 }
-

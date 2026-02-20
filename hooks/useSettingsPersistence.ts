@@ -4,6 +4,7 @@ import {
   AppTheme,
   DefaultLanguage,
   LearnLanguage,
+  LessonLayoutMode,
 } from '../config/appConfig';
 import { persistSyncedSettingsToStorage } from '../config/settingsSync';
 
@@ -19,6 +20,7 @@ type UseSettingsPersistenceParams = {
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
   appTheme: AppTheme;
+  lessonLayoutDefault: LessonLayoutMode;
 };
 
 export function useSettingsPersistence({
@@ -33,6 +35,7 @@ export function useSettingsPersistence({
   isRandomLessonOrderEnabled,
   isReviewQuestionsRemoved,
   appTheme,
+  lessonLayoutDefault,
 }: UseSettingsPersistenceParams) {
   useEffect(() => {
     if (!enabled || !profileStorageId) return;
@@ -46,6 +49,7 @@ export function useSettingsPersistence({
       isRandomLessonOrderEnabled,
       isReviewQuestionsRemoved,
       appTheme,
+      lessonLayoutDefault,
     }, profileStorageId);
     document.documentElement.style.fontSize = `${textScalePercent}%`;
   }, [
@@ -60,6 +64,6 @@ export function useSettingsPersistence({
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     appTheme,
+    lessonLayoutDefault,
   ]);
 }
-

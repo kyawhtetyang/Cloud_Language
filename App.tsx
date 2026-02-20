@@ -106,6 +106,8 @@ const App: React.FC = () => {
     setIsReviewQuestionsRemoved,
     appTheme,
     setAppTheme,
+    lessonLayoutDefault,
+    setLessonLayoutDefault,
     hasHydratedSettings,
   } = useAppPreferences(profileName ? toProfileStorageId(profileName) : '');
   const [isNextDisabled, setIsNextDisabled] = useState(false);
@@ -120,10 +122,18 @@ const App: React.FC = () => {
   const [isUnitCompleteModalOpen, setIsUnitCompleteModalOpen] = useState(false);
   const [isLessonUnitBoundaryModalOpen, setIsLessonUnitBoundaryModalOpen] = useState(false);
   const [isReading, setIsReading] = useState(false);
+  const [lessonLayoutMode, setLessonLayoutMode] = useState<'paged' | 'list'>(lessonLayoutDefault);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   const [pendingUnitTarget, setPendingUnitTarget] = useState<PendingUnitTarget | null>(null);
   const [roadmapSelectedAlbumKey, setRoadmapSelectedAlbumKey] = useState<string | null>(null);
   const readSessionRef = useRef(0);
+  const isContinuousListPlaybackRef = useRef(false);
+  const modeRef = useRef<AppMode>('learn');
+  const learnStepRef = useRef(0);
+  const sectionTotalRef = useRef(1);
+  const orderedUnitIndexesRef = useRef<number[]>([]);
+  const sectionStartRef = useRef(0);
+  const repeatModeRef = useRef<RepeatMode>('off');
   const [randomOrderVersion, setRandomOrderVersion] = useState(0);
   const {
     answerChecked,
@@ -183,6 +193,7 @@ const App: React.FC = () => {
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     appTheme,
+    lessonLayoutDefault,
     totalLevels,
     progressStorageKey,
     unlockedStorageKey,
@@ -199,6 +210,7 @@ const App: React.FC = () => {
     setIsRandomLessonOrderEnabled,
     setIsReviewQuestionsRemoved,
     setAppTheme,
+    setLessonLayoutDefault,
   });
 
   useSettingsPersistence({
@@ -213,6 +225,7 @@ const App: React.FC = () => {
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     appTheme,
+    lessonLayoutDefault,
   });
 
   const {
@@ -292,6 +305,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (mode !== 'learn' && isReading) {
+      isContinuousListPlaybackRef.current = false;
       readSessionRef.current += 1;
       setIsReading(false);
       cancelSpeech();
@@ -309,6 +323,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const movedIntoLessonTab = previousSidebarTabRef.current !== 'lesson' && sidebarTab === 'lesson';
     if (movedIntoLessonTab && isReading) {
+      isContinuousListPlaybackRef.current = false;
       readSessionRef.current += 1;
       setIsReading(false);
       cancelSpeech();
@@ -316,22 +331,17 @@ const App: React.FC = () => {
     previousSidebarTabRef.current = sidebarTab;
   }, [isReading, sidebarTab]);
 
-  const handleReadCurrentBatch = async () => {
-    if (mode !== 'learn') return;
+  useEffect(() => {
+    modeRef.current = mode;
+    learnStepRef.current = learnStep;
+    sectionTotalRef.current = sectionTotal;
+    orderedUnitIndexesRef.current = orderedUnitIndexes;
+    sectionStartRef.current = sectionStart;
+    repeatModeRef.current = repeatMode;
+  }, [mode, learnStep, sectionTotal, orderedUnitIndexes, sectionStart, repeatMode]);
 
-    if (isReading) {
-      readSessionRef.current += 1;
-      setIsReading(false);
-      cancelSpeech();
-      return;
-    }
-
-    const texts = currentBatchEntries
-      .map(({ lesson }) => lesson.english)
-      .filter((text) => typeof text === 'string' && text.trim().length > 0);
-
-    if (texts.length === 0) return;
-
+  const playTextsSequentially = async (texts: string[]): Promise<boolean> => {
+    if (mode !== 'learn' || texts.length === 0) return false;
     const sessionId = readSessionRef.current + 1;
     readSessionRef.current = sessionId;
     setIsReading(true);
@@ -344,17 +354,97 @@ const App: React.FC = () => {
 
     if (readSessionRef.current === sessionId) {
       setIsReading(false);
+      return true;
     }
+    return false;
+  };
+
+  const getBatchTextsForStep = (step: number): string[] => {
+    const safeStep = Math.max(0, Math.min(LEARN_QUESTIONS_PER_UNIT - 1, step));
+    const sectionTotalValue = Math.max(1, sectionTotalRef.current);
+    const offset = (safeStep * LESSONS_PER_BATCH) % sectionTotalValue;
+    const batchIndexes = Array.from({ length: LESSONS_PER_BATCH }, (_, idx) => {
+      const orderedIndex = orderedUnitIndexesRef.current[(offset + idx) % sectionTotalValue];
+      return orderedIndex ?? sectionStartRef.current;
+    });
+    return batchIndexes
+      .map((index) => lessons[index]?.english)
+      .filter((text): text is string => typeof text === 'string' && text.trim().length > 0);
+  };
+
+  const proceedUnitCompletionWithoutReviewRef = useRef<() => void>(() => {});
+
+  const runContinuousListPlayback = async () => {
+    let cursorStep = learnStepRef.current;
+    while (isContinuousListPlaybackRef.current && modeRef.current === 'learn') {
+      const texts = getBatchTextsForStep(cursorStep);
+      if (texts.length === 0) break;
+      const finished = await playTextsSequentially(texts);
+      if (!finished || !isContinuousListPlaybackRef.current || modeRef.current !== 'learn') break;
+
+      if (cursorStep >= LEARN_QUESTIONS_PER_UNIT - 1) {
+        if (repeatModeRef.current === 'one') {
+          setCurrentIndex(sectionStartRef.current);
+          setLearnStep(0);
+          learnStepRef.current = 0;
+          cursorStep = 0;
+          setRandomOrderVersion((prev) => prev + 1);
+        } else {
+          proceedUnitCompletionWithoutReviewRef.current();
+          // Let state commit to the next unit before continuing.
+          await new Promise((resolve) => window.setTimeout(resolve, 0));
+          cursorStep = learnStepRef.current;
+        }
+      } else {
+        const nextStep = cursorStep + 1;
+        const sectionTotalValue = Math.max(1, sectionTotalRef.current);
+        const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotalValue;
+        setLearnStep(nextStep);
+        learnStepRef.current = nextStep;
+        setCurrentIndex(orderedUnitIndexesRef.current[nextOffset] ?? sectionStartRef.current);
+        cursorStep = nextStep;
+        // Yield once so selection UI updates before the next batch starts speaking.
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
+      }
+    }
+    isContinuousListPlaybackRef.current = false;
+  };
+
+  const handleReadCurrentBatch = async () => {
+    if (mode !== 'learn') return;
+
+    if (isReading) {
+      isContinuousListPlaybackRef.current = false;
+      readSessionRef.current += 1;
+      setIsReading(false);
+      cancelSpeech();
+      return;
+    }
+
+    const texts = currentBatchEntries
+      .map(({ lesson }) => lesson.english)
+      .filter((text) => typeof text === 'string' && text.trim().length > 0);
+
+    if (lessonLayoutMode === 'list') {
+      isContinuousListPlaybackRef.current = true;
+      await runContinuousListPlayback();
+      return;
+    }
+
+    isContinuousListPlaybackRef.current = false;
+    await playTextsSequentially(texts);
   };
 
   const handleSelectLessonStep = (step: number) => {
     if (mode !== 'learn') return;
     const safeStep = Math.max(0, Math.min(LEARN_QUESTIONS_PER_UNIT - 1, step));
     if (isReading) {
+      isContinuousListPlaybackRef.current = false;
       readSessionRef.current += 1;
       setIsReading(false);
       cancelSpeech();
     }
+    learnStepRef.current = safeStep;
     setLearnStep(safeStep);
     const nextOffset = (safeStep * LESSONS_PER_BATCH) % sectionTotal;
     setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
@@ -466,6 +556,10 @@ const App: React.FC = () => {
     resetQuizState();
   };
 
+  useEffect(() => {
+    proceedUnitCompletionWithoutReviewRef.current = proceedUnitCompletionWithoutReview;
+  }, [proceedUnitCompletionWithoutReview]);
+
   const startCheckpointQuizForStep = (nextStep: number) => {
     const previousCheckpoint =
       QUICK_REVIEW_CHECKPOINTS.filter((checkpoint) => checkpoint < nextStep).at(-1) || 0;
@@ -492,6 +586,7 @@ const App: React.FC = () => {
 
   const handleNext = () => {
     if (isNextDisabled || mode !== 'learn') return;
+    isContinuousListPlaybackRef.current = false;
 
     setIsNextDisabled(true);
     const nextStep = learnStep + 1;
@@ -511,6 +606,9 @@ const App: React.FC = () => {
     } else {
       const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotal;
       setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
+      if (lessonLayoutMode === 'list') {
+        void playTextsSequentially(getBatchTextsForStep(nextStep));
+      }
     }
 
     setIsNextDisabled(false);
@@ -971,6 +1069,7 @@ const App: React.FC = () => {
               translationLabel={translationLabel}
               pronunciationStyleLabel={pronunciationStyleLabel}
               appTheme={appTheme}
+              lessonLayoutDefault={lessonLayoutDefault}
               onDefaultLanguageChange={setDefaultLanguage}
               onLearnLanguageChange={setLearnLanguage}
               onTogglePronunciation={() => setIsPronunciationEnabled((prev) => !prev)}
@@ -979,6 +1078,7 @@ const App: React.FC = () => {
               onIncreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev + 5))}
               onVoicePreferenceChange={setVoicePreference}
               onAppThemeChange={setAppTheme}
+              onLessonLayoutDefaultChange={setLessonLayoutDefault}
             />
           ) : mode === 'quiz' ? (
             <MatchReviewView
@@ -1025,6 +1125,8 @@ const App: React.FC = () => {
               isPronunciationEnabled={isPronunciationEnabled}
               isBoldTextEnabled={isBoldTextEnabled}
               voicePreference={voicePreference}
+              defaultLayoutMode={lessonLayoutDefault}
+              onLayoutModeChange={setLessonLayoutMode}
             />
           )}
         </main>
@@ -1060,4 +1162,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

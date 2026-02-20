@@ -7,6 +7,8 @@ import {
   DefaultLanguage,
   LEARN_LANGUAGE_OPTIONS,
   LearnLanguage,
+  LESSON_LAYOUT_OPTIONS,
+  LessonLayoutMode,
 } from '../../config/appConfig';
 
 type SettingsViewProps = {
@@ -21,6 +23,7 @@ type SettingsViewProps = {
   translationLabel: string;
   pronunciationStyleLabel: string;
   appTheme: AppTheme;
+  lessonLayoutDefault: LessonLayoutMode;
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
   onLearnLanguageChange: (value: LearnLanguage) => void;
   onTogglePronunciation: () => void;
@@ -29,6 +32,7 @@ type SettingsViewProps = {
   onIncreaseTextSize: () => void;
   onVoicePreferenceChange: (value: VoicePreference) => void;
   onAppThemeChange: (value: AppTheme) => void;
+  onLessonLayoutDefaultChange: (value: LessonLayoutMode) => void;
 };
 
 const sectionTitleClass = 'text-sm font-extrabold uppercase tracking-wide text-brand-ink';
@@ -76,6 +80,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   translationLabel,
   pronunciationStyleLabel,
   appTheme,
+  lessonLayoutDefault,
   onDefaultLanguageChange,
   onLearnLanguageChange,
   onTogglePronunciation,
@@ -84,6 +89,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onIncreaseTextSize,
   onVoicePreferenceChange,
   onAppThemeChange,
+  onLessonLayoutDefaultChange,
 }) => {
   return (
     <div className="w-full max-w-2xl rounded-[24px] border-2 border-gray-100 bg-white p-4 shadow-xl md:p-5">
@@ -138,7 +144,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className={sectionCardClass}>
           <p className={sectionTitleClass}>Current Theme</p>
           <p className="text-sm text-gray-600 mt-1 mb-3">Choose visual style for the app.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {APP_THEME_OPTIONS.map((option) => (
               <button
                 key={option.code}
@@ -166,6 +172,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             isOn={isBoldTextEnabled}
             onToggle={onToggleBoldText}
           />
+          <div className={sectionCardClass}>
+            <p className={sectionTitleClass}>Lesson Layout Default</p>
+            <p className="text-sm text-gray-600 mt-1 mb-3">Choose default view for lesson screen.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {LESSON_LAYOUT_OPTIONS.map((option) => (
+                <button
+                  key={option.code}
+                  type="button"
+                  onClick={() => onLessonLayoutDefaultChange(option.code)}
+                  className={`${optionButtonBaseClass} ${
+                    lessonLayoutDefault === option.code
+                      ? 'btn-selected'
+                      : 'btn-unselected'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className={sectionCardClass}>
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -220,7 +246,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className={sectionCardClass}>
             <p className={sectionTitleClass}>Voice</p>
             <p className="text-sm text-gray-600 mt-1 mb-3">Choose your preferred speaking voice style.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => onVoicePreferenceChange('young_female')}
@@ -231,17 +257,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 }`}
               >
                 Warm Female
-              </button>
-              <button
-                type="button"
-                onClick={() => onVoicePreferenceChange('google_female')}
-                className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-                  voicePreference === 'google_female'
-                    ? 'btn-selected'
-                    : 'btn-unselected'
-                }`}
-              >
-                Google Female
               </button>
               <button
                 type="button"
@@ -275,4 +290,3 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     </div>
   );
 };
-

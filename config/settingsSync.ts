@@ -9,7 +9,10 @@ import {
   DEFAULT_LANGUAGE_KEY,
   DefaultLanguage,
   isDefaultLanguage,
+  isLessonLayoutMode,
   isLearnLanguage,
+  LESSON_LAYOUT_DEFAULT_KEY,
+  LessonLayoutMode,
   LEARN_LANGUAGE_KEY,
   LearnLanguage,
   PRONUNCIATION_ENABLED_KEY,
@@ -29,6 +32,7 @@ export type SyncedAppSettings = {
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
   appTheme: AppTheme;
+  lessonLayoutDefault: LessonLayoutMode;
 };
 
 export type SyncedAppSettingsSetters = {
@@ -41,6 +45,7 @@ export type SyncedAppSettingsSetters = {
   setIsRandomLessonOrderEnabled: Dispatch<SetStateAction<boolean>>;
   setIsReviewQuestionsRemoved: Dispatch<SetStateAction<boolean>>;
   setAppTheme: Dispatch<SetStateAction<AppTheme>>;
+  setLessonLayoutDefault: Dispatch<SetStateAction<LessonLayoutMode>>;
 };
 
 const DEFAULT_SYNCED_SETTINGS: SyncedAppSettings = {
@@ -53,6 +58,7 @@ const DEFAULT_SYNCED_SETTINGS: SyncedAppSettings = {
   isRandomLessonOrderEnabled: false,
   isReviewQuestionsRemoved: false,
   appTheme: 'apple_notes',
+  lessonLayoutDefault: 'list',
 };
 
 function toScopedKey(baseKey: string, profileStorageId: string): string {
@@ -84,8 +90,11 @@ function parseDefaultLanguage(value: string | null): DefaultLanguage {
 }
 
 function parseVoicePreference(value: string | null): VoicePreference {
-  if (value === 'google_female' || value === 'system_default' || value === 'young_female') {
+  if (value === 'young_female' || value === 'system_default') {
     return value;
+  }
+  if (value === 'google_female') {
+    return 'system_default';
   }
   return 'young_female';
 }
@@ -100,6 +109,10 @@ function parseTextScale(value: string | null): number {
 
 function parseAppTheme(value: string | null): AppTheme {
   return isAppTheme(value) ? value : 'apple_notes';
+}
+
+function parseLessonLayoutDefault(value: string | null): LessonLayoutMode {
+  return isLessonLayoutMode(value) ? value : 'list';
 }
 
 function readWithFallback(baseKey: string, profileStorageId?: string): string | null {
@@ -122,6 +135,7 @@ export function readSyncedSettingsFromStorage(profileStorageId?: string): Synced
     isRandomLessonOrderEnabled: parseBoolean(readWithFallback(RANDOM_LESSON_ORDER_ENABLED_KEY, profileStorageId)),
     isReviewQuestionsRemoved: parseBoolean(readWithFallback(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY, profileStorageId)),
     appTheme: parseAppTheme(readWithFallback(APP_THEME_KEY, profileStorageId)),
+    lessonLayoutDefault: parseLessonLayoutDefault(readWithFallback(LESSON_LAYOUT_DEFAULT_KEY, profileStorageId)),
   };
 }
 
@@ -140,6 +154,7 @@ export function persistSyncedSettingsToStorage(
   safeWrite(resolveKey(RANDOM_LESSON_ORDER_ENABLED_KEY), String(settings.isRandomLessonOrderEnabled));
   safeWrite(resolveKey(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY), String(settings.isReviewQuestionsRemoved));
   safeWrite(resolveKey(APP_THEME_KEY), settings.appTheme);
+  safeWrite(resolveKey(LESSON_LAYOUT_DEFAULT_KEY), settings.lessonLayoutDefault);
 }
 
 export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedAppSettings {
@@ -153,6 +168,7 @@ export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedA
     isRandomLessonOrderEnabled: settings.isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved: settings.isReviewQuestionsRemoved,
     appTheme: settings.appTheme,
+    lessonLayoutDefault: settings.lessonLayoutDefault,
   };
 }
 
@@ -174,10 +190,11 @@ export function applyRemoteSyncedSettings(
   }
   if (
     remote.voicePreference === 'young_female' ||
-    remote.voicePreference === 'google_female' ||
     remote.voicePreference === 'system_default'
   ) {
     setters.setVoicePreference(remote.voicePreference);
+  } else if (remote.voicePreference === 'google_female') {
+    setters.setVoicePreference('system_default');
   }
   if (typeof remote.isBoldTextEnabled === 'boolean') {
     setters.setIsBoldTextEnabled(remote.isBoldTextEnabled);
@@ -191,5 +208,7 @@ export function applyRemoteSyncedSettings(
   if (isAppTheme(remote.appTheme)) {
     setters.setAppTheme(remote.appTheme);
   }
+  if (isLessonLayoutMode(remote.lessonLayoutDefault)) {
+    setters.setLessonLayoutDefault(remote.lessonLayoutDefault);
+  }
 }
-

@@ -61,6 +61,8 @@ describe('useProfileProgressSync debounce', () => {
       isBoldTextEnabled: false,
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
+      appTheme: 'apple_notes' as const,
+      lessonLayoutDefault: 'list' as const,
       totalLevels: 12,
       progressStorageKey: 'progress:tester',
       unlockedStorageKey: 'unlocked:tester',
@@ -76,6 +78,8 @@ describe('useProfileProgressSync debounce', () => {
       setIsBoldTextEnabled: vi.fn(),
       setIsRandomLessonOrderEnabled: vi.fn(),
       setIsReviewQuestionsRemoved: vi.fn(),
+      setAppTheme: vi.fn(),
+      setLessonLayoutDefault: vi.fn(),
     };
 
     const { rerender } = renderHook(
@@ -122,5 +126,4 @@ describe('useProfileProgressSync debounce', () => {
     expect(putCalls.length).toBe(1);
   });
 });
-
 

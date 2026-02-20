@@ -25,6 +25,8 @@ type LessonViewProps = {
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
   voicePreference: VoicePreference;
+  defaultLayoutMode?: 'paged' | 'list';
+  onLayoutModeChange?: (mode: 'paged' | 'list') => void;
 };
 
 export const LessonView: React.FC<LessonViewProps> = ({
@@ -42,8 +44,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
   isPronunciationEnabled,
   isBoldTextEnabled,
   voicePreference,
+  defaultLayoutMode = 'list',
+  onLayoutModeChange,
 }) => {
-  const [lessonLayout, setLessonLayout] = useState<'paged' | 'list'>('paged');
+  const [lessonLayout, setLessonLayout] = useState<'paged' | 'list'>(defaultLayoutMode);
   const batchRefs = useRef<Array<HTMLDivElement | null>>([]);
   const leadLesson = currentBatchEntries[0]?.lesson;
   const level = leadLesson?.level || 1;
@@ -60,8 +64,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
     if (typeof currentStep !== 'number' || currentStep < 0) return;
     const node = batchRefs.current[currentStep];
     if (!node) return;
+    if (typeof node.scrollIntoView !== 'function') return;
     node.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [currentStep, lessonLayout]);
+
+  useEffect(() => {
+    onLayoutModeChange?.(lessonLayout);
+  }, [lessonLayout, onLayoutModeChange]);
+
+  useEffect(() => {
+    setLessonLayout(defaultLayoutMode);
+  }, [defaultLayoutMode]);
 
   return (
     <div className="w-full max-w-2xl">
@@ -138,7 +151,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 }}
                 className={`relative rounded-xl border p-1.5 transition-all ${
                   batchIdx === (currentStep ?? -1)
-                    ? 'border-2 border-brand-dark bg-brand-paler/60 shadow-[0_0_0_2px_rgba(88,204,2,0.10)]'
+                    ? 'lesson-batch-selected'
                     : 'border border-gray-200 bg-white'
                 }`}
               >
@@ -242,4 +255,3 @@ export const LessonView: React.FC<LessonViewProps> = ({
     </div>
   );
 };
-

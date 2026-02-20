@@ -543,7 +543,9 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
               </p>
             </div>
             <div className="divide-y divide-gray-100">
-              {stageGroups.map((group) => (
+              {stageGroups.map((group) => {
+                const stageLabel = text.stageLabels[stage].replace(/\s*\([^)]*\)\s*$/, '');
+                return (
                 <button
                   key={group.key}
                   type="button"
@@ -563,14 +565,11 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                       />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className={`text-xs font-black uppercase tracking-[0.12em] ${stageUi.titleClass}`}>
-                        {stage} · {text.groupPrefix} {group.groupIndex + 1}
-                      </p>
-                      <p className="mt-0.5 truncate text-base font-extrabold text-ink-strong">
+                      <p className="truncate text-base font-extrabold text-ink-strong">
                         {shortenLabel(group.firstTopicConcise, 48)}
                       </p>
                       <p className="mt-1 text-xs font-semibold text-ink-muted">
-                        {group.units.length} {group.units.length > 1 ? 'units' : 'unit'} · {text.stageLabels[stage]}
+                        [{stage} · U{group.groupIndex + 1}] [{group.units.length} {group.units.length > 1 ? 'units' : 'unit'} · {stageLabel}]
                       </p>
                     </div>
                     <span className={`shrink-0 ${stageUi.titleClass}`} aria-hidden="true">
@@ -580,7 +579,8 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                     </span>
                   </div>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
@@ -588,4 +588,3 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
     </div>
   );
 };
-

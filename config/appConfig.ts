@@ -18,6 +18,7 @@ export const RANDOM_LESSON_ORDER_ENABLED_KEY = 'lingo_burmese_random_lesson_orde
 export const REMOVE_REVIEW_QUESTIONS_ENABLED_KEY = 'lingo_burmese_remove_review_questions_enabled';
 export const RELOAD_TO_LESSON_KEY = 'lingo_burmese_reload_to_lesson';
 export const APP_THEME_KEY = 'lingo_burmese_app_theme';
+export const LESSON_LAYOUT_DEFAULT_KEY = 'lingo_burmese_lesson_layout_default';
 
 export const LESSONS_PER_BATCH = 3;
 export const MATCH_PAIRS_PER_REVIEW = 3;
@@ -136,8 +137,15 @@ export const APP_THEME_OPTIONS = [
   { code: 'apple_notes', label: 'Apple Notes' },
   { code: 'duolingo', label: 'Duolingo' },
   { code: 'system', label: 'System' },
+  { code: 'dark', label: 'Dark' },
 ] as const;
 export type AppTheme = (typeof APP_THEME_OPTIONS)[number]['code'];
+
+export const LESSON_LAYOUT_OPTIONS = [
+  { code: 'paged', label: 'Paged' },
+  { code: 'list', label: 'List' },
+] as const;
+export type LessonLayoutMode = (typeof LESSON_LAYOUT_OPTIONS)[number]['code'];
 
 export type ReviewResult = {
   correct: number;
@@ -162,6 +170,11 @@ export function isDefaultLanguage(value: unknown): value is DefaultLanguage {
 export function isAppTheme(value: unknown): value is AppTheme {
   if (typeof value !== 'string') return false;
   return APP_THEME_OPTIONS.some((option) => option.code === value);
+}
+
+export function isLessonLayoutMode(value: unknown): value is LessonLayoutMode {
+  if (typeof value !== 'string') return false;
+  return LESSON_LAYOUT_OPTIONS.some((option) => option.code === value);
 }
 
 export type CoreLessonRef = {
@@ -272,4 +285,3 @@ export function toProfileStorageId(name: string): string {
       .replace(/^_+|_+$/g, '') || 'user'
   );
 }
-
