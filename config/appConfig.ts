@@ -12,7 +12,6 @@ export const PRONUNCIATION_ENABLED_KEY = 'lingo_burmese_pronunciation_enabled';
 export const LEARN_LANGUAGE_KEY = 'lingo_burmese_learn_language';
 export const DEFAULT_LANGUAGE_KEY = 'lingo_burmese_default_language';
 export const TEXT_SCALE_PERCENT_KEY = 'lingo_burmese_text_scale_percent';
-export const VOICE_PREFERENCE_KEY = 'lingo_burmese_voice_preference';
 export const BOLD_TEXT_ENABLED_KEY = 'lingo_burmese_bold_text_enabled';
 export const RANDOM_LESSON_ORDER_ENABLED_KEY = 'lingo_burmese_random_lesson_order_enabled';
 export const REMOVE_REVIEW_QUESTIONS_ENABLED_KEY = 'lingo_burmese_remove_review_questions_enabled';
@@ -147,6 +146,25 @@ export const LESSON_LAYOUT_OPTIONS = [
 ] as const;
 export type LessonLayoutMode = (typeof LESSON_LAYOUT_OPTIONS)[number]['code'];
 
+export const TEXT_SCALE_PERCENT_MIN = 90;
+export const TEXT_SCALE_PERCENT_MAX = 120;
+export const DEFAULT_TEXT_SCALE_PERCENT = 100;
+export const DEFAULT_UNLOCKED_LEVEL = 1;
+export const DEFAULT_STREAK = 0;
+export const DEFAULT_PROGRESS_INDEX = 0;
+
+export const APP_DEFAULTS = {
+  learnLanguage: 'english' as LearnLanguage,
+  defaultLanguage: 'burmese' as DefaultLanguage,
+  isPronunciationEnabled: false,
+  textScalePercent: DEFAULT_TEXT_SCALE_PERCENT,
+  isBoldTextEnabled: false,
+  isRandomLessonOrderEnabled: false,
+  isReviewQuestionsRemoved: false,
+  appTheme: 'apple_notes' as AppTheme,
+  lessonLayoutDefault: 'list' as LessonLayoutMode,
+};
+
 export type ReviewResult = {
   correct: number;
   total: number;
@@ -154,7 +172,7 @@ export type ReviewResult = {
 };
 
 export function clampTextScale(value: number): number {
-  return Math.min(120, Math.max(90, value));
+  return Math.min(TEXT_SCALE_PERCENT_MAX, Math.max(TEXT_SCALE_PERCENT_MIN, value));
 }
 
 export function isLearnLanguage(value: unknown): value is LearnLanguage {
@@ -184,6 +202,15 @@ export type CoreLessonRef = {
   level: number;
   unit: number;
 };
+
+export type PlayableLessonTextRef = {
+  english?: string | null;
+};
+
+export function getPlayableLessonText(lesson: PlayableLessonTextRef): string {
+  if (typeof lesson.english !== 'string') return '';
+  return lesson.english.trim();
+}
 
 export function getLessonUnitId(lesson: CoreLessonRef): number {
   if (Number.isInteger(lesson.unitId) && (lesson.unitId as number) > 0) {

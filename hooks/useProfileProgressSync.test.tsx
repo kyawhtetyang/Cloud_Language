@@ -57,7 +57,6 @@ describe('useProfileProgressSync debounce', () => {
       defaultLanguage: 'burmese' as const,
       isPronunciationEnabled: false,
       textScalePercent: 100,
-      voicePreference: 'young_female' as const,
       isBoldTextEnabled: false,
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
@@ -74,7 +73,6 @@ describe('useProfileProgressSync debounce', () => {
       setDefaultLanguage: vi.fn(),
       setIsPronunciationEnabled: vi.fn(),
       setTextScalePercent: vi.fn(),
-      setVoicePreference: vi.fn(),
       setIsBoldTextEnabled: vi.fn(),
       setIsRandomLessonOrderEnabled: vi.fn(),
       setIsReviewQuestionsRemoved: vi.fn(),
@@ -126,4 +124,3 @@ describe('useProfileProgressSync debounce', () => {
     expect(putCalls.length).toBe(1);
   });
 });
-

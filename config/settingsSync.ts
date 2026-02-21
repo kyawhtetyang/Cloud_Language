@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction } from 'react';
-import { VoicePreference } from '../components/AudioButton';
 import {
+  APP_DEFAULTS,
   APP_THEME_KEY,
   AppTheme,
   isAppTheme,
@@ -19,7 +19,6 @@ import {
   RANDOM_LESSON_ORDER_ENABLED_KEY,
   REMOVE_REVIEW_QUESTIONS_ENABLED_KEY,
   TEXT_SCALE_PERCENT_KEY,
-  VOICE_PREFERENCE_KEY,
 } from './appConfig';
 
 export type SyncedAppSettings = {
@@ -27,7 +26,6 @@ export type SyncedAppSettings = {
   defaultLanguage: DefaultLanguage;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
-  voicePreference: VoicePreference;
   isBoldTextEnabled: boolean;
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
@@ -40,7 +38,6 @@ export type SyncedAppSettingsSetters = {
   setDefaultLanguage: Dispatch<SetStateAction<DefaultLanguage>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
-  setVoicePreference: Dispatch<SetStateAction<VoicePreference>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
   setIsRandomLessonOrderEnabled: Dispatch<SetStateAction<boolean>>;
   setIsReviewQuestionsRemoved: Dispatch<SetStateAction<boolean>>;
@@ -49,16 +46,7 @@ export type SyncedAppSettingsSetters = {
 };
 
 const DEFAULT_SYNCED_SETTINGS: SyncedAppSettings = {
-  learnLanguage: 'english',
-  defaultLanguage: 'burmese',
-  isPronunciationEnabled: false,
-  textScalePercent: 100,
-  voicePreference: 'young_female',
-  isBoldTextEnabled: false,
-  isRandomLessonOrderEnabled: false,
-  isReviewQuestionsRemoved: false,
-  appTheme: 'apple_notes',
-  lessonLayoutDefault: 'list',
+  ...APP_DEFAULTS,
 };
 
 function toScopedKey(baseKey: string, profileStorageId: string): string {
@@ -82,21 +70,11 @@ function safeWrite(key: string, value: string): void {
 }
 
 function parseLearnLanguage(value: string | null): LearnLanguage {
-  return isLearnLanguage(value) ? value : 'english';
+  return isLearnLanguage(value) ? value : APP_DEFAULTS.learnLanguage;
 }
 
 function parseDefaultLanguage(value: string | null): DefaultLanguage {
-  return isDefaultLanguage(value) ? value : 'burmese';
-}
-
-function parseVoicePreference(value: string | null): VoicePreference {
-  if (value === 'young_female' || value === 'system_default') {
-    return value;
-  }
-  if (value === 'google_female') {
-    return 'system_default';
-  }
-  return 'young_female';
+  return isDefaultLanguage(value) ? value : APP_DEFAULTS.defaultLanguage;
 }
 
 function parseBoolean(value: string | null): boolean {
@@ -108,11 +86,11 @@ function parseTextScale(value: string | null): number {
 }
 
 function parseAppTheme(value: string | null): AppTheme {
-  return isAppTheme(value) ? value : 'apple_notes';
+  return isAppTheme(value) ? value : APP_DEFAULTS.appTheme;
 }
 
 function parseLessonLayoutDefault(value: string | null): LessonLayoutMode {
-  return isLessonLayoutMode(value) ? value : 'list';
+  return isLessonLayoutMode(value) ? value : APP_DEFAULTS.lessonLayoutDefault;
 }
 
 function readWithFallback(baseKey: string, profileStorageId?: string): string | null {
@@ -130,7 +108,6 @@ export function readSyncedSettingsFromStorage(profileStorageId?: string): Synced
     defaultLanguage: parseDefaultLanguage(readWithFallback(DEFAULT_LANGUAGE_KEY, profileStorageId)),
     isPronunciationEnabled: parseBoolean(readWithFallback(PRONUNCIATION_ENABLED_KEY, profileStorageId)),
     textScalePercent: parseTextScale(readWithFallback(TEXT_SCALE_PERCENT_KEY, profileStorageId)),
-    voicePreference: parseVoicePreference(readWithFallback(VOICE_PREFERENCE_KEY, profileStorageId)),
     isBoldTextEnabled: parseBoolean(readWithFallback(BOLD_TEXT_ENABLED_KEY, profileStorageId)),
     isRandomLessonOrderEnabled: parseBoolean(readWithFallback(RANDOM_LESSON_ORDER_ENABLED_KEY, profileStorageId)),
     isReviewQuestionsRemoved: parseBoolean(readWithFallback(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY, profileStorageId)),
@@ -149,7 +126,6 @@ export function persistSyncedSettingsToStorage(
   safeWrite(resolveKey(DEFAULT_LANGUAGE_KEY), settings.defaultLanguage);
   safeWrite(resolveKey(PRONUNCIATION_ENABLED_KEY), String(settings.isPronunciationEnabled));
   safeWrite(resolveKey(TEXT_SCALE_PERCENT_KEY), String(settings.textScalePercent));
-  safeWrite(resolveKey(VOICE_PREFERENCE_KEY), settings.voicePreference);
   safeWrite(resolveKey(BOLD_TEXT_ENABLED_KEY), String(settings.isBoldTextEnabled));
   safeWrite(resolveKey(RANDOM_LESSON_ORDER_ENABLED_KEY), String(settings.isRandomLessonOrderEnabled));
   safeWrite(resolveKey(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY), String(settings.isReviewQuestionsRemoved));
@@ -163,7 +139,6 @@ export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedA
     defaultLanguage: settings.defaultLanguage,
     isPronunciationEnabled: settings.isPronunciationEnabled,
     textScalePercent: settings.textScalePercent,
-    voicePreference: settings.voicePreference,
     isBoldTextEnabled: settings.isBoldTextEnabled,
     isRandomLessonOrderEnabled: settings.isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved: settings.isReviewQuestionsRemoved,
@@ -187,14 +162,6 @@ export function applyRemoteSyncedSettings(
   }
   if (typeof remote.textScalePercent === 'number') {
     setters.setTextScalePercent(clampTextScale(remote.textScalePercent));
-  }
-  if (
-    remote.voicePreference === 'young_female' ||
-    remote.voicePreference === 'system_default'
-  ) {
-    setters.setVoicePreference(remote.voicePreference);
-  } else if (remote.voicePreference === 'google_female') {
-    setters.setVoicePreference('system_default');
   }
   if (typeof remote.isBoldTextEnabled === 'boolean') {
     setters.setIsBoldTextEnabled(remote.isBoldTextEnabled);

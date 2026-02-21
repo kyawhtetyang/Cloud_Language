@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { cancelSpeech, speakText, VoicePreference } from '../AudioButton';
+import { cancelSpeech, speakText } from '../AudioButton';
 import { LessonData } from '../../types';
-import { resolveStageCode } from '../../config/appConfig';
+import { getPlayableLessonText, LearnLanguage, resolveStageCode } from '../../config/appConfig';
 import { buildLessonReferenceKey } from '../../utils/lessonReference';
 import { localizeRoadmapTopic } from '../../config/roadmapI18n';
 
@@ -24,7 +24,7 @@ type LessonViewProps = {
   defaultLanguage: 'burmese' | 'english';
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
-  voicePreference: VoicePreference;
+  learnLanguage: LearnLanguage;
   defaultLayoutMode?: 'paged' | 'list';
   onLayoutModeChange?: (mode: 'paged' | 'list') => void;
 };
@@ -43,7 +43,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   defaultLanguage,
   isPronunciationEnabled,
   isBoldTextEnabled,
-  voicePreference,
+  learnLanguage,
   defaultLayoutMode = 'list',
   onLayoutModeChange,
 }) => {
@@ -134,8 +134,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
       }`}>
         {lessonLayout === 'list' && allBatchGroups && allBatchGroups.length > 0 ? (
           <div className="space-y-2 p-2">
-            {allBatchGroups.map((entries, batchIdx) => (
-              <div
+            {allBatchGroups.map((entries, batchIdx) => {
+              const isBatchSelected = batchIdx === (currentStep ?? -1);
+              return (
+                <div
                 key={`batch-${batchIdx}`}
                 ref={(node) => {
                   batchRefs.current[batchIdx] = node;
@@ -150,20 +152,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   }
                 }}
                 className={`relative rounded-xl border p-1.5 transition-all ${
-                  batchIdx === (currentStep ?? -1)
+                  isBatchSelected
                     ? 'lesson-batch-selected'
                     : 'border border-gray-200 bg-white'
                 }`}
               >
-                {batchIdx === (currentStep ?? -1) && (
-                  <span className="absolute inset-y-1.5 left-0 w-1.5 rounded-r-full bg-brand" aria-hidden="true" />
-                )}
                 <div className="flex items-center justify-between px-2 pb-1">
                   <p className="text-xs font-black uppercase tracking-wide text-gray-500">
                     {batchIdx + 1}/10
                   </p>
-                  {batchIdx === (currentStep ?? -1) ? (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-brand-paler px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-brand-ink">
+                  {isBatchSelected ? (
+                    <span className="selection-selected-badge inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide">
                       {isReading ? 'Playing' : 'Selected'}
                     </span>
                   ) : (
@@ -185,9 +184,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
                         onClick={() => {
                           onSelectStep?.(batchIdx);
                           cancelSpeech();
-                          void speakText(lesson.english, voicePreference);
+                          const speakValue = getPlayableLessonText(lesson);
+                          if (!speakValue) return;
+                          void speakText(speakValue, {
+                            learnLanguage,
+                            unitId: lesson.unitId ?? lesson.unit,
+                            audioUrl: lesson.audioPath,
+                          });
                         }}
-                        className="w-full rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-gray-50 active:scale-[0.99]"
+                        className="selection-hover w-full rounded-lg px-3 py-2.5 text-left transition-colors active:scale-[0.99]"
                         aria-label={`Play audio for ${lesson.english}`}
                         title="Tap to hear pronunciation"
                       >
@@ -200,7 +205,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                           <p className={`text-base md:text-lg text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-medium'}`}>
                             {lesson.english}
                           </p>
-                          <p className={`text-brand text-base md:text-lg ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
+                          <p className={`text-base md:text-lg text-brand ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
                             {translatedText}
                           </p>
                         </div>
@@ -209,7 +214,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   })}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="divide-y divide-gray-100 p-1.5">
@@ -225,9 +231,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
                       type="button"
                       onClick={() => {
                         cancelSpeech();
-                        void speakText(lesson.english, voicePreference);
+                        const speakValue = getPlayableLessonText(lesson);
+                        if (!speakValue) return;
+                        void speakText(speakValue, {
+                          learnLanguage,
+                          unitId: lesson.unitId ?? lesson.unit,
+                          audioUrl: lesson.audioPath,
+                        });
                       }}
-                      className="w-full rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-gray-50 active:scale-[0.99]"
+                      className="selection-hover w-full rounded-lg px-3 py-2.5 text-left transition-colors active:scale-[0.99]"
                       aria-label={`Play audio for ${lesson.english}`}
                       title="Tap to hear pronunciation"
                     >

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LessonData, ProgressState } from '../types';
-import { VoicePreference } from '../components/AudioButton';
 import {
   AppTheme,
   AppMode,
+  DEFAULT_PROGRESS_INDEX,
+  DEFAULT_STREAK,
+  DEFAULT_UNLOCKED_LEVEL,
   DefaultLanguage,
   getLessonOrderIndex,
   LearnLanguage,
@@ -33,7 +35,6 @@ type UseProfileProgressSyncParams = {
   defaultLanguage: DefaultLanguage;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
-  voicePreference: VoicePreference;
   isBoldTextEnabled: boolean;
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
@@ -50,7 +51,6 @@ type UseProfileProgressSyncParams = {
   setDefaultLanguage: React.Dispatch<React.SetStateAction<DefaultLanguage>>;
   setIsPronunciationEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setTextScalePercent: React.Dispatch<React.SetStateAction<number>>;
-  setVoicePreference: React.Dispatch<React.SetStateAction<VoicePreference>>;
   setIsBoldTextEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setIsRandomLessonOrderEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
@@ -70,7 +70,6 @@ export function useProfileProgressSync({
   defaultLanguage,
   isPronunciationEnabled,
   textScalePercent,
-  voicePreference,
   isBoldTextEnabled,
   isRandomLessonOrderEnabled,
   isReviewQuestionsRemoved,
@@ -87,7 +86,6 @@ export function useProfileProgressSync({
   setDefaultLanguage,
   setIsPronunciationEnabled,
   setTextScalePercent,
-  setVoicePreference,
   setIsBoldTextEnabled,
   setIsRandomLessonOrderEnabled,
   setIsReviewQuestionsRemoved,
@@ -119,16 +117,28 @@ export function useProfileProgressSync({
       let restoredIndex = 0;
       try {
         const saved = localStorage.getItem(progressStorageKey) || localStorage.getItem(PROGRESS_KEY);
-        restoredIndex = saved ? (JSON.parse(saved) as ProgressState).currentIndex : 0;
+        restoredIndex = saved ? (JSON.parse(saved) as ProgressState).currentIndex : DEFAULT_PROGRESS_INDEX;
       } catch {
-        restoredIndex = 0;
+        restoredIndex = DEFAULT_PROGRESS_INDEX;
       }
       const safeLocalIndex = Math.min(Math.max(restoredIndex, 0), lessons.length - 1);
 
-      const savedUnlocked = Number(localStorage.getItem(unlockedStorageKey) || localStorage.getItem(UNLOCKED_LEVEL_KEY) || 1);
-      const inferredUnlocked = lessons[safeLocalIndex] ? getLessonOrderIndex(lessons[safeLocalIndex]) : 1;
-      const safeLocalUnlocked = Math.min(totalLevels, Math.max(savedUnlocked, inferredUnlocked, 1));
-      const safeLocalStreak = Math.max(0, Number(localStorage.getItem(streakStorageKey) || localStorage.getItem(STREAK_KEY) || 0));
+      const savedUnlocked = Number(
+        localStorage.getItem(unlockedStorageKey)
+        || localStorage.getItem(UNLOCKED_LEVEL_KEY)
+        || DEFAULT_UNLOCKED_LEVEL,
+      );
+      const inferredUnlocked = lessons[safeLocalIndex]
+        ? getLessonOrderIndex(lessons[safeLocalIndex])
+        : DEFAULT_UNLOCKED_LEVEL;
+      const safeLocalUnlocked = Math.min(
+        totalLevels,
+        Math.max(savedUnlocked, inferredUnlocked, DEFAULT_UNLOCKED_LEVEL),
+      );
+      const safeLocalStreak = Math.max(
+        DEFAULT_STREAK,
+        Number(localStorage.getItem(streakStorageKey) || localStorage.getItem(STREAK_KEY) || DEFAULT_STREAK),
+      );
 
       if (cancelled) return;
       setCurrentIndex(safeLocalIndex);
@@ -142,14 +152,14 @@ export function useProfileProgressSync({
         if (response.ok) {
           const remote = await response.json();
           const remoteIndex = Math.min(
-            Math.max(0, Number(remote.currentIndex) || 0),
+            Math.max(DEFAULT_PROGRESS_INDEX, Number(remote.currentIndex) || DEFAULT_PROGRESS_INDEX),
             lessons.length - 1,
           );
           const remoteUnlocked = Math.min(
             totalLevels,
-            Math.max(1, Number(remote.unlockedLevel) || 1),
+            Math.max(DEFAULT_UNLOCKED_LEVEL, Number(remote.unlockedLevel) || DEFAULT_UNLOCKED_LEVEL),
           );
-          const remoteStreak = Math.max(0, Number(remote.streak) || 0);
+          const remoteStreak = Math.max(DEFAULT_STREAK, Number(remote.streak) || DEFAULT_STREAK);
           if (cancelled) return;
           setCurrentIndex(remoteIndex);
           setUnlockedLevel(remoteUnlocked);
@@ -159,7 +169,6 @@ export function useProfileProgressSync({
             setDefaultLanguage,
             setIsPronunciationEnabled,
             setTextScalePercent,
-            setVoicePreference,
             setIsBoldTextEnabled,
             setIsRandomLessonOrderEnabled,
             setIsReviewQuestionsRemoved,
@@ -187,7 +196,6 @@ export function useProfileProgressSync({
     setDefaultLanguage,
     setIsPronunciationEnabled,
     setTextScalePercent,
-    setVoicePreference,
     setIsBoldTextEnabled,
     setIsRandomLessonOrderEnabled,
     setIsReviewQuestionsRemoved,
@@ -256,7 +264,6 @@ export function useProfileProgressSync({
         defaultLanguage,
         isPronunciationEnabled,
         textScalePercent,
-        voicePreference,
         isBoldTextEnabled,
         isRandomLessonOrderEnabled,
         isReviewQuestionsRemoved,
@@ -296,7 +303,6 @@ export function useProfileProgressSync({
     hasHydratedProfile,
     isPronunciationEnabled,
     textScalePercent,
-    voicePreference,
     isBoldTextEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,

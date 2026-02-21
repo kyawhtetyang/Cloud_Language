@@ -488,12 +488,12 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
               const isCompleted = completedUnitKeys?.has(unitKey) ?? false;
               const isActive = activeUnitKey === unitKey;
               const rowClass = isActive
-                ? 'btn-selected-flat'
+                ? 'neutral-selected-flat'
                 : isCompleted
                   ? 'bg-gray-100/80 text-gray-500'
                   : 'bg-white text-gray-700';
               const badgeClass = isActive
-                ? 'bg-brand text-white'
+                ? 'border border-white/35 bg-white/15 text-white'
                 : isCompleted
                   ? 'bg-brand-soft text-brand'
                   : stageUi.badgeClass;
@@ -551,7 +551,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                   type="button"
                   onClick={() => setSelectedAlbumKey(group.key)}
                   aria-label={`Open album group ${group.groupIndex + 1}`}
-                  className="w-full text-left px-3 py-3 transition-colors hover:bg-gray-50"
+                  className="selection-hover w-full text-left px-3 py-3 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg">

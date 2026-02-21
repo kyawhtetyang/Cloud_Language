@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { VoicePreference } from '../components/AudioButton';
 import {
   AppTheme,
   DefaultLanguage,
@@ -15,7 +14,6 @@ type UseSettingsPersistenceParams = {
   defaultLanguage: DefaultLanguage;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
-  voicePreference: VoicePreference;
   isBoldTextEnabled: boolean;
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
@@ -30,7 +28,6 @@ export function useSettingsPersistence({
   defaultLanguage,
   isPronunciationEnabled,
   textScalePercent,
-  voicePreference,
   isBoldTextEnabled,
   isRandomLessonOrderEnabled,
   isReviewQuestionsRemoved,
@@ -44,7 +41,6 @@ export function useSettingsPersistence({
       defaultLanguage,
       isPronunciationEnabled,
       textScalePercent,
-      voicePreference,
       isBoldTextEnabled,
       isRandomLessonOrderEnabled,
       isReviewQuestionsRemoved,
@@ -59,7 +55,6 @@ export function useSettingsPersistence({
     defaultLanguage,
     isPronunciationEnabled,
     textScalePercent,
-    voicePreference,
     isBoldTextEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,

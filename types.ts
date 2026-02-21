@@ -10,10 +10,10 @@ export interface LessonData {
   burmese: string;
   english: string;
   pronunciation: string;
+  audioPath?: string;
 }
 
 export interface ProgressState {
   currentIndex: number;
   completedCount: number;
 }
-

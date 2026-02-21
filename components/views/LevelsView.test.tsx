@@ -46,4 +46,3 @@ describe('LevelsView topic localization', () => {
     expect(unitCard?.className).toContain('bg-gray-100');
   });
 });
-

@@ -110,6 +110,11 @@
       --color-btn-unselected-bg: #ffffff;
       --color-btn-unselected-text: #4b5563;
       --color-btn-unselected-hover-bg: #f9fafb;
+      --color-selection-hover-bg: #f7f9fa;
+      --color-selection-selected-bg: #94a3b8;
+      --color-selection-selected-border: #94a3b8;
+      --color-selection-selected-text: #ffffff;
+      --color-selection-selected-ring: rgba(148, 163, 184, 0.25);
     }
     html[data-app-theme='apple_notes'] {
       --color-brand: #ff9f0a;
@@ -180,6 +185,11 @@
       --color-bg-grad-2: var(--dark-bg);
       --color-bg-grad-3: var(--dark-bg);
       --color-shadow-secondary: var(--dark-muted-shadow);
+      --color-selection-hover-bg: var(--dark-hover-bg);
+      --color-selection-selected-bg: var(--dark-selected-bg);
+      --color-selection-selected-border: var(--dark-selected-border);
+      --color-selection-selected-text: var(--dark-text);
+      --color-selection-selected-ring: var(--dark-selected-shadow);
     }
     html[data-app-theme='system'] {
       --color-brand: #000000;
@@ -277,13 +287,28 @@
       box-shadow: none;
       transform: translateY(2px);
     }
+    .neutral-selected-flat {
+      border-color: var(--color-selection-selected-border);
+      background: var(--color-selection-selected-bg);
+      color: var(--color-selection-selected-text);
+      box-shadow: none;
+    }
+    .selection-hover:hover {
+      background: var(--color-selection-hover-bg);
+    }
+    .selection-selected-badge {
+      border-color: var(--color-selection-selected-border);
+      background: var(--color-selection-selected-bg);
+      color: var(--color-selection-selected-text);
+    }
     .text-brand {
       color: var(--color-brand);
     }
     .lesson-batch-selected {
-      border: 2px solid var(--color-brand-dark);
-      background: var(--color-btn-unselected-bg);
-      box-shadow: 0 0 0 2px var(--color-brand-light);
+      border: 2px solid var(--color-selection-selected-border);
+      background: #ffffff;
+      color: inherit;
+      box-shadow: 0 0 0 2px var(--color-selection-selected-ring);
     }
     html[data-app-theme='dark'],
     html[data-app-theme='dark'] body {

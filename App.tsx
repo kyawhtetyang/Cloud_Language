@@ -11,7 +11,6 @@ import { useLessonUnitState } from './hooks/useLessonUnitState';
 import { useLessonBatchGroups } from './hooks/useLessonBatchGroups';
 import { useOfflineLessonPacks } from './hooks/useOfflineLessonPacks';
 import { useAppTheme } from './hooks/useAppTheme';
-import { isPassingScore } from './utils/reviewScoring';
 import { buildLessonReferenceKey } from './utils/lessonReference';
 import { ProfileView } from './components/views/ProfileView';
 import { SettingsView } from './components/views/SettingsView';
@@ -26,12 +25,15 @@ import {
   AppMode,
   buildStageUnitsFromLessons,
   clampTextScale,
+  DEFAULT_PROGRESS_INDEX,
+  DEFAULT_STREAK,
+  DEFAULT_UNLOCKED_LEVEL,
+  getPlayableLessonText,
   getLessonOrderIndex,
   getLessonUnitId,
   LEARN_QUESTIONS_PER_UNIT,
   LESSONS_PER_BATCH,
   MATCH_PAIRS_PER_REVIEW,
-  PASS_SCORE,
   PROFILE_NAME_KEY,
   PROGRESS_KEY,
   QUICK_REVIEW_CHECKPOINTS,
@@ -63,6 +65,7 @@ function normalizeApiBaseUrl(rawApiBaseUrl: string | undefined): string {
 
 type RepeatMode = 'off' | 'all' | 'one';
 type PendingUnitTarget = { level: number; unit: number; albumKey?: string | null };
+type SpeakEntry = { text: string; unitId?: number; audioUrl?: string };
 
 const App: React.FC = () => {
   const {
@@ -74,10 +77,10 @@ const App: React.FC = () => {
     setProfileInput,
     applyProfileName,
   } = useProfileProgress(PROFILE_NAME_KEY);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(DEFAULT_PROGRESS_INDEX);
   const [mode, setMode] = useState<AppMode>('learn');
-  const [unlockedLevel, setUnlockedLevel] = useState(1);
-  const [streak, setStreak] = useState(0);
+  const [unlockedLevel, setUnlockedLevel] = useState(DEFAULT_UNLOCKED_LEVEL);
+  const [streak, setStreak] = useState(DEFAULT_STREAK);
   const {
     isSidebarOpen,
     sidebarTab,
@@ -96,8 +99,6 @@ const App: React.FC = () => {
     setDefaultLanguage,
     textScalePercent,
     setTextScalePercent,
-    voicePreference,
-    setVoicePreference,
     isBoldTextEnabled,
     setIsBoldTextEnabled,
     isRandomLessonOrderEnabled,
@@ -188,7 +189,6 @@ const App: React.FC = () => {
     defaultLanguage,
     isPronunciationEnabled,
     textScalePercent,
-    voicePreference,
     isBoldTextEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
@@ -205,7 +205,6 @@ const App: React.FC = () => {
     setDefaultLanguage,
     setIsPronunciationEnabled,
     setTextScalePercent,
-    setVoicePreference,
     setIsBoldTextEnabled,
     setIsRandomLessonOrderEnabled,
     setIsReviewQuestionsRemoved,
@@ -220,7 +219,6 @@ const App: React.FC = () => {
     defaultLanguage,
     isPronunciationEnabled,
     textScalePercent,
-    voicePreference,
     isBoldTextEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
@@ -340,16 +338,20 @@ const App: React.FC = () => {
     repeatModeRef.current = repeatMode;
   }, [mode, learnStep, sectionTotal, orderedUnitIndexes, sectionStart, repeatMode]);
 
-  const playTextsSequentially = async (texts: string[]): Promise<boolean> => {
-    if (mode !== 'learn' || texts.length === 0) return false;
+  const playTextsSequentially = async (entries: SpeakEntry[]): Promise<boolean> => {
+    if (mode !== 'learn' || entries.length === 0) return false;
     const sessionId = readSessionRef.current + 1;
     readSessionRef.current = sessionId;
     setIsReading(true);
     cancelSpeech();
 
-    for (const text of texts) {
+    for (const entry of entries) {
       if (readSessionRef.current !== sessionId) break;
-      await speakText(text, voicePreference);
+      await speakText(entry.text, {
+        learnLanguage,
+        unitId: entry.unitId,
+        audioUrl: entry.audioUrl,
+      });
     }
 
     if (readSessionRef.current === sessionId) {
@@ -359,7 +361,7 @@ const App: React.FC = () => {
     return false;
   };
 
-  const getBatchTextsForStep = (step: number): string[] => {
+  const getBatchTextsForStep = (step: number): SpeakEntry[] => {
     const safeStep = Math.max(0, Math.min(LEARN_QUESTIONS_PER_UNIT - 1, step));
     const sectionTotalValue = Math.max(1, sectionTotalRef.current);
     const offset = (safeStep * LESSONS_PER_BATCH) % sectionTotalValue;
@@ -368,8 +370,18 @@ const App: React.FC = () => {
       return orderedIndex ?? sectionStartRef.current;
     });
     return batchIndexes
-      .map((index) => lessons[index]?.english)
-      .filter((text): text is string => typeof text === 'string' && text.trim().length > 0);
+      .map((index) => {
+        const lesson = lessons[index];
+        if (!lesson) return null;
+        const speakTextValue = getPlayableLessonText(lesson);
+        if (!speakTextValue) return null;
+        return {
+          text: speakTextValue,
+          unitId: getLessonUnitId(lesson),
+          audioUrl: lesson.audioPath,
+        };
+      })
+      .filter((entry): entry is SpeakEntry => entry !== null);
   };
 
   const proceedUnitCompletionWithoutReviewRef = useRef<() => void>(() => {});
@@ -422,8 +434,16 @@ const App: React.FC = () => {
     }
 
     const texts = currentBatchEntries
-      .map(({ lesson }) => lesson.english)
-      .filter((text) => typeof text === 'string' && text.trim().length > 0);
+      .map(({ lesson }) => {
+        const speakTextValue = getPlayableLessonText(lesson);
+        if (!speakTextValue) return null;
+        return {
+          text: speakTextValue,
+          unitId: getLessonUnitId(lesson),
+          audioUrl: lesson.audioPath,
+        };
+      })
+      .filter((entry): entry is SpeakEntry => entry !== null);
 
     if (lessonLayoutMode === 'list') {
       isContinuousListPlaybackRef.current = true;
@@ -482,9 +502,16 @@ const App: React.FC = () => {
     const texts = lessons
       .filter((lesson) => {
         const key = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
-        return unitKeySet.has(key) && typeof lesson.english === 'string' && lesson.english.trim().length > 0;
+        return unitKeySet.has(key) && getPlayableLessonText(lesson).length > 0;
       })
-      .map((lesson) => lesson.english);
+      .map((lesson) => {
+        const speakTextValue = getPlayableLessonText(lesson);
+        return {
+          text: speakTextValue,
+          unitId: getLessonUnitId(lesson),
+          audioUrl: lesson.audioPath,
+        };
+      });
 
     if (texts.length === 0) return;
 
@@ -493,9 +520,13 @@ const App: React.FC = () => {
     setIsReading(true);
     cancelSpeech();
 
-    for (const text of texts) {
+    for (const entry of texts) {
       if (readSessionRef.current !== sessionId) break;
-      await speakText(text, voicePreference);
+      await speakText(entry.text, {
+        learnLanguage,
+        unitId: entry.unitId,
+        audioUrl: entry.audioUrl,
+      });
     }
 
     if (readSessionRef.current === sessionId) {
@@ -891,41 +922,6 @@ const App: React.FC = () => {
     });
   };
 
-  const handleQuizNext = () => {
-    if (!answerChecked) return;
-
-    const isPass = matchMistakes === 0 && matchedPairIds.length === matchPairs.length;
-    const gainedXp = isPass ? 1 : 0;
-    const nextXp = Math.min(unitXp + gainedXp, TOTAL_XP_PER_COURSE);
-    if (isPass) {
-      setUnitXp(nextXp);
-    }
-
-    if (learnStep >= LEARN_QUESTIONS_PER_UNIT) {
-      const passedByScore = isPassingScore(nextXp, PASS_SCORE);
-      if (!passedByScore) {
-        setStreak(0);
-      }
-      setReviewResult({
-        correct: nextXp,
-        total: TOTAL_XP_PER_COURSE,
-        passed: passedByScore,
-      });
-      setMode('result');
-      resetQuizState();
-      return;
-    }
-
-    setMode('learn');
-    resetQuizState();
-    if (isPass && learnStep < LEARN_QUESTIONS_PER_UNIT) {
-      const nextOffset = (learnStep * LESSONS_PER_BATCH) % sectionTotal;
-      setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
-    } else {
-      setStreak(0);
-    }
-  };
-
   if (loading) {
     return <LoadingView />;
   }
@@ -948,8 +944,6 @@ const App: React.FC = () => {
   }
 
   const translationLabel = defaultLanguage === 'burmese' ? 'Burmese (Current)' : 'English';
-  const pronunciationStyleLabel =
-    defaultLanguage === 'burmese' ? 'Burmese style (Current)' : 'English style (Pinyin for Chinese)';
   const totalLessonsCount = lessons.length;
   const completedLessonsCount = Math.min(currentIndex + 1, totalLessonsCount);
   const overallProgressPercent = totalLessonsCount > 0
@@ -1065,9 +1059,7 @@ const App: React.FC = () => {
               textScalePercent={textScalePercent}
               canDecreaseTextSize={textScalePercent > 90}
               canIncreaseTextSize={textScalePercent < 120}
-              voicePreference={voicePreference}
               translationLabel={translationLabel}
-              pronunciationStyleLabel={pronunciationStyleLabel}
               appTheme={appTheme}
               lessonLayoutDefault={lessonLayoutDefault}
               onDefaultLanguageChange={setDefaultLanguage}
@@ -1076,7 +1068,6 @@ const App: React.FC = () => {
               onToggleBoldText={() => setIsBoldTextEnabled((prev) => !prev)}
               onDecreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev - 5))}
               onIncreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev + 5))}
-              onVoicePreferenceChange={setVoicePreference}
               onAppThemeChange={setAppTheme}
               onLessonLayoutDefaultChange={setLessonLayoutDefault}
             />
@@ -1124,7 +1115,7 @@ const App: React.FC = () => {
               defaultLanguage={defaultLanguage}
               isPronunciationEnabled={isPronunciationEnabled}
               isBoldTextEnabled={isBoldTextEnabled}
-              voicePreference={voicePreference}
+              learnLanguage={learnLanguage}
               defaultLayoutMode={lessonLayoutDefault}
               onLayoutModeChange={setLessonLayoutMode}
             />

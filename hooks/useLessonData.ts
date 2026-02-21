@@ -33,18 +33,26 @@ export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage):
       try {
         setLoading(true);
         setErrorMessage(null);
-        const [response, englishResponse] = await Promise.all([
-          fetchWithTimeout(`${apiBaseUrl}/api/lessons?language=${learnLanguage}`, LESSON_FETCH_TIMEOUT_MS),
-          fetchWithTimeout(`${apiBaseUrl}/api/lessons?language=english`, LESSON_FETCH_TIMEOUT_MS),
-        ]);
+        const response = await fetchWithTimeout(
+          `${apiBaseUrl}/api/lessons?language=${learnLanguage}`,
+          LESSON_FETCH_TIMEOUT_MS,
+        );
         if (!response.ok) throw new Error(`API responded with ${response.status}`);
-        if (!englishResponse.ok) throw new Error(`API responded with ${englishResponse.status}`);
 
         const data = (await response.json()) as LessonData[];
-        const englishData = (await englishResponse.json()) as LessonData[];
         if (!Array.isArray(data) || data.length === 0) throw new Error('No lessons returned from API');
-        if (!Array.isArray(englishData) || englishData.length === 0) {
-          throw new Error('No english lessons returned from API');
+
+        let englishData: LessonData[] = data;
+        if (learnLanguage !== 'english') {
+          const englishResponse = await fetchWithTimeout(
+            `${apiBaseUrl}/api/lessons?language=english`,
+            LESSON_FETCH_TIMEOUT_MS,
+          );
+          if (!englishResponse.ok) throw new Error(`API responded with ${englishResponse.status}`);
+          englishData = (await englishResponse.json()) as LessonData[];
+          if (!Array.isArray(englishData) || englishData.length === 0) {
+            throw new Error('No english lessons returned from API');
+          }
         }
 
         setLessons(data);
@@ -76,4 +84,3 @@ export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage):
 
   return { lessons, englishReferenceLessons, loading, errorMessage };
 }
-

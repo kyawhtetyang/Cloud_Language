@@ -5,7 +5,6 @@ import {
   LearnLanguage,
   LessonLayoutMode,
 } from '../config/appConfig';
-import { VoicePreference } from '../components/AudioButton';
 import { readSyncedSettingsFromStorage } from '../config/settingsSync';
 
 type UseAppPreferencesResult = {
@@ -17,8 +16,6 @@ type UseAppPreferencesResult = {
   setDefaultLanguage: React.Dispatch<React.SetStateAction<DefaultLanguage>>;
   textScalePercent: number;
   setTextScalePercent: React.Dispatch<React.SetStateAction<number>>;
-  voicePreference: VoicePreference;
-  setVoicePreference: React.Dispatch<React.SetStateAction<VoicePreference>>;
   isBoldTextEnabled: boolean;
   setIsBoldTextEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   isRandomLessonOrderEnabled: boolean;
@@ -40,7 +37,6 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
   const [learnLanguage, setLearnLanguage] = useState<LearnLanguage>(initialSettings.learnLanguage);
   const [defaultLanguage, setDefaultLanguage] = useState<DefaultLanguage>(initialSettings.defaultLanguage);
   const [textScalePercent, setTextScalePercent] = useState<number>(initialSettings.textScalePercent);
-  const [voicePreference, setVoicePreference] = useState<VoicePreference>(initialSettings.voicePreference);
   const [isBoldTextEnabled, setIsBoldTextEnabled] = useState<boolean>(initialSettings.isBoldTextEnabled);
   const [isRandomLessonOrderEnabled, setIsRandomLessonOrderEnabled] = useState<boolean>(initialSettings.isRandomLessonOrderEnabled);
   const [isReviewQuestionsRemoved, setIsReviewQuestionsRemoved] = useState<boolean>(initialSettings.isReviewQuestionsRemoved);
@@ -57,7 +53,6 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setDefaultLanguage(next.defaultLanguage);
     setIsPronunciationEnabled(next.isPronunciationEnabled);
     setTextScalePercent(next.textScalePercent);
-    setVoicePreference(next.voicePreference);
     setIsBoldTextEnabled(next.isBoldTextEnabled);
     setIsRandomLessonOrderEnabled(next.isRandomLessonOrderEnabled);
     setIsReviewQuestionsRemoved(next.isReviewQuestionsRemoved);
@@ -75,8 +70,6 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setDefaultLanguage,
     textScalePercent,
     setTextScalePercent,
-    voicePreference,
-    setVoicePreference,
     isBoldTextEnabled,
     setIsBoldTextEnabled,
     isRandomLessonOrderEnabled,

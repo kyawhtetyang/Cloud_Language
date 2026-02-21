@@ -1,5 +1,4 @@
 import React from 'react';
-import { VoicePreference } from '../AudioButton';
 import {
   APP_THEME_OPTIONS,
   AppTheme,
@@ -19,9 +18,7 @@ type SettingsViewProps = {
   textScalePercent: number;
   canDecreaseTextSize: boolean;
   canIncreaseTextSize: boolean;
-  voicePreference: VoicePreference;
   translationLabel: string;
-  pronunciationStyleLabel: string;
   appTheme: AppTheme;
   lessonLayoutDefault: LessonLayoutMode;
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
@@ -30,7 +27,6 @@ type SettingsViewProps = {
   onToggleBoldText: () => void;
   onDecreaseTextSize: () => void;
   onIncreaseTextSize: () => void;
-  onVoicePreferenceChange: (value: VoicePreference) => void;
   onAppThemeChange: (value: AppTheme) => void;
   onLessonLayoutDefaultChange: (value: LessonLayoutMode) => void;
 };
@@ -76,9 +72,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   textScalePercent,
   canDecreaseTextSize,
   canIncreaseTextSize,
-  voicePreference,
   translationLabel,
-  pronunciationStyleLabel,
   appTheme,
   lessonLayoutDefault,
   onDefaultLanguageChange,
@@ -87,7 +81,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onToggleBoldText,
   onDecreaseTextSize,
   onIncreaseTextSize,
-  onVoicePreferenceChange,
   onAppThemeChange,
   onLessonLayoutDefaultChange,
 }) => {
@@ -243,34 +236,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             isOn={isPronunciationEnabled}
             onToggle={onTogglePronunciation}
           />
-          <div className={sectionCardClass}>
-            <p className={sectionTitleClass}>Voice</p>
-            <p className="text-sm text-gray-600 mt-1 mb-3">Choose your preferred speaking voice style.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => onVoicePreferenceChange('young_female')}
-                className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-                  voicePreference === 'young_female'
-                    ? 'btn-selected'
-                    : 'btn-unselected'
-                }`}
-              >
-                Warm Female
-              </button>
-              <button
-                type="button"
-                onClick={() => onVoicePreferenceChange('system_default')}
-                className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-                  voicePreference === 'system_default'
-                    ? 'btn-selected'
-                    : 'btn-unselected'
-                }`}
-              >
-                Device Default
-              </button>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -280,9 +245,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="mt-3 space-y-1.5 text-xs">
             <p className="text-gray-600 font-bold">
               <span className="text-brand-ink uppercase tracking-wide">Translation:</span> {translationLabel}
-            </p>
-            <p className="text-gray-600 font-bold">
-              <span className="text-brand-ink uppercase tracking-wide">Pronunciation:</span> {pronunciationStyleLabel}
             </p>
           </div>
         </div>
