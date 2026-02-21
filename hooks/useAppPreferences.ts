@@ -4,6 +4,7 @@ import {
   DefaultLanguage,
   LearnLanguage,
   LessonLayoutMode,
+  VoiceProvider,
 } from '../config/appConfig';
 import { readSyncedSettingsFromStorage } from '../config/settingsSync';
 
@@ -26,6 +27,8 @@ type UseAppPreferencesResult = {
   setAppTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
   lessonLayoutDefault: LessonLayoutMode;
   setLessonLayoutDefault: React.Dispatch<React.SetStateAction<LessonLayoutMode>>;
+  voiceProvider: VoiceProvider;
+  setVoiceProvider: React.Dispatch<React.SetStateAction<VoiceProvider>>;
   hasHydratedSettings: boolean;
 };
 
@@ -42,6 +45,7 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
   const [isReviewQuestionsRemoved, setIsReviewQuestionsRemoved] = useState<boolean>(initialSettings.isReviewQuestionsRemoved);
   const [appTheme, setAppTheme] = useState<AppTheme>(initialSettings.appTheme);
   const [lessonLayoutDefault, setLessonLayoutDefault] = useState<LessonLayoutMode>(initialSettings.lessonLayoutDefault);
+  const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>(initialSettings.voiceProvider);
 
   useEffect(() => {
     if (!profileStorageId) {
@@ -58,6 +62,7 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setIsReviewQuestionsRemoved(next.isReviewQuestionsRemoved);
     setAppTheme(next.appTheme);
     setLessonLayoutDefault(next.lessonLayoutDefault);
+    setVoiceProvider(next.voiceProvider);
     setHasHydratedSettings(true);
   }, [profileStorageId]);
 
@@ -80,6 +85,8 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setAppTheme,
     lessonLayoutDefault,
     setLessonLayoutDefault,
+    voiceProvider,
+    setVoiceProvider,
     hasHydratedSettings,
   };
 }

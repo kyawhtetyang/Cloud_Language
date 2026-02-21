@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { cancelSpeech, speakText } from '../AudioButton';
 import { LessonData } from '../../types';
-import { getPlayableLessonText, LearnLanguage, resolveStageCode } from '../../config/appConfig';
+import { getPlayableLessonText, LearnLanguage, resolveStageCode, VoiceProvider } from '../../config/appConfig';
 import { buildLessonReferenceKey } from '../../utils/lessonReference';
 import { localizeRoadmapTopic } from '../../config/roadmapI18n';
 
@@ -25,6 +25,7 @@ type LessonViewProps = {
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
   learnLanguage: LearnLanguage;
+  voiceProvider: VoiceProvider;
   defaultLayoutMode?: 'paged' | 'list';
   onLayoutModeChange?: (mode: 'paged' | 'list') => void;
 };
@@ -44,10 +45,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
   isPronunciationEnabled,
   isBoldTextEnabled,
   learnLanguage,
+  voiceProvider,
   defaultLayoutMode = 'list',
   onLayoutModeChange,
 }) => {
   const [lessonLayout, setLessonLayout] = useState<'paged' | 'list'>(defaultLayoutMode);
+  const [localSelectedGroup, setLocalSelectedGroup] = useState<number | null>(null);
   const batchRefs = useRef<Array<HTMLDivElement | null>>([]);
   const leadLesson = currentBatchEntries[0]?.lesson;
   const level = leadLesson?.level || 1;
@@ -58,6 +61,16 @@ export const LessonView: React.FC<LessonViewProps> = ({
     : defaultLanguage === 'burmese'
       ? `ယူနစ် ${unit}`
       : `Unit ${unit}`;
+  const totalGroups = allBatchGroups?.length ?? 0;
+  const selectedGroupIndex =
+    typeof currentStep === 'number' && currentStep >= 0 ? currentStep : (localSelectedGroup ?? 0);
+  const activeGroup = selectedGroupIndex + 1;
+
+  useEffect(() => {
+    if (typeof currentStep === 'number' && currentStep >= 0) {
+      setLocalSelectedGroup(currentStep);
+    }
+  }, [currentStep]);
 
   useEffect(() => {
     if (lessonLayout !== 'list') return;
@@ -78,39 +91,41 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
   return (
     <div className="w-full max-w-2xl">
-      <div className="mb-3 w-full border-b border-gray-100 pb-2">
+      <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             {onBackToRoadmap && (
               <button
                 type="button"
                 onClick={onBackToRoadmap}
-                className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-bold text-gray-700 hover:bg-gray-50"
+                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-1.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
               >
                 <span aria-hidden="true">←</span>
                 Back
               </button>
             )}
-            <p className="truncate text-xs font-black uppercase tracking-[0.12em] text-lesson-accent">
+            <p className="truncate text-xs font-semibold tracking-wide text-[var(--text-secondary)]">
               {stage} U{unit}
             </p>
           </div>
-          {progressLabel && (
-            <p className="shrink-0 text-xs font-black uppercase tracking-[0.12em] text-gray-500">
-              {progressLabel}
-            </p>
-          )}
+          <p className="shrink-0 text-xs font-semibold tracking-wide text-[var(--text-muted)]">
+            {lessonLayout === 'list' && totalGroups > 0
+              ? `Group ${Math.min(activeGroup, totalGroups)} of ${totalGroups}`
+              : (progressLabel ?? '')}
+          </p>
         </div>
         <div className="mt-2 flex items-center justify-between gap-2">
           <p className="truncate text-sm font-bold text-ink-strong md:text-base">
             {topicTitle}
           </p>
-          <div className="inline-flex items-center gap-1 rounded-full border border-brand-border bg-white p-1">
+          <div className="inline-flex items-center gap-1 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-1">
             <button
               type="button"
               onClick={() => setLessonLayout('paged')}
-              className={`rounded-full border px-2.5 py-1 text-[11px] font-black uppercase tracking-wide transition-colors ${
-                lessonLayout === 'paged' ? 'btn-selected-flat' : 'border-transparent bg-transparent text-gray-600'
+              className={`min-h-[36px] rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors ${
+                lessonLayout === 'paged'
+                  ? 'btn-selected-flat'
+                  : 'border-transparent bg-transparent text-[var(--text-secondary)]'
               }`}
             >
               Paged
@@ -118,8 +133,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
             <button
               type="button"
               onClick={() => setLessonLayout('list')}
-              className={`rounded-full border px-2.5 py-1 text-[11px] font-black uppercase tracking-wide transition-colors ${
-                lessonLayout === 'list' ? 'btn-selected-flat' : 'border-transparent bg-transparent text-gray-600'
+              className={`min-h-[36px] rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors ${
+                lessonLayout === 'list'
+                  ? 'btn-selected-flat'
+                  : 'border-transparent bg-transparent text-[var(--text-secondary)]'
               }`}
             >
               List
@@ -127,15 +144,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
           </div>
         </div>
       </div>
-      <div className={`overflow-hidden rounded-2xl ${
-        lessonLayout === 'list'
-          ? 'bg-transparent border-0 shadow-none'
-          : 'border border-gray-200 bg-white shadow-[0_6px_22px_rgba(0,0,0,0.07)]'
-      }`}>
+      <div className="overflow-hidden bg-transparent">
         {lessonLayout === 'list' && allBatchGroups && allBatchGroups.length > 0 ? (
-          <div className="space-y-2 p-2">
+          <div className="divide-y divide-[var(--border-subtle)]">
             {allBatchGroups.map((entries, batchIdx) => {
-              const isBatchSelected = batchIdx === (currentStep ?? -1);
+              const isBatchSelected = batchIdx === selectedGroupIndex;
               return (
                 <div
                 key={`batch-${batchIdx}`}
@@ -144,34 +157,29 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 }}
                 role="button"
                 tabIndex={0}
-                onClick={() => onSelectStep?.(batchIdx)}
+                onClick={() => {
+                  setLocalSelectedGroup(batchIdx);
+                  onSelectStep?.(batchIdx);
+                }}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
+                    setLocalSelectedGroup(batchIdx);
                     onSelectStep?.(batchIdx);
                   }
                 }}
-                className={`relative rounded-xl border p-1.5 transition-all ${
+                className={`relative px-0 py-1.5 transition-all ${
                   isBatchSelected
-                    ? 'lesson-batch-selected'
-                    : 'border border-gray-200 bg-white'
+                    ? 'rounded-xl border border-[var(--border-strong)] ring-1 ring-[var(--color-selection-selected-ring)]'
+                    : 'bg-transparent'
                 }`}
               >
-                <div className="flex items-center justify-between px-2 pb-1">
-                  <p className="text-xs font-black uppercase tracking-wide text-gray-500">
-                    {batchIdx + 1}/10
-                  </p>
-                  {isBatchSelected ? (
-                    <span className="selection-selected-badge inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide">
-                      {isReading ? 'Playing' : 'Selected'}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
-                      Tap to select
-                    </span>
-                  )}
-                </div>
-                <div className="divide-y divide-gray-100">
+                {isBatchSelected && (
+                  <span className="pointer-events-none absolute right-2 top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-1.5 text-[10px] font-semibold text-[var(--text-secondary)]">
+                    {batchIdx + 1}
+                  </span>
+                )}
+                <div className="space-y-1.5 px-1 pb-1">
                   {entries.map(({ lesson, lessonIndex }, idx) => {
                     const lessonKey = buildLessonReferenceKey(lesson);
                     const englishTranslation =
@@ -182,6 +190,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                         key={`${lesson.english}-${batchIdx}-${idx}`}
                         type="button"
                         onClick={() => {
+                          setLocalSelectedGroup(batchIdx);
                           onSelectStep?.(batchIdx);
                           cancelSpeech();
                           const speakValue = getPlayableLessonText(lesson);
@@ -190,22 +199,25 @@ export const LessonView: React.FC<LessonViewProps> = ({
                             learnLanguage,
                             unitId: lesson.unitId ?? lesson.unit,
                             audioUrl: lesson.audioPath,
+                            voiceProvider,
                           });
                         }}
-                        className="selection-hover w-full rounded-lg px-3 py-2.5 text-left transition-colors active:scale-[0.99]"
+                        className="selection-hover w-full rounded-lg px-3 py-3 text-left transition-colors"
                         aria-label={`Play audio for ${lesson.english}`}
                         title="Tap to hear pronunciation"
                       >
                         <div className="text-left leading-tight">
                           {isPronunciationEnabled && (
-                            <p className={`text-sm md:text-base text-gray-400 ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
+                            <p
+                              className={`text-sm md:text-base text-[var(--text-secondary)] ${isBoldTextEnabled ? 'font-semibold' : 'font-normal'}`}
+                            >
                               {lesson.pronunciation}
                             </p>
                           )}
                           <p className={`text-base md:text-lg text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-medium'}`}>
                             {lesson.english}
                           </p>
-                          <p className={`text-base md:text-lg text-brand ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
+                          <p className={`text-base md:text-lg text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
                             {translatedText}
                           </p>
                         </div>
@@ -218,7 +230,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
             })}
           </div>
         ) : (
-          <div className="divide-y divide-gray-100 p-1.5">
+          <div className="divide-y divide-[var(--border-subtle)] px-0">
             {currentBatchEntries.map(({ lesson, lessonIndex }, idx) => (
               <div key={`${lesson.english}-${currentIndex + idx}`}>
                 {(() => {
@@ -237,22 +249,25 @@ export const LessonView: React.FC<LessonViewProps> = ({
                           learnLanguage,
                           unitId: lesson.unitId ?? lesson.unit,
                           audioUrl: lesson.audioPath,
+                          voiceProvider,
                         });
                       }}
-                      className="selection-hover w-full rounded-lg px-3 py-2.5 text-left transition-colors active:scale-[0.99]"
+                      className="selection-hover w-full px-3 py-3 text-left transition-colors"
                       aria-label={`Play audio for ${lesson.english}`}
                       title="Tap to hear pronunciation"
                     >
                       <div className="text-left leading-tight">
                         {isPronunciationEnabled && (
-                          <p className={`text-sm md:text-base text-gray-400 ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
+                          <p
+                            className={`text-sm md:text-base text-[var(--text-secondary)] ${isBoldTextEnabled ? 'font-semibold' : 'font-normal'}`}
+                          >
                             {lesson.pronunciation}
                           </p>
                         )}
                         <p className={`text-base md:text-lg text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-medium'}`}>
                           {lesson.english}
                         </p>
-                        <p className={`text-brand text-base md:text-lg ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
+                        <p className={`text-ink text-base md:text-lg ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
                           {translatedText}
                         </p>
                       </div>

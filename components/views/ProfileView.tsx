@@ -60,8 +60,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               style={{
                 width: `${visualProgress}%`,
                 minWidth: '10px',
-                opacity: normalizedProgress > 0 ? 1 : 0.5,
-                background: 'linear-gradient(90deg, var(--color-brand), var(--color-brand-dark))',
+                opacity: 1,
+                background: 'linear-gradient(90deg, var(--dark-accent-primary, var(--color-brand)), var(--dark-accent-primary, var(--color-brand-dark)))',
               }}
             />
           </div>

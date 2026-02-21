@@ -27,3 +27,4 @@ describe('MobileBottomNav', () => {
     expect(onTabChange).toHaveBeenNthCalledWith(2, 'profile');
   });
 });
+

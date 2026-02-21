@@ -114,3 +114,4 @@ describe('settingsSync', () => {
     expect(setters.setLessonLayoutDefault).toHaveBeenCalledWith('paged');
   });
 });
+

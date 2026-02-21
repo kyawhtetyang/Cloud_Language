@@ -86,3 +86,4 @@ export const CompletedView: React.FC<{ onRestart: () => void }> = ({ onRestart }
   </div>
 );
 
+

@@ -18,14 +18,14 @@ const lessons: LessonData[] = [
 describe('LevelsView topic localization', () => {
   it('localizes known roadmap topic labels when default language is burmese', () => {
     render(<LevelsView lessons={lessons} defaultLanguage="burmese" onSelectUnit={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /open album/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open group/i }));
 
     expect(screen.getByRole('button', { name: /မြန်မာ စကားလုံးများ/i })).toBeInTheDocument();
   });
 
   it('keeps original topic labels when default language is english', () => {
     render(<LevelsView lessons={lessons} defaultLanguage="english" onSelectUnit={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /open album/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open group/i }));
 
     expect(screen.getByRole('button', { name: /Burmese words/i })).toBeInTheDocument();
   });
@@ -39,10 +39,8 @@ describe('LevelsView topic localization', () => {
         completedUnitKeys={new Set(['1:1'])}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /open album/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open group/i }));
 
-    const unitButton = screen.getByRole('button', { name: /Burmese words/i });
-    const unitCard = unitButton.closest('button.rounded-lg');
-    expect(unitCard?.className).toContain('bg-gray-100');
+    expect(screen.getByLabelText(/completed unit/i)).toBeInTheDocument();
   });
 });

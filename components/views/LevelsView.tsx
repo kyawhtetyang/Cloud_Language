@@ -3,7 +3,6 @@ import { LessonData } from '../../types';
 import {
   buildStageUnitsFromLessons,
   DefaultLanguage,
-  STAGE_META,
   STAGE_ORDER,
   StageCode,
 } from '../../config/appConfig';
@@ -32,6 +31,25 @@ type AlbumGroup = {
   firstTopicConcise: string;
   coverUrl: string;
 };
+
+const LIBRARY_HEADER_STYLE = {
+  barClass: 'bg-[var(--surface-subtle)] border-b border-[var(--border-subtle)]',
+  textClass: 'text-[var(--text-secondary)]',
+  accentClass: 'text-[var(--text-muted)]',
+} as const;
+
+const LIBRARY_STATE_STYLE = {
+  rowDefault: 'bg-[var(--surface-default)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]',
+  rowActive: 'border border-[var(--border-strong)] bg-[var(--surface-active)] text-[var(--text-primary)]',
+  rowCompleted: 'bg-[var(--surface-default)] text-[var(--text-muted)]',
+  badgeDefault: 'bg-[var(--surface-subtle)] text-[var(--text-secondary)]',
+  badgeActive: 'border border-[var(--border-strong)] bg-[var(--surface-default)] text-[var(--text-primary)]',
+  badgeCompleted: 'bg-[var(--surface-subtle)] text-[var(--text-muted)]',
+  downloadDefault: 'border-[var(--border-subtle)] bg-[var(--surface-default)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]',
+  downloadDone: 'border-[var(--border-strong)] bg-[var(--surface-active)] text-[var(--text-secondary)]',
+  downloadLoading: 'border-[var(--border-strong)] bg-[var(--surface-active)] text-[var(--text-muted)] opacity-70 cursor-wait',
+  primaryAction: 'btn-selected',
+} as const;
 
 function shortenLabel(text: string, max = 56): string {
   if (text.length <= max) return text;
@@ -323,7 +341,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
     setInternalSelectedAlbumKey(key);
   };
   const text = getRoadmapText(defaultLanguage);
-  const playAllLabel = defaultLanguage === 'burmese' ? 'အားလုံးဖတ်' : 'Play All';
+  const playAllLabel = defaultLanguage === 'burmese' ? 'အားလုံးဖတ်' : 'Play all';
   const stageUnits = buildStageUnitsFromLessons(lessons);
   const groupsByStage = useMemo(() => {
     return STAGE_ORDER.reduce<Record<StageCode, AlbumGroup[]>>((acc, stage) => {
@@ -350,6 +368,11 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
     return null;
   }, [activeSelectedAlbumKey, groupsByStage]);
 
+  const formatAlbumMeta = (stage: StageCode, groupIndex: number, unitCount: number): string => {
+    const unitWord = unitCount === 1 ? 'unit' : 'units';
+    return `${stage} · G${groupIndex + 1} (${unitCount} ${unitWord})`;
+  };
+
   const renderDownloadButton = (group: AlbumGroup) => {
     if (!onDownloadUnit) return null;
 
@@ -359,12 +382,12 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
     const isGroupPartial = downloadedCount > 0 && downloadedCount < group.units.length;
     const isGroupDownloading = group.units.some((entry) => Boolean(isUnitDownloading?.(entry.level, entry.unit)));
     const groupDownloadLabel = isGroupDownloading
-      ? 'Downloading album'
+      ? 'Downloading'
       : isGroupDownloaded
-        ? 'Album downloaded'
+        ? 'Offline ready'
         : isGroupPartial
-          ? 'Download remaining units in album'
-          : 'Download album';
+          ? 'Downloaded'
+          : 'Download';
 
     return (
       <button
@@ -381,64 +404,62 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
         disabled={isGroupDownloading}
         aria-label={groupDownloadLabel}
         title={groupDownloadLabel}
-        className={`h-8 w-8 inline-flex items-center justify-center rounded-full border transition-all ${
-          isGroupDownloaded
-            ? 'border-brand-dark bg-brand-pale text-brand-ink'
-            : isGroupPartial
-              ? 'border-warning bg-warning-soft text-warning-ink'
-              : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
-        } ${isGroupDownloading ? 'opacity-70 cursor-wait' : ''}`}
+        className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition-all ${
+          isGroupDownloading
+            ? LIBRARY_STATE_STYLE.downloadLoading
+            : (isGroupDownloaded || isGroupPartial)
+              ? LIBRARY_STATE_STYLE.downloadDone
+              : LIBRARY_STATE_STYLE.downloadDefault
+        }`}
       >
         {isGroupDownloading ? (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 animate-spin">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 animate-spin shrink-0">
             <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.25" />
             <path d="M12 3a9 9 0 0 1 9 9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         ) : isGroupDownloaded ? (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 shrink-0">
             <path d="M20 7L10 17l-6-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         ) : isGroupPartial ? (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 shrink-0">
             <path d="M4 12h16M12 4v16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         ) : (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 shrink-0">
             <path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
+        <span>{groupDownloadLabel}</span>
       </button>
     );
   };
 
   if (selectedAlbum) {
-    const stageUi = STAGE_META[selectedAlbum.stage];
+    const stageHeaderUi = LIBRARY_HEADER_STYLE;
 
     return (
-      <div className="w-full max-w-2xl">
-        <div className="mb-3 w-full border-b border-gray-100 pb-2">
+      <div className="w-full max-w-3xl">
+        <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               <button
                 type="button"
                 onClick={() => setSelectedAlbumKey(null)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-bold text-gray-700 hover:bg-gray-50"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-default)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
               >
                 <span aria-hidden="true">←</span>
                 Back
               </button>
-              <p className={`truncate text-xs font-black uppercase tracking-[0.12em] ${stageUi.titleClass}`}>
-                {selectedAlbum.stage} G{selectedAlbum.groupIndex + 1}
-              </p>
             </div>
             {renderDownloadButton(selectedAlbum)}
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_6px_22px_rgba(0,0,0,0.07)]">
-          <div className={`p-4 ${stageUi.levelCardClass}`}>
+        <div className="overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-default)] shadow-sm">
+          <div className={`px-3 py-2.5 ${stageHeaderUi.barClass}`}>
             <div className="flex items-center gap-3">
-              <div className={`relative aspect-[3/4] w-[112px] shrink-0 overflow-hidden rounded-xl ${stageUi.badgeClass}`}>
+              <div className="relative aspect-[3/4] w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)]">
                 <div className="absolute inset-y-0 left-0 z-10 w-2 bg-black/12" aria-hidden="true" />
                 <img
                   src={selectedAlbum.coverUrl}
@@ -447,19 +468,17 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                   loading="lazy"
                   className="absolute inset-0 h-full w-full object-cover object-center"
                 />
-                <div className={`absolute bottom-2 left-2 right-2 text-xs font-black tracking-wide ${stageUi.titleClass}`}>
-                  {selectedAlbum.stage} · {selectedAlbum.groupIndex + 1}
-                </div>
               </div>
               <div className="min-w-0">
-                <p className={`text-xs font-black uppercase tracking-[0.14em] ${stageUi.titleClass}`}>
-                  {text.groupPrefix} {selectedAlbum.groupIndex + 1}
-                </p>
-                <h3 className="text-xl font-extrabold leading-tight text-ink-strong">
+                <h3 className="text-lg font-semibold leading-tight text-ink-strong">
                   {shortenLabel(selectedAlbum.firstTopicConcise, 58)}
                 </h3>
                 <p className="mt-0.5 text-sm font-medium text-ink-muted">
-                  {selectedAlbum.units.length} {selectedAlbum.units.length > 1 ? 'units' : 'unit'} · {text.stageLabels[selectedAlbum.stage]}
+                  {formatAlbumMeta(
+                    selectedAlbum.stage,
+                    selectedAlbum.groupIndex,
+                    selectedAlbum.units.length,
+                  )}
                 </p>
                 <button
                   type="button"
@@ -467,7 +486,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                     selectedAlbum.units.map((entry) => ({ level: entry.level, unit: entry.unit })),
                     activeSelectedAlbumKey,
                   )}
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-brand-stroke bg-brand-paler px-2.5 py-1.5 text-xs font-black uppercase tracking-wide text-brand-ink"
+                  className={`mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold ${LIBRARY_STATE_STYLE.primaryAction}`}
                   aria-label={playAllLabel}
                   title={playAllLabel}
                 >
@@ -481,38 +500,44 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
             </div>
           </div>
 
-          <div className="divide-y divide-gray-100 p-1.5">
+          <div className="divide-y divide-[var(--border-subtle)] px-2">
             {selectedAlbum.units.map((entry, albumIndex) => {
               const unitKey = buildUnitKey(entry.level, entry.unit);
               const albumUnitNumber = albumIndex + 1;
               const isCompleted = completedUnitKeys?.has(unitKey) ?? false;
               const isActive = activeUnitKey === unitKey;
               const rowClass = isActive
-                ? 'neutral-selected-flat'
+                ? LIBRARY_STATE_STYLE.rowActive
                 : isCompleted
-                  ? 'bg-gray-100/80 text-gray-500'
-                  : 'bg-white text-gray-700';
+                  ? LIBRARY_STATE_STYLE.rowCompleted
+                  : LIBRARY_STATE_STYLE.rowDefault;
               const badgeClass = isActive
-                ? 'border border-white/35 bg-white/15 text-white'
+                ? LIBRARY_STATE_STYLE.badgeActive
                 : isCompleted
-                  ? 'bg-brand-soft text-brand'
-                  : stageUi.badgeClass;
+                  ? LIBRARY_STATE_STYLE.badgeCompleted
+                  : LIBRARY_STATE_STYLE.badgeDefault;
 
               return (
                 <button
                   key={`${entry.stage}-${entry.level}-${entry.unit}`}
                   type="button"
                   onClick={() => onSelectUnit(entry.level, entry.unit, activeSelectedAlbumKey)}
-                  className={`w-full rounded-lg px-3 py-3 text-sm md:text-base font-bold transition-colors ${rowClass}`}
+                  className={`w-full min-h-12 px-3 py-2.5 text-sm md:text-base font-semibold transition-colors ${isActive ? `rounded-lg ${rowClass}` : rowClass}`}
                 >
-                  <div className="flex items-center gap-2.5">
+                  <div className="grid grid-cols-[auto,1fr] items-center gap-2.5">
                     <span
                       className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md px-1.5 text-xs font-extrabold ${badgeClass}`}
-                      aria-label={`${text.unitPrefix} ${albumUnitNumber}`}
+                      aria-label={isCompleted ? 'Completed unit' : `${text.unitPrefix} ${albumUnitNumber}`}
                     >
-                      {albumUnitNumber}
+                      {isCompleted ? (
+                        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5">
+                          <path d="M20 7L10 17l-6-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      ) : (
+                        albumUnitNumber
+                      )}
                     </span>
-                    <span className={`min-w-0 flex-1 truncate text-left ${isActive ? 'text-white' : ''}`}>
+                    <span className="min-w-0 flex-1 truncate text-left">
                       {localizeRoadmapTopic(entry.topic, defaultLanguage)}
                     </span>
                   </div>
@@ -526,34 +551,33 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
   }
 
   return (
-    <div className="w-full max-w-2xl">
+    <div className="w-full max-w-3xl">
       {STAGE_ORDER.map((stage) => {
         const stageGroups = groupsByStage[stage];
         if (stageGroups.length === 0) return null;
-        const stageUi = STAGE_META[stage];
+        const stageHeaderUi = LIBRARY_HEADER_STYLE;
 
         return (
           <div
             key={stage}
-            className="mb-6 last:mb-0 overflow-hidden rounded-2xl border border-gray-200/85 bg-white shadow-[0_4px_14px_rgba(0,0,0,0.08)]"
+            className="mb-6 last:mb-0 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-default)] shadow-sm"
           >
-            <div className={`px-3 py-2.5 border-b border-gray-200/70 ${stageUi.levelCardClass}`}>
-              <p className={`text-sm font-extrabold uppercase tracking-wide md:text-base ${stageUi.titleClass}`}>
+            <div className={`px-3 py-2 ${stageHeaderUi.barClass}`}>
+              <p className={`text-sm font-semibold uppercase tracking-[0.08em] md:text-sm ${stageHeaderUi.textClass}`}>
                 {text.stageLabels[stage]}
               </p>
             </div>
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-[var(--border-subtle)]">
               {stageGroups.map((group) => {
-                const stageLabel = text.stageLabels[stage].replace(/\s*\([^)]*\)\s*$/, '');
                 return (
                 <button
                   key={group.key}
                   type="button"
                   onClick={() => setSelectedAlbumKey(group.key)}
-                  aria-label={`Open album group ${group.groupIndex + 1}`}
-                  className="selection-hover w-full text-left px-3 py-3 transition-colors"
+                  aria-label={`Open group ${group.groupIndex + 1}`}
+                  className="selection-hover w-full min-h-[84px] text-left px-3 py-3 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="grid grid-cols-[48px,1fr,20px] items-center gap-3">
                     <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg">
                       <div className="absolute inset-y-0 left-0 z-10 w-1 bg-black/12" aria-hidden="true" />
                       <img
@@ -565,14 +589,14 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                       />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-base font-extrabold text-ink-strong">
+                      <p className="truncate text-base font-semibold leading-tight text-ink">
                         {shortenLabel(group.firstTopicConcise, 48)}
                       </p>
-                      <p className="mt-1 text-xs font-semibold text-ink-muted">
-                        [{stage} · U{group.groupIndex + 1}] [{group.units.length} {group.units.length > 1 ? 'units' : 'unit'} · {stageLabel}]
+                      <p className="mt-1 truncate text-xs font-semibold text-[var(--text-muted)]">
+                        {formatAlbumMeta(stage, group.groupIndex, group.units.length)}
                       </p>
                     </div>
-                    <span className={`shrink-0 ${stageUi.titleClass}`} aria-hidden="true">
+                    <span className={`flex h-5 w-5 items-center justify-center ${stageHeaderUi.accentClass}`} aria-hidden="true">
                       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M9 6l6 6-6 6" />
                       </svg>

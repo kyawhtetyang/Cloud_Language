@@ -10,6 +10,7 @@ import {
   getLessonOrderIndex,
   LearnLanguage,
   LessonLayoutMode,
+  VoiceProvider,
   PROGRESS_KEY,
   STREAK_KEY,
   UNLOCKED_LEVEL_KEY,
@@ -40,6 +41,7 @@ type UseProfileProgressSyncParams = {
   isReviewQuestionsRemoved: boolean;
   appTheme: AppTheme;
   lessonLayoutDefault: LessonLayoutMode;
+  voiceProvider: VoiceProvider;
   totalLevels: number;
   progressStorageKey: string;
   unlockedStorageKey: string;
@@ -56,6 +58,7 @@ type UseProfileProgressSyncParams = {
   setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
   setAppTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
   setLessonLayoutDefault: React.Dispatch<React.SetStateAction<LessonLayoutMode>>;
+  setVoiceProvider: React.Dispatch<React.SetStateAction<VoiceProvider>>;
 };
 
 export function useProfileProgressSync({
@@ -75,6 +78,7 @@ export function useProfileProgressSync({
   isReviewQuestionsRemoved,
   appTheme,
   lessonLayoutDefault,
+  voiceProvider,
   totalLevels,
   progressStorageKey,
   unlockedStorageKey,
@@ -91,6 +95,7 @@ export function useProfileProgressSync({
   setIsReviewQuestionsRemoved,
   setAppTheme,
   setLessonLayoutDefault,
+  setVoiceProvider,
 }: UseProfileProgressSyncParams) {
   const [hasHydratedProfile, setHasHydratedProfile] = useState(false);
   const isFlushingQueueRef = useRef(false);
@@ -174,6 +179,7 @@ export function useProfileProgressSync({
             setIsReviewQuestionsRemoved,
             setAppTheme,
             setLessonLayoutDefault,
+            setVoiceProvider,
           });
         }
       } catch {
@@ -201,6 +207,7 @@ export function useProfileProgressSync({
     setIsReviewQuestionsRemoved,
     setAppTheme,
     setLessonLayoutDefault,
+    setVoiceProvider,
     setLearnLanguage,
     setStreak,
     setUnlockedLevel,
@@ -269,6 +276,7 @@ export function useProfileProgressSync({
         isReviewQuestionsRemoved,
         appTheme,
         lessonLayoutDefault,
+        voiceProvider,
       }),
     };
 
@@ -308,6 +316,7 @@ export function useProfileProgressSync({
     isReviewQuestionsRemoved,
     appTheme,
     lessonLayoutDefault,
+    voiceProvider,
     learnLanguage,
     lessons.length,
     profileName,

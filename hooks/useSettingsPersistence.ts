@@ -4,6 +4,7 @@ import {
   DefaultLanguage,
   LearnLanguage,
   LessonLayoutMode,
+  VoiceProvider,
 } from '../config/appConfig';
 import { persistSyncedSettingsToStorage } from '../config/settingsSync';
 
@@ -19,6 +20,7 @@ type UseSettingsPersistenceParams = {
   isReviewQuestionsRemoved: boolean;
   appTheme: AppTheme;
   lessonLayoutDefault: LessonLayoutMode;
+  voiceProvider: VoiceProvider;
 };
 
 export function useSettingsPersistence({
@@ -33,6 +35,7 @@ export function useSettingsPersistence({
   isReviewQuestionsRemoved,
   appTheme,
   lessonLayoutDefault,
+  voiceProvider,
 }: UseSettingsPersistenceParams) {
   useEffect(() => {
     if (!enabled || !profileStorageId) return;
@@ -46,6 +49,7 @@ export function useSettingsPersistence({
       isReviewQuestionsRemoved,
       appTheme,
       lessonLayoutDefault,
+      voiceProvider,
     }, profileStorageId);
     document.documentElement.style.fontSize = `${textScalePercent}%`;
   }, [
@@ -60,5 +64,6 @@ export function useSettingsPersistence({
     isReviewQuestionsRemoved,
     appTheme,
     lessonLayoutDefault,
+    voiceProvider,
   ]);
 }

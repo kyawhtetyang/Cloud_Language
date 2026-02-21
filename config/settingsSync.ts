@@ -19,6 +19,9 @@ import {
   RANDOM_LESSON_ORDER_ENABLED_KEY,
   REMOVE_REVIEW_QUESTIONS_ENABLED_KEY,
   TEXT_SCALE_PERCENT_KEY,
+  VOICE_PROVIDER_KEY,
+  VoiceProvider,
+  isVoiceProvider,
 } from './appConfig';
 
 export type SyncedAppSettings = {
@@ -31,6 +34,7 @@ export type SyncedAppSettings = {
   isReviewQuestionsRemoved: boolean;
   appTheme: AppTheme;
   lessonLayoutDefault: LessonLayoutMode;
+  voiceProvider: VoiceProvider;
 };
 
 export type SyncedAppSettingsSetters = {
@@ -43,6 +47,7 @@ export type SyncedAppSettingsSetters = {
   setIsReviewQuestionsRemoved: Dispatch<SetStateAction<boolean>>;
   setAppTheme: Dispatch<SetStateAction<AppTheme>>;
   setLessonLayoutDefault: Dispatch<SetStateAction<LessonLayoutMode>>;
+  setVoiceProvider: Dispatch<SetStateAction<VoiceProvider>>;
 };
 
 const DEFAULT_SYNCED_SETTINGS: SyncedAppSettings = {
@@ -93,6 +98,11 @@ function parseLessonLayoutDefault(value: string | null): LessonLayoutMode {
   return isLessonLayoutMode(value) ? value : APP_DEFAULTS.lessonLayoutDefault;
 }
 
+function parseVoiceProvider(value: string | null): VoiceProvider {
+  if (value === 'google') return 'apple_siri';
+  return isVoiceProvider(value) ? value : APP_DEFAULTS.voiceProvider;
+}
+
 function readWithFallback(baseKey: string, profileStorageId?: string): string | null {
   if (!profileStorageId) {
     return safeRead(baseKey);
@@ -113,6 +123,7 @@ export function readSyncedSettingsFromStorage(profileStorageId?: string): Synced
     isReviewQuestionsRemoved: parseBoolean(readWithFallback(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY, profileStorageId)),
     appTheme: parseAppTheme(readWithFallback(APP_THEME_KEY, profileStorageId)),
     lessonLayoutDefault: parseLessonLayoutDefault(readWithFallback(LESSON_LAYOUT_DEFAULT_KEY, profileStorageId)),
+    voiceProvider: parseVoiceProvider(readWithFallback(VOICE_PROVIDER_KEY, profileStorageId)),
   };
 }
 
@@ -131,6 +142,7 @@ export function persistSyncedSettingsToStorage(
   safeWrite(resolveKey(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY), String(settings.isReviewQuestionsRemoved));
   safeWrite(resolveKey(APP_THEME_KEY), settings.appTheme);
   safeWrite(resolveKey(LESSON_LAYOUT_DEFAULT_KEY), settings.lessonLayoutDefault);
+  safeWrite(resolveKey(VOICE_PROVIDER_KEY), settings.voiceProvider);
 }
 
 export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedAppSettings {
@@ -144,6 +156,7 @@ export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedA
     isReviewQuestionsRemoved: settings.isReviewQuestionsRemoved,
     appTheme: settings.appTheme,
     lessonLayoutDefault: settings.lessonLayoutDefault,
+    voiceProvider: settings.voiceProvider,
   };
 }
 
@@ -177,5 +190,10 @@ export function applyRemoteSyncedSettings(
   }
   if (isLessonLayoutMode(remote.lessonLayoutDefault)) {
     setters.setLessonLayoutDefault(remote.lessonLayoutDefault);
+  }
+  if (remote.voiceProvider === 'google') {
+    setters.setVoiceProvider('apple_siri');
+  } else if (isVoiceProvider(remote.voiceProvider)) {
+    setters.setVoiceProvider(remote.voiceProvider);
   }
 }

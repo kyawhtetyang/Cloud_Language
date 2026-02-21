@@ -45,3 +45,4 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, A
     return this.props.children;
   }
 }
+

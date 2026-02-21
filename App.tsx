@@ -109,6 +109,8 @@ const App: React.FC = () => {
     setAppTheme,
     lessonLayoutDefault,
     setLessonLayoutDefault,
+    voiceProvider,
+    setVoiceProvider,
     hasHydratedSettings,
   } = useAppPreferences(profileName ? toProfileStorageId(profileName) : '');
   const [isNextDisabled, setIsNextDisabled] = useState(false);
@@ -194,6 +196,7 @@ const App: React.FC = () => {
     isReviewQuestionsRemoved,
     appTheme,
     lessonLayoutDefault,
+    voiceProvider,
     totalLevels,
     progressStorageKey,
     unlockedStorageKey,
@@ -210,6 +213,7 @@ const App: React.FC = () => {
     setIsReviewQuestionsRemoved,
     setAppTheme,
     setLessonLayoutDefault,
+    setVoiceProvider,
   });
 
   useSettingsPersistence({
@@ -224,6 +228,7 @@ const App: React.FC = () => {
     isReviewQuestionsRemoved,
     appTheme,
     lessonLayoutDefault,
+    voiceProvider,
   });
 
   const {
@@ -351,6 +356,7 @@ const App: React.FC = () => {
         learnLanguage,
         unitId: entry.unitId,
         audioUrl: entry.audioUrl,
+        voiceProvider,
       });
     }
 
@@ -526,6 +532,7 @@ const App: React.FC = () => {
         learnLanguage,
         unitId: entry.unitId,
         audioUrl: entry.audioUrl,
+        voiceProvider,
       });
     }
 
@@ -891,6 +898,13 @@ const App: React.FC = () => {
 
   const handleUnitCompleteStay = () => {
     setIsUnitCompleteModalOpen(false);
+    setMode('learn');
+    setCurrentIndex(quizSectionStart);
+    setLearnStep(0);
+    setRandomOrderVersion((prev) => prev + 1);
+    setUnitXp(0);
+    setReviewResult(null);
+    resetQuizState();
   };
 
   const handleUnitCompleteContinue = () => {
@@ -1062,6 +1076,7 @@ const App: React.FC = () => {
               translationLabel={translationLabel}
               appTheme={appTheme}
               lessonLayoutDefault={lessonLayoutDefault}
+              voiceProvider={voiceProvider}
               onDefaultLanguageChange={setDefaultLanguage}
               onLearnLanguageChange={setLearnLanguage}
               onTogglePronunciation={() => setIsPronunciationEnabled((prev) => !prev)}
@@ -1070,6 +1085,7 @@ const App: React.FC = () => {
               onIncreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev + 5))}
               onAppThemeChange={setAppTheme}
               onLessonLayoutDefaultChange={setLessonLayoutDefault}
+              onVoiceProviderChange={setVoiceProvider}
             />
           ) : mode === 'quiz' ? (
             <MatchReviewView
@@ -1116,6 +1132,7 @@ const App: React.FC = () => {
               isPronunciationEnabled={isPronunciationEnabled}
               isBoldTextEnabled={isBoldTextEnabled}
               learnLanguage={learnLanguage}
+              voiceProvider={voiceProvider}
               defaultLayoutMode={lessonLayoutDefault}
               onLayoutModeChange={setLessonLayoutMode}
             />

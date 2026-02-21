@@ -6,3 +6,4 @@ export function useAppTheme(appTheme: AppTheme): void {
     document.documentElement.setAttribute('data-app-theme', appTheme);
   }, [appTheme]);
 }
+

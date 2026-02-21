@@ -124,3 +124,4 @@ describe('useProfileProgressSync debounce', () => {
     expect(putCalls.length).toBe(1);
   });
 });
+

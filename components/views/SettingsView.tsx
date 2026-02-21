@@ -8,6 +8,8 @@ import {
   LearnLanguage,
   LESSON_LAYOUT_OPTIONS,
   LessonLayoutMode,
+  VOICE_PROVIDER_OPTIONS,
+  VoiceProvider,
 } from '../../config/appConfig';
 
 type SettingsViewProps = {
@@ -21,6 +23,7 @@ type SettingsViewProps = {
   translationLabel: string;
   appTheme: AppTheme;
   lessonLayoutDefault: LessonLayoutMode;
+  voiceProvider: VoiceProvider;
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
   onLearnLanguageChange: (value: LearnLanguage) => void;
   onTogglePronunciation: () => void;
@@ -29,6 +32,7 @@ type SettingsViewProps = {
   onIncreaseTextSize: () => void;
   onAppThemeChange: (value: AppTheme) => void;
   onLessonLayoutDefaultChange: (value: LessonLayoutMode) => void;
+  onVoiceProviderChange: (value: VoiceProvider) => void;
 };
 
 const sectionTitleClass = 'text-sm font-extrabold uppercase tracking-wide text-brand-ink';
@@ -75,6 +79,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   translationLabel,
   appTheme,
   lessonLayoutDefault,
+  voiceProvider,
   onDefaultLanguageChange,
   onLearnLanguageChange,
   onTogglePronunciation,
@@ -83,6 +88,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onIncreaseTextSize,
   onAppThemeChange,
   onLessonLayoutDefaultChange,
+  onVoiceProviderChange,
 }) => {
   return (
     <div className="w-full max-w-2xl rounded-[24px] border-2 border-gray-100 bg-white p-4 shadow-xl md:p-5">
@@ -236,6 +242,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             isOn={isPronunciationEnabled}
             onToggle={onTogglePronunciation}
           />
+          <div className={sectionCardClass}>
+            <p className={sectionTitleClass}>Voice Provider</p>
+            <p className="text-sm text-gray-600 mt-1 mb-3">Choose Default voice or prefer Apple Siri-style female voice when available.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {VOICE_PROVIDER_OPTIONS.map((option) => (
+                <button
+                  key={option.code}
+                  type="button"
+                  onClick={() => onVoiceProviderChange(option.code)}
+                  className={`${optionButtonBaseClass} ${
+                    voiceProvider === option.code
+                      ? 'btn-selected'
+                      : 'btn-unselected'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

@@ -18,6 +18,7 @@ export const REMOVE_REVIEW_QUESTIONS_ENABLED_KEY = 'lingo_burmese_remove_review_
 export const RELOAD_TO_LESSON_KEY = 'lingo_burmese_reload_to_lesson';
 export const APP_THEME_KEY = 'lingo_burmese_app_theme';
 export const LESSON_LAYOUT_DEFAULT_KEY = 'lingo_burmese_lesson_layout_default';
+export const VOICE_PROVIDER_KEY = 'lingo_burmese_voice_provider';
 
 export const LESSONS_PER_BATCH = 3;
 export const MATCH_PAIRS_PER_REVIEW = 3;
@@ -90,31 +91,31 @@ export type StageCode = (typeof STAGE_ORDER)[number];
 export const STAGE_META = {
   A1: {
     label: 'Beginner (A1)',
-    levelCardClass: 'border-[#c5eb9f] bg-[#f7ffef]',
+    levelCardClass: 'btn-selected-flat border-0',
     topicCardClass: 'border-[#dbe8cb] bg-white/85 hover:border-[#9ad56a]',
     badgeClass: 'bg-brand-soft text-brand',
-    titleClass: 'text-brand',
+    titleClass: 'text-white',
   },
   A2: {
     label: 'Pre-Intermediate (A2)',
-    levelCardClass: 'border-[#facc15] bg-[#fff9e8]',
+    levelCardClass: 'btn-selected-flat border-0',
     topicCardClass: 'border-[#f5d564] bg-white/90 hover:border-[#eab308]',
     badgeClass: 'bg-brand-soft text-brand',
-    titleClass: 'text-brand',
+    titleClass: 'text-white',
   },
   B1: {
     label: 'Intermediate (B1)',
-    levelCardClass: 'border-[#93c5fd] bg-[#eff6ff]',
+    levelCardClass: 'btn-selected-flat border-0',
     topicCardClass: 'border-[#bfdbfe] bg-white/90 hover:border-[#60a5fa]',
     badgeClass: 'bg-brand-soft text-brand',
-    titleClass: 'text-brand',
+    titleClass: 'text-white',
   },
   B2: {
     label: 'Upper-Intermediate (B2)',
-    levelCardClass: 'border-[#fbcfe8] bg-[#fff1f9]',
+    levelCardClass: 'btn-selected-flat border-0',
     topicCardClass: 'border-[#f9a8d4] bg-white/90 hover:border-[#ec4899]',
     badgeClass: 'bg-brand-soft text-brand',
-    titleClass: 'text-brand',
+    titleClass: 'text-white',
   },
 } as const;
 
@@ -133,10 +134,10 @@ export const DEFAULT_LANGUAGE_OPTIONS = [
 export type DefaultLanguage = (typeof DEFAULT_LANGUAGE_OPTIONS)[number]['code'];
 
 export const APP_THEME_OPTIONS = [
-  { code: 'apple_notes', label: 'Apple Notes' },
+  { code: 'apple_notes', label: 'Orange (Apple)' },
+  { code: 'dark', label: 'Dark (Apple)' },
+  { code: 'system', label: 'Light mode' },
   { code: 'duolingo', label: 'Duolingo' },
-  { code: 'system', label: 'System' },
-  { code: 'dark', label: 'Dark' },
 ] as const;
 export type AppTheme = (typeof APP_THEME_OPTIONS)[number]['code'];
 
@@ -145,6 +146,12 @@ export const LESSON_LAYOUT_OPTIONS = [
   { code: 'list', label: 'List' },
 ] as const;
 export type LessonLayoutMode = (typeof LESSON_LAYOUT_OPTIONS)[number]['code'];
+
+export const VOICE_PROVIDER_OPTIONS = [
+  { code: 'default', label: 'Default' },
+  { code: 'apple_siri', label: 'Apple (Siri)' },
+] as const;
+export type VoiceProvider = (typeof VOICE_PROVIDER_OPTIONS)[number]['code'];
 
 export const TEXT_SCALE_PERCENT_MIN = 90;
 export const TEXT_SCALE_PERCENT_MAX = 120;
@@ -163,6 +170,7 @@ export const APP_DEFAULTS = {
   isReviewQuestionsRemoved: false,
   appTheme: 'apple_notes' as AppTheme,
   lessonLayoutDefault: 'list' as LessonLayoutMode,
+  voiceProvider: 'default' as VoiceProvider,
 };
 
 export type ReviewResult = {
@@ -193,6 +201,11 @@ export function isAppTheme(value: unknown): value is AppTheme {
 export function isLessonLayoutMode(value: unknown): value is LessonLayoutMode {
   if (typeof value !== 'string') return false;
   return LESSON_LAYOUT_OPTIONS.some((option) => option.code === value);
+}
+
+export function isVoiceProvider(value: unknown): value is VoiceProvider {
+  if (typeof value !== 'string') return false;
+  return VOICE_PROVIDER_OPTIONS.some((option) => option.code === value);
 }
 
 export type CoreLessonRef = {
