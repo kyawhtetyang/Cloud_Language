@@ -332,6 +332,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
   onRemoveUnitDownload,
 }) => {
   const [internalSelectedAlbumKey, setInternalSelectedAlbumKey] = useState<string | null>(null);
+  const [libraryQuery, setLibraryQuery] = useState('');
   const activeSelectedAlbumKey = selectedAlbumKey === undefined ? internalSelectedAlbumKey : selectedAlbumKey;
   const setSelectedAlbumKey = (key: string | null) => {
     if (onSelectedAlbumKeyChange) {
@@ -367,6 +368,23 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
     }
     return null;
   }, [activeSelectedAlbumKey, groupsByStage]);
+  const normalizedLibraryQuery = libraryQuery.trim().toLowerCase();
+  const filteredGroupsByStage = useMemo(() => {
+    if (!normalizedLibraryQuery) return groupsByStage;
+
+    return STAGE_ORDER.reduce<Record<StageCode, AlbumGroup[]>>((acc, stage) => {
+      acc[stage] = groupsByStage[stage].filter((group) => {
+        if (group.firstTopicConcise.toLowerCase().includes(normalizedLibraryQuery)) return true;
+        return group.units.some((unitEntry) => {
+          const conciseTopic = getConciseTopicTitle(unitEntry.topic, defaultLanguage).toLowerCase();
+          const localizedTopic = localizeRoadmapTopic(unitEntry.topic, defaultLanguage).toLowerCase();
+          return conciseTopic.includes(normalizedLibraryQuery) || localizedTopic.includes(normalizedLibraryQuery);
+        });
+      });
+      return acc;
+    }, { A1: [], A2: [], B1: [], B2: [] });
+  }, [defaultLanguage, groupsByStage, normalizedLibraryQuery]);
+  const hasFilteredResults = STAGE_ORDER.some((stage) => filteredGroupsByStage[stage].length > 0);
 
   const formatAlbumMeta = (stage: StageCode, groupIndex: number, unitCount: number): string => {
     const unitWord = unitCount === 1 ? 'unit' : 'units';
@@ -404,55 +422,57 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
         disabled={isGroupDownloading}
         aria-label={groupDownloadLabel}
         title={groupDownloadLabel}
-        className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition-all ${
+        className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
           isGroupDownloading
-            ? LIBRARY_STATE_STYLE.downloadLoading
+            ? 'border-[var(--border-strong)] bg-[var(--surface-active)] text-[var(--text-muted)] cursor-wait'
             : (isGroupDownloaded || isGroupPartial)
-              ? LIBRARY_STATE_STYLE.downloadDone
-              : LIBRARY_STATE_STYLE.downloadDefault
+              ? 'border-[var(--border-strong)] bg-[var(--surface-active)] text-[var(--text-secondary)]'
+              : 'border-[var(--border-subtle)] bg-[var(--surface-default)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]'
         }`}
       >
         {isGroupDownloading ? (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 animate-spin shrink-0">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 animate-spin">
             <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.25" />
             <path d="M12 3a9 9 0 0 1 9 9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         ) : isGroupDownloaded ? (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 shrink-0">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
             <path d="M20 7L10 17l-6-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         ) : isGroupPartial ? (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 shrink-0">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
             <path d="M4 12h16M12 4v16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         ) : (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 shrink-0">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
             <path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
-        <span>{groupDownloadLabel}</span>
       </button>
     );
   };
 
   if (selectedAlbum) {
     const stageHeaderUi = LIBRARY_HEADER_STYLE;
+    const albumTitle = shortenLabel(selectedAlbum.firstTopicConcise, 58);
 
     return (
       <div className="w-full max-w-3xl">
         <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center">
+          <div className="top-toolbar-row flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => setSelectedAlbumKey(null)}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-default)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
+                aria-label="Back"
+                className="top-toolbar-icon inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
               >
                 <span aria-hidden="true">←</span>
-                Back
               </button>
+              <p className="truncate text-sm font-bold text-ink-strong md:text-base">
+                {albumTitle}
+              </p>
             </div>
-            {renderDownloadButton(selectedAlbum)}
           </div>
         </div>
 
@@ -471,7 +491,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
               </div>
               <div className="min-w-0">
                 <h3 className="text-lg font-semibold leading-tight text-ink-strong">
-                  {shortenLabel(selectedAlbum.firstTopicConcise, 58)}
+                  {albumTitle}
                 </h3>
                 <p className="mt-0.5 text-sm font-medium text-ink-muted">
                   {formatAlbumMeta(
@@ -480,37 +500,33 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                     selectedAlbum.units.length,
                   )}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => onReadAlbum?.(
-                    selectedAlbum.units.map((entry) => ({ level: entry.level, unit: entry.unit })),
-                    activeSelectedAlbumKey,
-                  )}
-                  className={`mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold ${LIBRARY_STATE_STYLE.primaryAction}`}
-                  aria-label={playAllLabel}
-                  title={playAllLabel}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M10 9.5v5l4-2.5z" fill="currentColor" stroke="none" />
-                  </svg>
-                  <span>{playAllLabel}</span>
-                </button>
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onReadAlbum?.(
+                      selectedAlbum.units.map((entry) => ({ level: entry.level, unit: entry.unit })),
+                      activeSelectedAlbumKey,
+                    )}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-default)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+                    aria-label={playAllLabel}
+                    title={playAllLabel}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 7.5v9l7-4.5z" fill="currentColor" stroke="none" />
+                    </svg>
+                  </button>
+                  {renderDownloadButton(selectedAlbum)}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="divide-y divide-[var(--border-subtle)] px-2">
+          <div className="divide-y divide-[var(--border-subtle)]">
             {selectedAlbum.units.map((entry, albumIndex) => {
               const unitKey = buildUnitKey(entry.level, entry.unit);
               const albumUnitNumber = albumIndex + 1;
               const isCompleted = completedUnitKeys?.has(unitKey) ?? false;
               const isActive = activeUnitKey === unitKey;
-              const rowClass = isActive
-                ? LIBRARY_STATE_STYLE.rowActive
-                : isCompleted
-                  ? LIBRARY_STATE_STYLE.rowCompleted
-                  : LIBRARY_STATE_STYLE.rowDefault;
               const badgeClass = isActive
                 ? LIBRARY_STATE_STYLE.badgeActive
                 : isCompleted
@@ -522,23 +538,31 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                   key={`${entry.stage}-${entry.level}-${entry.unit}`}
                   type="button"
                   onClick={() => onSelectUnit(entry.level, entry.unit, activeSelectedAlbumKey)}
-                  className={`w-full min-h-12 px-3 py-2.5 text-sm md:text-base font-semibold transition-colors ${isActive ? `rounded-lg ${rowClass}` : rowClass}`}
+                  className={`selection-hover w-full min-h-[64px] px-3 py-1.5 text-left transition-colors ${
+                    isActive ? 'bg-[var(--surface-active)]' : 'bg-[var(--surface-default)]'
+                  }`}
                 >
-                  <div className="grid grid-cols-[auto,1fr] items-center gap-2.5">
-                    <span
-                      className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md px-1.5 text-xs font-extrabold ${badgeClass}`}
-                      aria-label={isCompleted ? 'Completed unit' : `${text.unitPrefix} ${albumUnitNumber}`}
-                    >
-                      {isCompleted ? (
-                        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5">
-                          <path d="M20 7L10 17l-6-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      ) : (
-                        albumUnitNumber
-                      )}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-left">
-                      {localizeRoadmapTopic(entry.topic, defaultLanguage)}
+                  <div className="grid grid-cols-[40px,1fr,20px] items-center gap-2.5">
+                    <div className={`inline-flex h-10 w-10 items-center justify-center rounded-lg text-xs font-extrabold ${badgeClass}`}>
+                      <span aria-label={isCompleted ? 'Completed unit' : `${text.unitPrefix} ${albumUnitNumber}`}>
+                        {isCompleted ? (
+                          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+                            <path d="M20 7L10 17l-6-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        ) : (
+                          albumUnitNumber
+                        )}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[15px] font-medium leading-tight text-ink">
+                        {localizeRoadmapTopic(entry.topic, defaultLanguage)}
+                      </p>
+                    </div>
+                    <span className={`flex h-5 w-5 items-center justify-center ${stageHeaderUi.accentClass}`} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 6l6 6-6 6" />
+                      </svg>
                     </span>
                   </div>
                 </button>
@@ -552,8 +576,36 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
 
   return (
     <div className="w-full max-w-3xl">
+      <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
+        <label htmlFor="library-search" className="sr-only">
+          Search library
+        </label>
+        <div className="top-toolbar-row relative flex items-center">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+          >
+            🔍
+          </span>
+          <input
+            id="library-search"
+            type="search"
+            value={libraryQuery}
+            onChange={(event) => setLibraryQuery(event.target.value)}
+            placeholder={defaultLanguage === 'burmese' ? 'Library ကို ရှာမယ်' : 'Search library'}
+            className="top-toolbar-control w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)]"
+          />
+        </div>
+      </div>
+
+      {!hasFilteredResults && (
+        <div className="mb-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-4 text-sm text-[var(--text-secondary)]">
+          {defaultLanguage === 'burmese' ? 'ရှာဖွေမှုနှင့် ကိုက်ညီသော album မရှိသေးပါ။' : 'No albums match your search.'}
+        </div>
+      )}
+
       {STAGE_ORDER.map((stage) => {
-        const stageGroups = groupsByStage[stage];
+        const stageGroups = filteredGroupsByStage[stage];
         if (stageGroups.length === 0) return null;
         const stageHeaderUi = LIBRARY_HEADER_STYLE;
 

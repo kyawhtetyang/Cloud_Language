@@ -44,3 +44,4 @@ describe('LevelsView topic localization', () => {
     expect(screen.getByLabelText(/completed unit/i)).toBeInTheDocument();
   });
 });
+

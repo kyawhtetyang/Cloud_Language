@@ -91,7 +91,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onVoiceProviderChange,
 }) => {
   return (
-    <div className="w-full max-w-2xl rounded-[24px] border-2 border-gray-100 bg-white p-4 shadow-xl md:p-5">
+    <div className="w-full max-w-3xl rounded-[24px] border-2 border-gray-100 bg-white p-4 shadow-xl md:p-5">
       <section className="mb-4">
         <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] text-gray-500 mb-2">Language</h3>
         <div className="space-y-3">
@@ -278,3 +278,4 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     </div>
   );
 };
+

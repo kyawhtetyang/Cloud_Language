@@ -325,3 +325,4 @@ export function toProfileStorageId(name: string): string {
       .replace(/^_+|_+$/g, '') || 'user'
   );
 }
+

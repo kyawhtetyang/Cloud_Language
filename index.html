@@ -81,6 +81,7 @@
       --weight-bold: 700;
       --weight-extrabold: 800;
       --weight-black: 900;
+      --top-toolbar-height: 44px;
       --color-brand: #ff9f0a;
       --color-brand-dark: #d98200;
       --color-brand-ink: #7a4a00;
@@ -350,6 +351,16 @@
       border-color: var(--color-selection-selected-border);
       background: var(--color-selection-selected-bg);
       color: var(--color-selection-selected-text);
+    }
+    .top-toolbar-row {
+      min-height: var(--top-toolbar-height);
+    }
+    .top-toolbar-control {
+      height: var(--top-toolbar-height);
+    }
+    .top-toolbar-icon {
+      width: var(--top-toolbar-height);
+      height: var(--top-toolbar-height);
     }
     .text-brand {
       color: var(--color-brand);

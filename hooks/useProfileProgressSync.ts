@@ -327,3 +327,4 @@ export function useProfileProgressSync({
 
   return { markHydrationStale };
 }
+

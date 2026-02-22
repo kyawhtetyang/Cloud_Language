@@ -40,7 +40,7 @@ export const MatchReviewView: React.FC<MatchReviewViewProps> = ({
   onSelectAnswer,
 }) => {
   return (
-    <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-2xl">
+    <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-3xl">
       <div className="w-full mb-3 flex items-center justify-between gap-2">
         <p className="text-xs font-extrabold uppercase tracking-wide text-brand">
           Course {currentCourseCode} • {currentLevelTitle}

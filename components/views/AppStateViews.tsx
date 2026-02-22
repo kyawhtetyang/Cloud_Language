@@ -74,7 +74,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
 );
 
 export const CompletedView: React.FC<{ onRestart: () => void }> = ({ onRestart }) => (
-  <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-2xl text-center">
+  <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-3xl text-center">
     <h2 className="text-3xl font-extrabold text-ink mb-3">All Units Passed</h2>
     <p className="text-gray-500 mb-6">You completed all sections and passed the random checks.</p>
     <button

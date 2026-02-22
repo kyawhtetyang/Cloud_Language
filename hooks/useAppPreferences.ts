@@ -90,3 +90,4 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     hasHydratedSettings,
   };
 }
+

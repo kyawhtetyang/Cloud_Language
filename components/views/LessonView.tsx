@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { cancelSpeech, speakText } from '../AudioButton';
 import { LessonData } from '../../types';
-import { getPlayableLessonText, LearnLanguage, resolveStageCode, VoiceProvider } from '../../config/appConfig';
+import { getPlayableLessonText, LearnLanguage, VoiceProvider } from '../../config/appConfig';
 import { buildLessonReferenceKey } from '../../utils/lessonReference';
 import { localizeRoadmapTopic } from '../../config/roadmapI18n';
 
@@ -53,9 +53,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [localSelectedGroup, setLocalSelectedGroup] = useState<number | null>(null);
   const batchRefs = useRef<Array<HTMLDivElement | null>>([]);
   const leadLesson = currentBatchEntries[0]?.lesson;
-  const level = leadLesson?.level || 1;
   const unit = leadLesson?.unit || 1;
-  const stage = resolveStageCode(level, leadLesson?.stage);
   const topicTitle = leadLesson?.topic
     ? localizeRoadmapTopic(leadLesson.topic, defaultLanguage)
     : defaultLanguage === 'burmese'
@@ -65,6 +63,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const selectedGroupIndex =
     typeof currentStep === 'number' && currentStep >= 0 ? currentStep : (localSelectedGroup ?? 0);
   const activeGroup = selectedGroupIndex + 1;
+  const topRightProgressLabel =
+    lessonLayout === 'list' && totalGroups > 0
+      ? `${Math.min(activeGroup, totalGroups)}/${totalGroups}`
+      : (progressLabel ?? '');
 
   useEffect(() => {
     if (typeof currentStep === 'number' && currentStep >= 0) {
@@ -90,58 +92,27 @@ export const LessonView: React.FC<LessonViewProps> = ({
   }, [defaultLayoutMode]);
 
   return (
-    <div className="w-full max-w-2xl">
+    <div className="w-full max-w-3xl">
       <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
+        <div className="top-toolbar-row flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2.5">
             {onBackToRoadmap && (
               <button
                 type="button"
                 onClick={onBackToRoadmap}
-                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-1.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+                aria-label="Back"
+                className="top-toolbar-icon inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
               >
                 <span aria-hidden="true">←</span>
-                Back
               </button>
             )}
-            <p className="truncate text-xs font-semibold tracking-wide text-[var(--text-secondary)]">
-              {stage} U{unit}
+            <p className="truncate text-sm font-bold text-ink-strong md:text-base">
+              {topicTitle}
             </p>
           </div>
           <p className="shrink-0 text-xs font-semibold tracking-wide text-[var(--text-muted)]">
-            {lessonLayout === 'list' && totalGroups > 0
-              ? `Group ${Math.min(activeGroup, totalGroups)} of ${totalGroups}`
-              : (progressLabel ?? '')}
+            {topRightProgressLabel}
           </p>
-        </div>
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <p className="truncate text-sm font-bold text-ink-strong md:text-base">
-            {topicTitle}
-          </p>
-          <div className="inline-flex items-center gap-1 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] p-1">
-            <button
-              type="button"
-              onClick={() => setLessonLayout('paged')}
-              className={`min-h-[36px] rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors ${
-                lessonLayout === 'paged'
-                  ? 'btn-selected-flat'
-                  : 'border-transparent bg-transparent text-[var(--text-secondary)]'
-              }`}
-            >
-              Paged
-            </button>
-            <button
-              type="button"
-              onClick={() => setLessonLayout('list')}
-              className={`min-h-[36px] rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors ${
-                lessonLayout === 'list'
-                  ? 'btn-selected-flat'
-                  : 'border-transparent bg-transparent text-[var(--text-secondary)]'
-              }`}
-            >
-              List
-            </button>
-          </div>
         </div>
       </div>
       <div className="overflow-hidden bg-transparent">

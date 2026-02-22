@@ -37,7 +37,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const visualProgress = normalizedProgress > 0 ? normalizedProgress : 2;
 
   return (
-    <div className="w-full max-w-2xl space-y-4">
+    <div className="w-full max-w-3xl space-y-4">
       <section className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-5 md:p-7">
         <div className="flex items-center gap-3">
           <div className="w-14 h-14 rounded-2xl border-2 btn-selected flex items-center justify-center text-2xl font-extrabold">

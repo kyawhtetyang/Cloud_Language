@@ -26,3 +26,4 @@ export function getSpeechLanguageProfile(learnLanguage?: string): SpeechLanguage
   return SPEECH_LANGUAGE_PROFILES[learnLanguage as LearnLanguage] || DEFAULT_SPEECH_LANGUAGE_PROFILE;
 }
 
+
