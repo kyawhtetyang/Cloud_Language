@@ -1,7 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { cancelSpeech, speakText } from '../AudioButton';
 import { LessonData } from '../../types';
-import { getPlayableLessonText, LearnLanguage, VoiceProvider } from '../../config/appConfig';
+import {
+  getPlayableLessonText,
+  LearnLanguage,
+  resolveLessonTranslationText,
+  VoiceProvider,
+} from '../../config/appConfig';
 import { buildLessonReferenceKey } from '../../utils/lessonReference';
 import { localizeRoadmapTopic } from '../../config/roadmapI18n';
 
@@ -19,7 +24,6 @@ type LessonViewProps = {
   currentStep?: number;
   isReading?: boolean;
   onSelectStep?: (step: number) => void;
-  englishReferenceLessons: LessonData[];
   englishReferenceByKey: Map<string, string>;
   defaultLanguage: 'burmese' | 'english';
   isPronunciationEnabled: boolean;
@@ -39,7 +43,6 @@ export const LessonView: React.FC<LessonViewProps> = ({
   currentStep,
   isReading,
   onSelectStep,
-  englishReferenceLessons,
   englishReferenceByKey,
   defaultLanguage,
   isPronunciationEnabled,
@@ -53,7 +56,9 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [localSelectedGroup, setLocalSelectedGroup] = useState<number | null>(null);
   const batchRefs = useRef<Array<HTMLDivElement | null>>([]);
   const leadLesson = currentBatchEntries[0]?.lesson;
+  const level = leadLesson?.level || 1;
   const unit = leadLesson?.unit || 1;
+  const unitCode = `${Math.max(1, level)}.${Math.max(1, unit)}`;
   const topicTitle = leadLesson?.topic
     ? localizeRoadmapTopic(leadLesson.topic, defaultLanguage)
     : defaultLanguage === 'burmese'
@@ -106,9 +111,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 <span aria-hidden="true">←</span>
               </button>
             )}
-            <p className="truncate text-sm font-bold text-ink-strong md:text-base">
-              {topicTitle}
-            </p>
+            <div className="min-w-0">
+              <p className="truncate text-[11px] font-semibold tracking-wide text-[var(--text-muted)]">{unitCode}</p>
+              <p className="truncate text-sm font-bold text-ink-strong md:text-base">
+                {topicTitle}
+              </p>
+            </div>
           </div>
           <p className="shrink-0 text-xs font-semibold tracking-wide text-[var(--text-muted)]">
             {topRightProgressLabel}
@@ -151,11 +159,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   </span>
                 )}
                 <div className="space-y-1.5 px-1 pb-1">
-                  {entries.map(({ lesson, lessonIndex }, idx) => {
+                  {entries.map(({ lesson }, idx) => {
                     const lessonKey = buildLessonReferenceKey(lesson);
-                    const englishTranslation =
-                      englishReferenceByKey.get(lessonKey) || englishReferenceLessons[lessonIndex]?.english || lesson.english;
-                    const translatedText = defaultLanguage === 'burmese' ? lesson.burmese : englishTranslation;
+                    const translatedText = resolveLessonTranslationText({
+                      lessonEnglish: lesson.english,
+                      lessonBurmese: lesson.burmese,
+                      defaultLanguage,
+                      learnLanguage,
+                      englishReferenceText: englishReferenceByKey.get(lessonKey),
+                    });
                     return (
                       <button
                         key={`${lesson.english}-${batchIdx}-${idx}`}
@@ -202,13 +214,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
           </div>
         ) : (
           <div className="divide-y divide-[var(--border-subtle)] px-0">
-            {currentBatchEntries.map(({ lesson, lessonIndex }, idx) => (
+            {currentBatchEntries.map(({ lesson }, idx) => (
               <div key={`${lesson.english}-${currentIndex + idx}`}>
                 {(() => {
                   const lessonKey = buildLessonReferenceKey(lesson);
-                  const englishTranslation =
-                    englishReferenceByKey.get(lessonKey) || englishReferenceLessons[lessonIndex]?.english || lesson.english;
-                  const translatedText = defaultLanguage === 'burmese' ? lesson.burmese : englishTranslation;
+                  const translatedText = resolveLessonTranslationText({
+                    lessonEnglish: lesson.english,
+                    lessonBurmese: lesson.burmese,
+                    defaultLanguage,
+                    learnLanguage,
+                    englishReferenceText: englishReferenceByKey.get(lessonKey),
+                  });
                   return (
                     <button
                       type="button"

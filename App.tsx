@@ -31,7 +31,6 @@ import {
   getPlayableLessonText,
   getLessonOrderIndex,
   getLessonUnitId,
-  LEARN_QUESTIONS_PER_UNIT,
   LESSONS_PER_BATCH,
   MATCH_PAIRS_PER_REVIEW,
   PROFILE_NAME_KEY,
@@ -133,7 +132,7 @@ const App: React.FC = () => {
   const isContinuousListPlaybackRef = useRef(false);
   const modeRef = useRef<AppMode>('learn');
   const learnStepRef = useRef(0);
-  const sectionTotalRef = useRef(1);
+  const learnStepCountRef = useRef(1);
   const orderedUnitIndexesRef = useRef<number[]>([]);
   const sectionStartRef = useRef(0);
   const repeatModeRef = useRef<RepeatMode>('off');
@@ -289,9 +288,12 @@ const App: React.FC = () => {
   const lessonBatchGroups = useLessonBatchGroups({
     lessons,
     orderedUnitIndexes,
-    sectionStart,
     sectionTotal,
   });
+  const learnStepCount = useMemo(
+    () => Math.max(1, Math.ceil(sectionTotal / LESSONS_PER_BATCH)),
+    [sectionTotal],
+  );
 
   const handleApplyProfileName = () => {
     applyProfileName(() => {
@@ -337,11 +339,11 @@ const App: React.FC = () => {
   useEffect(() => {
     modeRef.current = mode;
     learnStepRef.current = learnStep;
-    sectionTotalRef.current = sectionTotal;
+    learnStepCountRef.current = learnStepCount;
     orderedUnitIndexesRef.current = orderedUnitIndexes;
     sectionStartRef.current = sectionStart;
     repeatModeRef.current = repeatMode;
-  }, [mode, learnStep, sectionTotal, orderedUnitIndexes, sectionStart, repeatMode]);
+  }, [mode, learnStep, learnStepCount, orderedUnitIndexes, sectionStart, repeatMode]);
 
   const playTextsSequentially = async (entries: SpeakEntry[]): Promise<boolean> => {
     if (mode !== 'learn' || entries.length === 0) return false;
@@ -368,15 +370,15 @@ const App: React.FC = () => {
   };
 
   const getBatchTextsForStep = (step: number): SpeakEntry[] => {
-    const safeStep = Math.max(0, Math.min(LEARN_QUESTIONS_PER_UNIT - 1, step));
-    const sectionTotalValue = Math.max(1, sectionTotalRef.current);
-    const offset = (safeStep * LESSONS_PER_BATCH) % sectionTotalValue;
+    const safeStep = Math.max(0, Math.min(learnStepCountRef.current - 1, step));
+    const offset = safeStep * LESSONS_PER_BATCH;
     const batchIndexes = Array.from({ length: LESSONS_PER_BATCH }, (_, idx) => {
-      const orderedIndex = orderedUnitIndexesRef.current[(offset + idx) % sectionTotalValue];
-      return orderedIndex ?? sectionStartRef.current;
+      const orderedIndex = orderedUnitIndexesRef.current[offset + idx];
+      return typeof orderedIndex === 'number' ? orderedIndex : null;
     });
     return batchIndexes
       .map((index) => {
+        if (typeof index !== 'number') return null;
         const lesson = lessons[index];
         if (!lesson) return null;
         const speakTextValue = getPlayableLessonText(lesson);
@@ -400,7 +402,7 @@ const App: React.FC = () => {
       const finished = await playTextsSequentially(texts);
       if (!finished || !isContinuousListPlaybackRef.current || modeRef.current !== 'learn') break;
 
-      if (cursorStep >= LEARN_QUESTIONS_PER_UNIT - 1) {
+      if (cursorStep >= learnStepCountRef.current - 1) {
         if (repeatModeRef.current === 'one') {
           setCurrentIndex(sectionStartRef.current);
           setLearnStep(0);
@@ -415,8 +417,7 @@ const App: React.FC = () => {
         }
       } else {
         const nextStep = cursorStep + 1;
-        const sectionTotalValue = Math.max(1, sectionTotalRef.current);
-        const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotalValue;
+        const nextOffset = nextStep * LESSONS_PER_BATCH;
         setLearnStep(nextStep);
         learnStepRef.current = nextStep;
         setCurrentIndex(orderedUnitIndexesRef.current[nextOffset] ?? sectionStartRef.current);
@@ -463,7 +464,7 @@ const App: React.FC = () => {
 
   const handleSelectLessonStep = (step: number) => {
     if (mode !== 'learn') return;
-    const safeStep = Math.max(0, Math.min(LEARN_QUESTIONS_PER_UNIT - 1, step));
+    const safeStep = Math.max(0, Math.min(learnStepCount - 1, step));
     if (isReading) {
       isContinuousListPlaybackRef.current = false;
       readSessionRef.current += 1;
@@ -472,7 +473,7 @@ const App: React.FC = () => {
     }
     learnStepRef.current = safeStep;
     setLearnStep(safeStep);
-    const nextOffset = (safeStep * LESSONS_PER_BATCH) % sectionTotal;
+    const nextOffset = safeStep * LESSONS_PER_BATCH;
     setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
   };
 
@@ -601,13 +602,9 @@ const App: React.FC = () => {
   const startCheckpointQuizForStep = (nextStep: number) => {
     const previousCheckpoint =
       QUICK_REVIEW_CHECKPOINTS.filter((checkpoint) => checkpoint < nextStep).at(-1) || 0;
-    const reviewSourceIndexes = Array.from(
-      { length: (nextStep - previousCheckpoint) * LESSONS_PER_BATCH },
-      (_, idx) => {
-        const offset = ((previousCheckpoint * LESSONS_PER_BATCH) + idx) % sectionTotal;
-        return orderedUnitIndexes[offset] ?? sectionStart;
-      },
-    );
+    const startOffset = previousCheckpoint * LESSONS_PER_BATCH;
+    const endOffset = nextStep * LESSONS_PER_BATCH;
+    const reviewSourceIndexes = orderedUnitIndexes.slice(startOffset, endOffset);
     const reviewSourceLessons = reviewSourceIndexes
       .map((index) => lessons[index])
       .filter((lesson): lesson is LessonData => Boolean(lesson));
@@ -632,7 +629,7 @@ const App: React.FC = () => {
 
     const isCheckpointStep = false;
 
-    if (nextStep >= LEARN_QUESTIONS_PER_UNIT) {
+    if (nextStep >= learnStepCount) {
       setIsLessonUnitBoundaryModalOpen(true);
       setIsNextDisabled(false);
       return;
@@ -642,7 +639,7 @@ const App: React.FC = () => {
     if (needsCheckpoint) {
       startCheckpointQuizForStep(nextStep);
     } else {
-      const nextOffset = (nextStep * LESSONS_PER_BATCH) % sectionTotal;
+      const nextOffset = nextStep * LESSONS_PER_BATCH;
       setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
       if (lessonLayoutMode === 'list') {
         void playTextsSequentially(getBatchTextsForStep(nextStep));
@@ -665,8 +662,10 @@ const App: React.FC = () => {
 
     if (learnStep <= 0) {
       if (repeatMode === 'one') {
-        setCurrentIndex(sectionStart);
-        setLearnStep(LEARN_QUESTIONS_PER_UNIT - 1);
+        const lastStep = Math.max(0, learnStepCount - 1);
+        const lastOffset = lastStep * LESSONS_PER_BATCH;
+        setCurrentIndex(orderedUnitIndexes[lastOffset] ?? sectionStart);
+        setLearnStep(lastStep);
         setIsNextDisabled(false);
         return;
       }
@@ -690,8 +689,11 @@ const App: React.FC = () => {
           }
           return acc;
         }, []);
-        setCurrentIndex(lastUnitIndexes[0] ?? lastLessonIndex);
-        setLearnStep(LEARN_QUESTIONS_PER_UNIT - 1);
+        const lastUnitStepCount = Math.max(1, Math.ceil(lastUnitIndexes.length / LESSONS_PER_BATCH));
+        const lastStep = Math.max(0, lastUnitStepCount - 1);
+        const lastOffset = lastStep * LESSONS_PER_BATCH;
+        setCurrentIndex(lastUnitIndexes[lastOffset] ?? lastUnitIndexes[0] ?? lastLessonIndex);
+        setLearnStep(lastStep);
         setIsNextDisabled(false);
         return;
       }
@@ -720,15 +722,18 @@ const App: React.FC = () => {
         return acc;
       }, []);
 
-      setCurrentIndex(previousUnitIndexes[0] ?? previousUnitAnchor);
-      setLearnStep(LEARN_QUESTIONS_PER_UNIT - 1);
+      const previousUnitStepCount = Math.max(1, Math.ceil(previousUnitIndexes.length / LESSONS_PER_BATCH));
+      const lastStep = Math.max(0, previousUnitStepCount - 1);
+      const lastOffset = lastStep * LESSONS_PER_BATCH;
+      setCurrentIndex(previousUnitIndexes[lastOffset] ?? previousUnitIndexes[0] ?? previousUnitAnchor);
+      setLearnStep(lastStep);
       setIsNextDisabled(false);
       return;
     }
 
     const previousStep = Math.max(0, learnStep - 1);
     setLearnStep(previousStep);
-    const previousOffset = (previousStep * LESSONS_PER_BATCH) % sectionTotal;
+    const previousOffset = previousStep * LESSONS_PER_BATCH;
     setCurrentIndex(orderedUnitIndexes[previousOffset] ?? sectionStart);
     setIsNextDisabled(false);
   };
@@ -765,7 +770,7 @@ const App: React.FC = () => {
     const isSwitchingUnit = targetUnitKey !== `${currentLevel}:${currentUnit}`;
     const currentUnitKey = `${currentLevel}:${currentUnit}`;
     const isCurrentUnitAlreadyCompleted = completedUnitKeys.has(currentUnitKey);
-    const isUnitLearnStepCompleted = mode === 'learn' && learnStep >= LEARN_QUESTIONS_PER_UNIT - 1;
+    const isUnitLearnStepCompleted = mode === 'learn' && learnStep >= learnStepCount - 1;
 
     if (mode === 'quiz') {
       setPendingUnitTarget({ level, unit, albumKey });
@@ -1053,6 +1058,7 @@ const App: React.FC = () => {
             <LevelsView
               lessons={lessons}
               defaultLanguage={defaultLanguage}
+              learnLanguage={learnLanguage}
               onSelectUnit={goToLevelUnit}
               onReadAlbum={(units, albumKey) => { void handleReadRoadmapAlbum(units, albumKey); }}
               selectedAlbumKey={roadmapSelectedAlbumKey}
@@ -1119,14 +1125,13 @@ const App: React.FC = () => {
                 setSidebarTab('levels');
                 setIsSidebarOpen(false);
               }}
-              progressLabel={`${Math.min(LEARN_QUESTIONS_PER_UNIT, learnStep + 1)}/${LEARN_QUESTIONS_PER_UNIT}`}
+              progressLabel={`${Math.min(learnStepCount, learnStep + 1)}/${learnStepCount}`}
               currentIndex={currentIndex}
               currentBatchEntries={currentBatchEntries}
               allBatchGroups={lessonBatchGroups}
               currentStep={learnStep}
               isReading={isReading}
               onSelectStep={handleSelectLessonStep}
-              englishReferenceLessons={englishReferenceLessons}
               englishReferenceByKey={englishReferenceByKey}
               defaultLanguage={defaultLanguage}
               isPronunciationEnabled={isPronunciationEnabled}
@@ -1170,4 +1175,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

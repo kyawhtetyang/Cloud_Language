@@ -22,6 +22,7 @@ export const VOICE_PROVIDER_KEY = 'lingo_burmese_voice_provider';
 
 export const LESSONS_PER_BATCH = 3;
 export const MATCH_PAIRS_PER_REVIEW = 3;
+export const UNITS_PER_ALBUM = 10;
 
 export const LEVEL_METADATA = [
   {
@@ -124,6 +125,7 @@ export type SidebarTab = 'profile' | 'levels' | 'lesson' | 'settings';
 export const LEARN_LANGUAGE_OPTIONS = [
   { code: 'english', label: 'English' },
   { code: 'chinese', label: 'Chinese' },
+  { code: 'hsk_chinese', label: 'HSK Chinese' },
 ] as const;
 export type LearnLanguage = (typeof LEARN_LANGUAGE_OPTIONS)[number]['code'];
 
@@ -132,6 +134,18 @@ export const DEFAULT_LANGUAGE_OPTIONS = [
   { code: 'english', label: 'English' },
 ] as const;
 export type DefaultLanguage = (typeof DEFAULT_LANGUAGE_OPTIONS)[number]['code'];
+
+const LESSON_TRANSLATION_POLICY: Record<LearnLanguage, { englishUiUsesLessonTranslation: boolean }> = {
+  english: { englishUiUsesLessonTranslation: false },
+  chinese: { englishUiUsesLessonTranslation: false },
+  hsk_chinese: { englishUiUsesLessonTranslation: true },
+  hsk1: { englishUiUsesLessonTranslation: true },
+  hsk2: { englishUiUsesLessonTranslation: true },
+  hsk3: { englishUiUsesLessonTranslation: true },
+  hsk4: { englishUiUsesLessonTranslation: true },
+  hsk5: { englishUiUsesLessonTranslation: true },
+  hsk6: { englishUiUsesLessonTranslation: true },
+};
 
 export const APP_THEME_OPTIONS = [
   { code: 'apple_notes', label: 'Orange (Apple)' },
@@ -223,6 +237,36 @@ export type PlayableLessonTextRef = {
 export function getPlayableLessonText(lesson: PlayableLessonTextRef): string {
   if (typeof lesson.english !== 'string') return '';
   return lesson.english.trim();
+}
+
+type TranslationTextInput = {
+  lessonEnglish?: string | null;
+  lessonBurmese?: string | null;
+  defaultLanguage: DefaultLanguage;
+  learnLanguage: LearnLanguage;
+  englishReferenceText?: string | null;
+};
+
+export function resolveLessonTranslationText({
+  lessonEnglish,
+  lessonBurmese,
+  defaultLanguage,
+  learnLanguage,
+  englishReferenceText,
+}: TranslationTextInput): string {
+  const sourceLine = typeof lessonEnglish === 'string' ? lessonEnglish.trim() : '';
+  const translationLine = typeof lessonBurmese === 'string' ? lessonBurmese.trim() : '';
+  const englishReference = typeof englishReferenceText === 'string' ? englishReferenceText.trim() : '';
+
+  if (defaultLanguage === 'burmese') {
+    return translationLine || sourceLine;
+  }
+
+  if (LESSON_TRANSLATION_POLICY[learnLanguage]?.englishUiUsesLessonTranslation) {
+    return translationLine || sourceLine;
+  }
+
+  return englishReference || sourceLine;
 }
 
 export function getLessonUnitId(lesson: CoreLessonRef): number {
@@ -325,4 +369,3 @@ export function toProfileStorageId(name: string): string {
       .replace(/^_+|_+$/g, '') || 'user'
   );
 }
-

@@ -123,8 +123,15 @@ export async function speakText(
   text: string,
   context?: SpeakContext,
 ): Promise<void> {
-  if (!('speechSynthesis' in window)) return Promise.resolve();
   if (typeof text !== 'string' || text.trim().length === 0) return Promise.resolve();
+
+  // Prefer recorded audio when available; fall back to TTS.
+  if (context?.audioUrl) {
+    const didPlayRecordedAudio = await playDirectAudioUrl(context.audioUrl);
+    if (didPlayRecordedAudio) return Promise.resolve();
+  }
+
+  if (!('speechSynthesis' in window)) return Promise.resolve();
 
   const sessionId = activeSpeechSession + 1;
   activeSpeechSession = sessionId;
@@ -152,4 +159,3 @@ export async function speakText(
     if (activeSpeechSession !== sessionId) done();
   });
 }
-

@@ -3,14 +3,19 @@ import { LessonData } from '../../types';
 import {
   buildStageUnitsFromLessons,
   DefaultLanguage,
+  getLessonOrderIndex,
+  getLessonUnitId,
+  LearnLanguage,
   STAGE_ORDER,
   StageCode,
+  UNITS_PER_ALBUM,
 } from '../../config/appConfig';
-import { getRoadmapText, localizeRoadmapTopic } from '../../config/roadmapI18n';
+import { getRoadmapText, localizeRoadmapTopic, localizeRoadmapTopicConcise } from '../../config/roadmapI18n';
 
 type LevelsViewProps = {
   lessons: LessonData[];
   defaultLanguage: DefaultLanguage;
+  learnLanguage: LearnLanguage;
   onSelectUnit: (level: number, unit: number, albumKey?: string | null) => void;
   onReadAlbum?: (units: Array<{ level: number; unit: number }>, albumKey?: string | null) => void;
   selectedAlbumKey?: string | null;
@@ -30,6 +35,12 @@ type AlbumGroup = {
   units: ReturnType<typeof buildStageUnitsFromLessons>[number][];
   firstTopicConcise: string;
   coverUrl: string;
+};
+
+type HskCollectionSection = {
+  key: string;
+  label: string;
+  groups: AlbumGroup[];
 };
 
 const LIBRARY_HEADER_STYLE = {
@@ -143,152 +154,30 @@ function getTopicPhotoUrl(topic: string, seed: string): string {
   return pool[pick];
 }
 
-function getGroupCoverUrl(stage: StageCode, groupIndex: number, topic: string): string {
+function getGroupCoverUrl(
+  stage: StageCode,
+  groupIndex: number,
+  topic: string,
+  learnLanguage: LearnLanguage,
+): string {
+  if (/^hsk[1-6]$/i.test(learnLanguage)) {
+    return `/api/lesson-cover/${learnLanguage}`;
+  }
   return getTopicPhotoUrl(topic, `${stage}:group:${groupIndex + 1}`);
 }
 
+function resolveHskLanguageCodeFromCollectionLabel(label: string): LearnLanguage {
+  const match = label.match(/hsk\s*([1-6])/i);
+  if (!match) return 'hsk1';
+  return `hsk${match[1]}` as LearnLanguage;
+}
+
 function getConciseTopicTitle(rawTopic: string, defaultLanguage: DefaultLanguage): string {
-  const topic = rawTopic.trim().toLowerCase();
-  const conciseEnglish: Record<string, string> = {
-    'common phrases for beginners': 'Common Phrases',
-    'alphabet sounds & basic pronunciation': 'Pronunciation',
-    'greeting and introducing yourself': 'Greetings',
-    'saying name, country, job': 'Name & Intro',
-    'yes/no short answers': 'Yes/No',
-    'classroom survival phrases': 'Classroom',
-    'talking about daily routine': 'Daily Routine',
-    'describing people & objects': 'People & Objects',
-    'asking simple questions': 'Simple Questions',
-    'talking about time & dates': 'Time & Dates',
-    'giving simple directions': 'Directions',
-    'talking about likes & preferences': 'Likes',
-    'talking about family & friends': 'Family & Friends',
-    'talking about past weekend': 'Past Weekend',
-    'talking about future plans': 'Future Plans',
-    'role-play conversations': 'Role-play',
-    'selling and buying': 'Buy & Sell',
-    'price and quantity': 'Price & Qty',
-    'payment and discount': 'Payment',
-    'return and exchange': 'Returns',
-    'market conversation': 'Market Talk',
-    'telling past stories': 'Past Stories',
-    'describing experiences': 'Experiences',
-    'sequencing events clearly': 'Event Sequence',
-    'comparing things': 'Comparisons',
-    'giving short explanations': 'Explanations',
-    'making requests politely': 'Polite Requests',
-    'giving advice': 'Advice',
-    'making suggestions': 'Suggestions',
-    'handling simple problems': 'Problem Solving',
-    'expressing agreement/disagreement': 'Agree/Disagree',
-    'giving opinions with reasons': 'Opinions',
-    'explaining cause & effect': 'Cause & Effect',
-    'describing advantages & disadvantages': 'Pros & Cons',
-    'reacting naturally in conversation': 'Natural Reactions',
-    'extending answers confidently': 'Extended Answers',
-    'talking about achievements': 'Achievements',
-    'describing processes': 'Processes',
-    'hypothetical situations (if...)': 'If Situations',
-    'explaining decisions': 'Decisions',
-    'storytelling techniques': 'Storytelling',
-    'expressing strong opinions': 'Strong Opinions',
-    'supporting arguments': 'Support Arguments',
-    'comparing viewpoints': 'Viewpoints',
-    'participating in discussions': 'Discussions',
-    'managing turn-taking': 'Turn-taking',
-    'presenting arguments': 'Present Arguments',
-    'convincing others': 'Persuasion',
-    'handling objections': 'Objections',
-    'structured mini-presentations': 'Mini Presentations',
-    'debate practice': 'Debate',
-    'hypothetical & abstract topics': 'Abstract Topics',
-    'nuanced comparisons': 'Nuanced Compare',
-    'clarifying complex ideas': 'Clarify Ideas',
-    'paraphrasing smoothly': 'Paraphrasing',
-    'emphasis & rhetorical devices': 'Emphasis Skills',
-    'analyzing social issues': 'Social Analysis',
-    'evaluating arguments': 'Evaluate Arguments',
-    'diplomatic disagreement': 'Diplomatic Talk',
-    'problem-solution discussions': 'Problem-Solution',
-    'critical thinking in speech': 'Critical Thinking',
-    'leading meetings': 'Lead Meetings',
-    'formal presentations': 'Formal Presenting',
-    'negotiation techniques': 'Negotiation',
-    'handling q&a sessions': 'Q&A Handling',
-    'executive-level communication': 'Executive Comms',
-  };
-  const conciseBurmese: Record<string, string> = {
-    'common phrases for beginners': 'အခြေခံစကားစု',
-    'alphabet sounds & basic pronunciation': 'အသံထွက်',
-    'greeting and introducing yourself': 'နှုတ်ဆက်/မိတ်ဆက်',
-    'saying name, country, job': 'နာမည်/နိုင်ငံ/အလုပ်',
-    'yes/no short answers': 'ဟုတ်/မဟုတ်',
-    'classroom survival phrases': 'စာသင်ခန်း',
-    'talking about daily routine': 'နေ့စဉ်လုပ်ရိုး',
-    'describing people & objects': 'လူ/အရာဖော်ပြ',
-    'asking simple questions': 'မေးခွန်းများ',
-    'talking about time & dates': 'အချိန်/ရက်စွဲ',
-    'giving simple directions': 'လမ်းညွှန်',
-    'talking about likes & preferences': 'ကြိုက်နှစ်သက်မှု',
-    'talking about family & friends': 'မိသားစု/သူငယ်ချင်း',
-    'talking about past weekend': 'ပြီးခဲ့သော ပိတ်ရက်',
-    'talking about future plans': 'အနာဂတ်အစီအစဉ်',
-    'role-play conversations': 'သရုပ်ဆောင်စကား',
-    'selling and buying': 'ရောင်း/ဝယ်',
-    'price and quantity': 'စျေးနှုန်း/အရေအတွက်',
-    'payment and discount': 'ငွေပေး/လျှော့စျေး',
-    'return and exchange': 'ပြန်အပ်/လဲလှယ်',
-    'market conversation': 'စျေးကွက်စကား',
-    'telling past stories': 'အတိတ်ဇာတ်လမ်း',
-    'describing experiences': 'အတွေ့အကြုံဖော်ပြ',
-    'sequencing events clearly': 'အစဉ်လိုက်ဖြစ်ရပ်',
-    'comparing things': 'နှိုင်းယှဉ်မှု',
-    'giving short explanations': 'အတိုရှင်းလင်း',
-    'making requests politely': 'ယဉ်ကျေးတောင်းဆို',
-    'giving advice': 'အကြံပေး',
-    'making suggestions': 'အကြံပြု',
-    'handling simple problems': 'ပြဿနာဖြေရှင်း',
-    'expressing agreement/disagreement': 'သဘောတူ/မတူ',
-    'giving opinions with reasons': 'အမြင်/အကြောင်း',
-    'explaining cause & effect': 'အကြောင်း/အကျိုး',
-    'describing advantages & disadvantages': 'အားသာ/အားနည်း',
-    'reacting naturally in conversation': 'သဘာဝတုံ့ပြန်',
-    'extending answers confidently': 'ယုံကြည်ဖြေဆို',
-    'talking about achievements': 'အောင်မြင်မှု',
-    'describing processes': 'လုပ်ငန်းစဉ်ဖော်ပြ',
-    'hypothetical situations (if...)': 'if အခြေအနေ',
-    'explaining decisions': 'ဆုံးဖြတ်ချက်',
-    'storytelling techniques': 'ဇာတ်လမ်းနည်း',
-    'expressing strong opinions': 'တင်းကျပ်အမြင်',
-    'supporting arguments': 'အငြင်းအခုံထောက်ခံ',
-    'comparing viewpoints': 'အမြင်နှိုင်းယှဉ်',
-    'participating in discussions': 'ဆွေးနွေးမှု',
-    'managing turn-taking': 'အလှည့်ကျပြော',
-    'presenting arguments': 'အကြောင်းပြတင်ပြ',
-    'convincing others': 'ယုံကြည်စေခြင်း',
-    'handling objections': 'ကန့်ကွက်ဖြေရှင်း',
-    'structured mini-presentations': 'အတိုတင်ပြ',
-    'debate practice': 'အငြင်းပွားလေ့ကျင့်',
-    'hypothetical & abstract topics': 'အယူအဆဆိုင်ရာ',
-    'nuanced comparisons': 'အသေးစိတ်နှိုင်းယှဉ်',
-    'clarifying complex ideas': 'ရှုပ်ထွေးအယူအဆ',
-    'paraphrasing smoothly': 'အဓိပ္ပါယ်တူဖော်ပြ',
-    'emphasis & rhetorical devices': 'အလေးပေးနည်း',
-    'analyzing social issues': 'လူမှုရေးခွဲခြမ်း',
-    'evaluating arguments': 'အငြင်းအခုံအကဲ',
-    'diplomatic disagreement': 'သံတမန်သဘောမတူ',
-    'problem-solution discussions': 'ပြဿနာ-ဖြေရှင်း',
-    'critical thinking in speech': 'ဝေဖန်စဉ်းစား',
-    'leading meetings': 'အစည်းအဝေးဦးဆောင်',
-    'formal presentations': 'တရားဝင်တင်ပြ',
-    'negotiation techniques': 'ညှိနှိုင်းနည်း',
-    'handling q&a sessions': 'Q&A ကိုင်တွယ်',
-    'executive-level communication': 'အုပ်ချုပ်မှုဆက်သွယ်',
-  };
-  if (defaultLanguage === 'burmese') {
-    return conciseBurmese[topic] || localizeRoadmapTopic(rawTopic, defaultLanguage);
-  }
-  return conciseEnglish[topic] || localizeRoadmapTopic(rawTopic, defaultLanguage);
+  return localizeRoadmapTopicConcise(rawTopic, defaultLanguage);
+}
+
+function getDisplayAlbumTitle(rawTitle: string, defaultLanguage: DefaultLanguage): string {
+  return localizeRoadmapTopic(rawTitle, defaultLanguage);
 }
 
 async function handleAlbumDownloadAction(
@@ -320,6 +209,7 @@ async function handleAlbumDownloadAction(
 export const LevelsView: React.FC<LevelsViewProps> = ({
   lessons,
   defaultLanguage,
+  learnLanguage,
   onSelectUnit,
   onReadAlbum,
   selectedAlbumKey,
@@ -331,6 +221,11 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
   onDownloadUnit,
   onRemoveUnitDownload,
 }) => {
+  const isHskSingleLanguage = /^hsk[1-6]$/i.test(learnLanguage);
+  // Full backend-driven grouping for all languages.
+  const isHskCollectionLanguage = true;
+  const isHskLanguage = isHskSingleLanguage || isHskCollectionLanguage;
+  const hskStageLabel = isHskSingleLanguage ? `HSK ${learnLanguage.replace(/^hsk/i, '')}` : 'HSK Chinese';
   const [internalSelectedAlbumKey, setInternalSelectedAlbumKey] = useState<string | null>(null);
   const [libraryQuery, setLibraryQuery] = useState('');
   const activeSelectedAlbumKey = selectedAlbumKey === undefined ? internalSelectedAlbumKey : selectedAlbumKey;
@@ -344,37 +239,149 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
   const text = getRoadmapText(defaultLanguage);
   const playAllLabel = defaultLanguage === 'burmese' ? 'အားလုံးဖတ်' : 'Play all';
   const stageUnits = buildStageUnitsFromLessons(lessons);
+  const hskCollectionSections = useMemo<HskCollectionSection[]>(() => {
+    const byCollection = new Map<string, { sourceOrder: string[]; bySource: Map<string, AlbumGroup['units']> }>();
+    for (const lesson of lessons) {
+      const level = getLessonOrderIndex(lesson);
+      const unit = getLessonUnitId(lesson);
+      const collectionLabel = (lesson.collectionLabel || '').trim() || `Collection ${level}`;
+      const sourceLabel = (lesson.sourceLabel || '').trim() || 'Untitled';
+      if (!byCollection.has(collectionLabel)) {
+        byCollection.set(collectionLabel, { sourceOrder: [], bySource: new Map() });
+      }
+      const collection = byCollection.get(collectionLabel)!;
+      if (!collection.bySource.has(sourceLabel)) {
+        collection.bySource.set(sourceLabel, []);
+        collection.sourceOrder.push(sourceLabel);
+      }
+      const units = collection.bySource.get(sourceLabel)!;
+      if (!units.some((entry) => entry.level === level && entry.unit === unit)) {
+        units.push({
+          stage: 'A1',
+          stageUnitNumber: units.length + 1,
+          level,
+          unit,
+          topic: lesson.topic,
+        });
+      }
+    }
+    const collectionLabels = Array.from(byCollection.keys()).sort((a, b) => {
+      const aNum = Number((a.match(/^hsk\s*([1-6])$/i)?.[1]) || 0);
+      const bNum = Number((b.match(/^hsk\s*([1-6])$/i)?.[1]) || 0);
+      if (aNum > 0 && bNum > 0) return aNum - bNum;
+      if (aNum > 0) return 1;
+      if (bNum > 0) return -1;
+      return a.localeCompare(b, undefined, { sensitivity: 'base' });
+    });
+    return collectionLabels.map((collectionLabel) => {
+      const collection = byCollection.get(collectionLabel)!;
+      const coverLanguage = /^hsk\s*[1-6]$/i.test(collectionLabel)
+        ? resolveHskLanguageCodeFromCollectionLabel(collectionLabel)
+        : learnLanguage;
+      const groups = collection.sourceOrder.map((sourceLabel, groupIndex) => {
+        const units = collection.bySource.get(sourceLabel) || [];
+        units.sort((a, b) => (a.level - b.level) || (a.unit - b.unit));
+        return {
+          key: `hsk-collection-${collectionLabel}-group-${groupIndex}`,
+          stage: 'A1' as StageCode,
+          groupIndex,
+          units,
+          firstTopicConcise: sourceLabel,
+          coverUrl: getGroupCoverUrl('A1', groupIndex, sourceLabel, coverLanguage),
+        };
+      });
+      return {
+        key: collectionLabel.toLowerCase().replace(/\s+/g, '-'),
+        label: collectionLabel,
+        groups,
+      };
+    });
+  }, [learnLanguage, lessons]);
   const groupsByStage = useMemo(() => {
+    if (isHskSingleLanguage) {
+      const bySource = new Map<string, AlbumGroup['units']>();
+      const sourceOrder: string[] = [];
+      for (const lesson of lessons) {
+        const sourceLabel = (lesson.sourceLabel || '').trim() || 'Untitled';
+        if (!bySource.has(sourceLabel)) {
+          bySource.set(sourceLabel, []);
+          sourceOrder.push(sourceLabel);
+        }
+        const bucket = bySource.get(sourceLabel)!;
+        const level = getLessonOrderIndex(lesson);
+        const unit = getLessonUnitId(lesson);
+        if (!bucket.some((entry) => entry.level === level && entry.unit === unit)) {
+          bucket.push({
+            stage: 'A1',
+            stageUnitNumber: bucket.length + 1,
+            level,
+            unit,
+            topic: lesson.topic,
+          });
+        }
+      }
+      const hskGroups: AlbumGroup[] = sourceOrder.map((sourceLabel, groupIndex) => {
+        const units = bySource.get(sourceLabel) || [];
+        units.sort((a, b) => (a.level - b.level) || (a.unit - b.unit));
+        return {
+          key: `hsk-${learnLanguage}-group-${groupIndex}`,
+          stage: 'A1',
+          groupIndex,
+          units,
+          firstTopicConcise: sourceLabel,
+          coverUrl: getGroupCoverUrl('A1', groupIndex, sourceLabel, learnLanguage),
+        };
+      });
+      return {
+        A1: hskGroups,
+        A2: [],
+        B1: [],
+        B2: [],
+      };
+    }
+
     return STAGE_ORDER.reduce<Record<StageCode, AlbumGroup[]>>((acc, stage) => {
       const stageRows = stageUnits.filter((item) => item.stage === stage);
-      const grouped = chunkUnits(stageRows, 5).map((units, groupIndex) => ({
+      const grouped = chunkUnits(stageRows, UNITS_PER_ALBUM).map((units, groupIndex) => ({
         key: `${stage}-group-${groupIndex}`,
         stage,
         groupIndex,
         units,
         firstTopicConcise: units[0] ? getConciseTopicTitle(units[0].topic, defaultLanguage) : '',
-        coverUrl: getGroupCoverUrl(stage, groupIndex, units[0]?.topic || `${stage} unit`),
+        coverUrl: getGroupCoverUrl(stage, groupIndex, units[0]?.topic || `${stage} unit`, learnLanguage),
       }));
       acc[stage] = grouped;
       return acc;
     }, { A1: [], A2: [], B1: [], B2: [] });
-  }, [defaultLanguage, stageUnits]);
+  }, [defaultLanguage, isHskSingleLanguage, learnLanguage, lessons, stageUnits]);
 
   const selectedAlbum = useMemo(() => {
     if (!activeSelectedAlbumKey) return null;
+    if (isHskCollectionLanguage) {
+      for (const section of hskCollectionSections) {
+        const found = section.groups.find((group) => group.key === activeSelectedAlbumKey);
+        if (found) return found;
+      }
+      return null;
+    }
     for (const stage of STAGE_ORDER) {
       const found = groupsByStage[stage].find((group) => group.key === activeSelectedAlbumKey);
       if (found) return found;
     }
     return null;
-  }, [activeSelectedAlbumKey, groupsByStage]);
+  }, [activeSelectedAlbumKey, groupsByStage, hskCollectionSections, isHskCollectionLanguage]);
   const normalizedLibraryQuery = libraryQuery.trim().toLowerCase();
   const filteredGroupsByStage = useMemo(() => {
+    if (isHskCollectionLanguage) {
+      return { A1: [], A2: [], B1: [], B2: [] } as Record<StageCode, AlbumGroup[]>;
+    }
     if (!normalizedLibraryQuery) return groupsByStage;
 
     return STAGE_ORDER.reduce<Record<StageCode, AlbumGroup[]>>((acc, stage) => {
       acc[stage] = groupsByStage[stage].filter((group) => {
+        const localizedGroupTitle = getDisplayAlbumTitle(group.firstTopicConcise, defaultLanguage).toLowerCase();
         if (group.firstTopicConcise.toLowerCase().includes(normalizedLibraryQuery)) return true;
+        if (localizedGroupTitle.includes(normalizedLibraryQuery)) return true;
         return group.units.some((unitEntry) => {
           const conciseTopic = getConciseTopicTitle(unitEntry.topic, defaultLanguage).toLowerCase();
           const localizedTopic = localizeRoadmapTopic(unitEntry.topic, defaultLanguage).toLowerCase();
@@ -383,10 +390,39 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
       });
       return acc;
     }, { A1: [], A2: [], B1: [], B2: [] });
-  }, [defaultLanguage, groupsByStage, normalizedLibraryQuery]);
-  const hasFilteredResults = STAGE_ORDER.some((stage) => filteredGroupsByStage[stage].length > 0);
+  }, [defaultLanguage, groupsByStage, isHskCollectionLanguage, normalizedLibraryQuery]);
+  const filteredHskCollectionSections = useMemo(() => {
+    if (!normalizedLibraryQuery) return hskCollectionSections;
+    return hskCollectionSections
+      .map((section) => ({
+        ...section,
+        groups: section.groups.filter((group) => {
+          const localizedGroupTitle = getDisplayAlbumTitle(group.firstTopicConcise, defaultLanguage).toLowerCase();
+          if (group.firstTopicConcise.toLowerCase().includes(normalizedLibraryQuery)) return true;
+          if (localizedGroupTitle.includes(normalizedLibraryQuery)) return true;
+          return group.units.some((unitEntry) => {
+            const conciseTopic = getConciseTopicTitle(unitEntry.topic, defaultLanguage).toLowerCase();
+            const localizedTopic = localizeRoadmapTopic(unitEntry.topic, defaultLanguage).toLowerCase();
+            return conciseTopic.includes(normalizedLibraryQuery) || localizedTopic.includes(normalizedLibraryQuery);
+          });
+        }),
+      }))
+      .filter((section) => section.groups.length > 0);
+  }, [defaultLanguage, hskCollectionSections, isHskCollectionLanguage, normalizedLibraryQuery]);
+  const hasFilteredResults = isHskCollectionLanguage
+    ? filteredHskCollectionSections.length > 0
+    : STAGE_ORDER.some((stage) => filteredGroupsByStage[stage].length > 0);
 
-  const formatAlbumMeta = (stage: StageCode, groupIndex: number, unitCount: number): string => {
+  const formatUnitCode = (level: number, unit: number): string => (
+    `${Math.max(1, level)}.${Math.max(1, unit)}`
+  );
+
+  const formatAlbumMeta = (stage: StageCode, groupIndex: number, unitCount: number, group?: AlbumGroup): string => {
+    if (group && group.units.length > 0) {
+      const first = group.units[0];
+      const last = group.units[group.units.length - 1];
+      return `${formatUnitCode(first.level, first.unit)}–${formatUnitCode(last.level, last.unit)}`;
+    }
     const unitWord = unitCount === 1 ? 'unit' : 'units';
     return `${stage} · G${groupIndex + 1} (${unitCount} ${unitWord})`;
   };
@@ -454,7 +490,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
 
   if (selectedAlbum) {
     const stageHeaderUi = LIBRARY_HEADER_STYLE;
-    const albumTitle = shortenLabel(selectedAlbum.firstTopicConcise, 58);
+    const albumTitle = shortenLabel(getDisplayAlbumTitle(selectedAlbum.firstTopicConcise, defaultLanguage), 58);
 
     return (
       <div className="w-full max-w-3xl">
@@ -465,11 +501,11 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                 type="button"
                 onClick={() => setSelectedAlbumKey(null)}
                 aria-label="Back"
-                className="top-toolbar-icon inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+                className="top-toolbar-icon inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-base font-normal text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
               >
                 <span aria-hidden="true">←</span>
               </button>
-              <p className="truncate text-sm font-bold text-ink-strong md:text-base">
+              <p className="truncate text-sm font-normal text-ink-strong md:text-base">
                 {albumTitle}
               </p>
             </div>
@@ -490,14 +526,15 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                 />
               </div>
               <div className="min-w-0">
-                <h3 className="text-lg font-semibold leading-tight text-ink-strong">
+                <h3 className="text-lg font-normal leading-tight text-ink-strong">
                   {albumTitle}
                 </h3>
-                <p className="mt-0.5 text-sm font-medium text-ink-muted">
+                <p className="mt-0.5 text-sm font-normal text-ink-muted">
                   {formatAlbumMeta(
                     selectedAlbum.stage,
                     selectedAlbum.groupIndex,
                     selectedAlbum.units.length,
+                    selectedAlbum,
                   )}
                 </p>
                 <div className="mt-2 flex items-center gap-2">
@@ -522,9 +559,8 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
           </div>
 
           <div className="divide-y divide-[var(--border-subtle)]">
-            {selectedAlbum.units.map((entry, albumIndex) => {
+            {selectedAlbum.units.map((entry) => {
               const unitKey = buildUnitKey(entry.level, entry.unit);
-              const albumUnitNumber = albumIndex + 1;
               const isCompleted = completedUnitKeys?.has(unitKey) ?? false;
               const isActive = activeUnitKey === unitKey;
               const badgeClass = isActive
@@ -542,20 +578,20 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                     isActive ? 'bg-[var(--surface-active)]' : 'bg-[var(--surface-default)]'
                   }`}
                 >
-                  <div className="grid grid-cols-[40px,1fr,20px] items-center gap-2.5">
-                    <div className={`inline-flex h-10 w-10 items-center justify-center rounded-lg text-xs font-extrabold ${badgeClass}`}>
-                      <span aria-label={isCompleted ? 'Completed unit' : `${text.unitPrefix} ${albumUnitNumber}`}>
+                  <div className="grid grid-cols-[auto,1fr,20px] items-center gap-2">
+                    <div className={`inline-flex h-7 min-w-[46px] items-center justify-center rounded-md px-1.5 text-[11px] font-bold ${badgeClass}`}>
+                      <span aria-label={isCompleted ? 'Completed unit' : `${text.unitPrefix} ${formatUnitCode(entry.level, entry.unit)}`}>
                         {isCompleted ? (
                           <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
                             <path d="M20 7L10 17l-6-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         ) : (
-                          albumUnitNumber
+                          formatUnitCode(entry.level, entry.unit)
                         )}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[15px] font-medium leading-tight text-ink">
+                      <p className="truncate text-[15px] font-normal leading-tight text-ink">
                         {localizeRoadmapTopic(entry.topic, defaultLanguage)}
                       </p>
                     </div>
@@ -604,63 +640,118 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
         </div>
       )}
 
-      {STAGE_ORDER.map((stage) => {
-        const stageGroups = filteredGroupsByStage[stage];
-        if (stageGroups.length === 0) return null;
-        const stageHeaderUi = LIBRARY_HEADER_STYLE;
+      {isHskCollectionLanguage ? (
+        filteredHskCollectionSections.map((section) => {
+          const stageHeaderUi = LIBRARY_HEADER_STYLE;
+          return (
+            <div
+              key={section.key}
+              className="mb-6 last:mb-0 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-default)] shadow-sm"
+            >
+              <div className={`px-3 py-2 ${stageHeaderUi.barClass}`}>
+                <p className={`text-sm font-normal uppercase tracking-[0.08em] md:text-sm ${stageHeaderUi.textClass}`}>
+                  {section.label}
+                </p>
+              </div>
+              <div className="divide-y divide-[var(--border-subtle)]">
+                {section.groups.map((group) => (
+                  <button
+                    key={group.key}
+                    type="button"
+                    onClick={() => setSelectedAlbumKey(group.key)}
+                    aria-label={`Open group ${group.groupIndex + 1}`}
+                    className="selection-hover w-full min-h-[84px] text-left px-3 py-3 transition-colors"
+                  >
+                    <div className="grid grid-cols-[48px,1fr,20px] items-center gap-3">
+                      <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg">
+                        <div className="absolute inset-y-0 left-0 z-10 w-1 bg-black/12" aria-hidden="true" />
+                        <img
+                          src={group.coverUrl}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          className="absolute inset-0 h-full w-full object-cover object-center"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-base font-normal leading-tight text-ink">
+                          {shortenLabel(getDisplayAlbumTitle(group.firstTopicConcise, defaultLanguage), 48)}
+                        </p>
+                        <p className="mt-1 truncate text-xs font-normal text-[var(--text-muted)]">
+                          {formatAlbumMeta('A1', group.groupIndex, group.units.length, group)}
+                        </p>
+                      </div>
+                      <span className={`flex h-5 w-5 items-center justify-center ${stageHeaderUi.accentClass}`} aria-hidden="true">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 6l6 6-6 6" />
+                        </svg>
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })
+      ) : (
+        STAGE_ORDER.map((stage) => {
+          const stageGroups = filteredGroupsByStage[stage];
+          if (stageGroups.length === 0) return null;
+          const stageHeaderUi = LIBRARY_HEADER_STYLE;
 
-        return (
-          <div
-            key={stage}
-            className="mb-6 last:mb-0 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-default)] shadow-sm"
-          >
-            <div className={`px-3 py-2 ${stageHeaderUi.barClass}`}>
-              <p className={`text-sm font-semibold uppercase tracking-[0.08em] md:text-sm ${stageHeaderUi.textClass}`}>
-                {text.stageLabels[stage]}
-              </p>
-            </div>
-            <div className="divide-y divide-[var(--border-subtle)]">
-              {stageGroups.map((group) => {
-                return (
-                <button
-                  key={group.key}
-                  type="button"
-                  onClick={() => setSelectedAlbumKey(group.key)}
-                  aria-label={`Open group ${group.groupIndex + 1}`}
-                  className="selection-hover w-full min-h-[84px] text-left px-3 py-3 transition-colors"
-                >
-                  <div className="grid grid-cols-[48px,1fr,20px] items-center gap-3">
-                    <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg">
-                      <div className="absolute inset-y-0 left-0 z-10 w-1 bg-black/12" aria-hidden="true" />
-                      <img
-                        src={group.coverUrl}
-                        alt=""
-                        aria-hidden="true"
-                        loading="lazy"
-                        className="absolute inset-0 h-full w-full object-cover object-center"
-                      />
+          return (
+            <div
+              key={stage}
+              className="mb-6 last:mb-0 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-default)] shadow-sm"
+            >
+              <div className={`px-3 py-2 ${stageHeaderUi.barClass}`}>
+                <p className={`text-sm font-normal uppercase tracking-[0.08em] md:text-sm ${stageHeaderUi.textClass}`}>
+                  {isHskLanguage ? hskStageLabel : text.stageLabels[stage]}
+                </p>
+              </div>
+              <div className="divide-y divide-[var(--border-subtle)]">
+                {stageGroups.map((group) => {
+                  return (
+                  <button
+                    key={group.key}
+                    type="button"
+                    onClick={() => setSelectedAlbumKey(group.key)}
+                    aria-label={`Open group ${group.groupIndex + 1}`}
+                    className="selection-hover w-full min-h-[84px] text-left px-3 py-3 transition-colors"
+                  >
+                    <div className="grid grid-cols-[48px,1fr,20px] items-center gap-3">
+                      <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg">
+                        <div className="absolute inset-y-0 left-0 z-10 w-1 bg-black/12" aria-hidden="true" />
+                        <img
+                          src={group.coverUrl}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          className="absolute inset-0 h-full w-full object-cover object-center"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-base font-normal leading-tight text-ink">
+                          {shortenLabel(getDisplayAlbumTitle(group.firstTopicConcise, defaultLanguage), 48)}
+                        </p>
+                        <p className="mt-1 truncate text-xs font-normal text-[var(--text-muted)]">
+                          {formatAlbumMeta(stage, group.groupIndex, group.units.length, group)}
+                        </p>
+                      </div>
+                      <span className={`flex h-5 w-5 items-center justify-center ${stageHeaderUi.accentClass}`} aria-hidden="true">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 6l6 6-6 6" />
+                        </svg>
+                      </span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-base font-semibold leading-tight text-ink">
-                        {shortenLabel(group.firstTopicConcise, 48)}
-                      </p>
-                      <p className="mt-1 truncate text-xs font-semibold text-[var(--text-muted)]">
-                        {formatAlbumMeta(stage, group.groupIndex, group.units.length)}
-                      </p>
-                    </div>
-                    <span className={`flex h-5 w-5 items-center justify-center ${stageHeaderUi.accentClass}`} aria-hidden="true">
-                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9 6l6 6-6 6" />
-                      </svg>
-                    </span>
-                  </div>
-                </button>
-                );
-              })}
+                  </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })
+      )}
     </div>
   );
 };

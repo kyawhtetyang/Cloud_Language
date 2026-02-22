@@ -6,7 +6,6 @@ import {
   getLevelTitle,
   getLessonOrderIndex,
   getLessonUnitId,
-  LEARN_QUESTIONS_PER_UNIT,
   LESSONS_PER_BATCH,
   resolveStageCode,
 } from '../config/appConfig';
@@ -52,7 +51,7 @@ export function useLessonUnitState({
     mode === 'quiz' || mode === 'result'
       ? quizSectionStart
       : Math.min(currentIndex, Math.max(lessons.length - 1, 0));
-  const fallbackLevel = Math.floor(activeLevelIndex / LEARN_QUESTIONS_PER_UNIT) + 1;
+  const fallbackLevel = lessons[0] ? getLessonOrderIndex(lessons[0]) : 1;
   const currentLevel = lessons[activeLevelIndex] ? getLessonOrderIndex(lessons[activeLevelIndex]) : fallbackLevel;
   const currentUnit = lessons[activeLevelIndex] ? getLessonUnitId(lessons[activeLevelIndex]) : 1;
   const currentStage = resolveStageCode(currentLevel, lessons[activeLevelIndex]?.stage);
@@ -86,12 +85,13 @@ export function useLessonUnitState({
   const sectionStart = levelIndexes.length > 0 ? Math.min(...levelIndexes) : Math.max(0, activeLevelIndex);
   const sectionEnd = levelIndexes.length > 0 ? Math.max(...levelIndexes) : Math.max(0, activeLevelIndex);
   const sectionTotal = Math.max(1, orderedUnitIndexes.length);
-  const batchStartOffset = mode === 'learn' ? (learnStep * LESSONS_PER_BATCH) % sectionTotal : 0;
+  const batchStartOffset = mode === 'learn' ? learnStep * LESSONS_PER_BATCH : 0;
   const currentBatchEntries =
     mode === 'learn'
       ? Array.from({ length: LESSONS_PER_BATCH }, (_, idx) => {
-          const orderedIndex = (batchStartOffset + idx) % sectionTotal;
-          const lessonIndex = orderedUnitIndexes[orderedIndex] ?? sectionStart;
+          const orderedIndex = batchStartOffset + idx;
+          const lessonIndex = orderedUnitIndexes[orderedIndex];
+          if (typeof lessonIndex !== 'number') return null;
           const lesson = lessons[lessonIndex];
           return lesson ? { lesson, lessonIndex } : null;
         }).filter((entry): entry is LessonBatchEntry => Boolean(entry))
@@ -109,6 +109,4 @@ export function useLessonUnitState({
     currentBatchEntries,
   };
 }
-
-
 

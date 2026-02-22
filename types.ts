@@ -11,11 +11,12 @@ export interface LessonData {
   english: string;
   pronunciation: string;
   audioPath?: string;
+  sourceLabel?: string;
+  collectionLabel?: string;
 }
 
 export interface ProgressState {
   currentIndex: number;
   completedCount: number;
 }
-
 
