@@ -1,4 +1,12 @@
 import React from 'react';
+import {
+  VIEW_H2_CLASS,
+  VIEW_META_TEXT_CLASS,
+  VIEW_PAGE_CLASS,
+  VIEW_PANEL_CLASS,
+  VIEW_PANEL_PAD_CLASS,
+  VIEW_STATUS_TEXT_CLASS,
+} from './viewShared';
 
 type MatchPair = {
   id: string;
@@ -40,17 +48,17 @@ export const MatchReviewView: React.FC<MatchReviewViewProps> = ({
   onSelectAnswer,
 }) => {
   return (
-    <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-3xl">
+    <div className={`${VIEW_PAGE_CLASS} ${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS}`}>
       <div className="w-full mb-3 flex items-center justify-between gap-2">
-        <p className="text-xs font-extrabold uppercase tracking-wide text-brand">
+        <p className={`${VIEW_META_TEXT_CLASS} text-brand`}>
           Course {currentCourseCode} • {currentLevelTitle}
         </p>
         <span className="shrink-0 inline-flex items-center px-2 py-1 rounded-lg border-2 border-brand-stroke bg-brand-paler text-brand-ink text-xs font-extrabold uppercase tracking-wide">
           XP: {unitXp}
         </span>
       </div>
-      <h2 className="text-2xl md:text-3xl font-medium text-ink mb-1">Match each sentence</h2>
-      <p className="text-xs font-extrabold uppercase tracking-wide text-brand mb-4">
+      <h2 className={`${VIEW_H2_CLASS} mb-1`}>Match each sentence</h2>
+      <p className={`${VIEW_META_TEXT_CLASS} text-brand mb-4`}>
         Quick Review • {matchPairsPerReview} Matches
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -99,12 +107,11 @@ export const MatchReviewView: React.FC<MatchReviewViewProps> = ({
           })}
         </div>
       </div>
-      <p className="mt-4 text-sm font-bold text-gray-500">
+      <p className={`${VIEW_STATUS_TEXT_CLASS} mt-4`}>
         Matched: {matchedPairIds.length}/{Math.max(matchPairs.length, matchPairsPerReview)}
         {isMatchReviewComplete && (matchMistakes === 0 ? ' • Perfect' : ` • Mistakes: ${matchMistakes}`)}
       </p>
     </div>
   );
 };
-
 

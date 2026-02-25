@@ -1,4 +1,12 @@
 import React from 'react';
+import {
+  VIEW_BODY_TEXT_CLASS,
+  VIEW_DIVIDER_CLASS,
+  VIEW_PAGE_CLASS,
+  VIEW_PANEL_CLASS,
+  VIEW_PANEL_PAD_CLASS,
+  VIEW_SECTION_LABEL_CLASS,
+} from './viewShared';
 
 type ProfileViewProps = {
   profileName: string;
@@ -37,20 +45,20 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const visualProgress = normalizedProgress > 0 ? normalizedProgress : 2;
 
   return (
-    <div className="w-full max-w-3xl space-y-4">
-      <section className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-5 md:p-7">
+    <div className={`${VIEW_PAGE_CLASS} space-y-4`}>
+      <section className={`${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS} md:p-6`}>
         <div className="flex items-center gap-3">
           <div className="w-14 h-14 rounded-2xl border-2 btn-selected flex items-center justify-center text-2xl font-extrabold">
             U
           </div>
           <div>
             <h2 className="text-xl md:text-2xl font-extrabold text-ink">Welcome back</h2>
-            <p className="text-sm text-gray-500 font-bold">{profileName}</p>
+            <p className={`${VIEW_BODY_TEXT_CLASS} font-semibold`}>{profileName}</p>
           </div>
         </div>
 
-        <div className="mt-4 border-t border-gray-100 pt-4">
-          <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-wide text-brand-ink">
+        <div className={`mt-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
+          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
             <span>Overall Progress</span>
             <span>{progressPercent}%</span>
           </div>
@@ -71,14 +79,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
 
         <div className="mt-4">
-          <p className="text-xs text-gray-500 font-extrabold uppercase tracking-wide mb-2">Switch Profile</p>
+          <p className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Switch Profile</p>
           <div className="flex gap-2">
             <input
               value={profileInput}
               onChange={(event) => onProfileInputChange(event.target.value)}
               onKeyDown={(event) => event.key === 'Enter' && onApplyProfileName()}
               placeholder="Username (no spaces)"
-              className="flex-1 px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-brand outline-none text-sm font-semibold text-ink"
+              className="flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)]"
             />
             <button
               onClick={onApplyProfileName}
@@ -98,18 +106,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       </section>
 
-      <section className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-5 md:p-7">
+      <section className={`${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS} md:p-6`}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="sm:border-r sm:border-gray-100 sm:pr-3">
-            <p className="text-xs text-brand-ink font-extrabold uppercase tracking-wide">Current Course</p>
+          <div className={`sm:border-r sm:pr-3 ${VIEW_DIVIDER_CLASS}`}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Current Course</p>
             <p className="mt-1 text-xl md:text-2xl font-extrabold text-ink">{currentCourseCode}</p>
           </div>
-          <div className="border-t border-gray-100 pt-3 sm:border-t-0 sm:border-r sm:border-gray-100 sm:pt-0 sm:px-3">
-            <p className="text-xs text-brand-ink font-extrabold uppercase tracking-wide">Unlocked Groups</p>
+          <div className={`border-t pt-3 sm:border-t-0 sm:border-r sm:pt-0 sm:px-3 ${VIEW_DIVIDER_CLASS}`}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Unlocked Groups</p>
             <p className="mt-1 text-xl md:text-2xl font-extrabold text-ink">{unlockedUnits}/{totalUnits}</p>
           </div>
-          <div className="border-t border-gray-100 pt-3 sm:border-t-0 sm:pl-3">
-            <p className="text-xs text-warning font-extrabold uppercase tracking-wide">Streak</p>
+          <div className={`border-t pt-3 sm:border-t-0 sm:pl-3 ${VIEW_DIVIDER_CLASS}`}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Streak</p>
             <p className="mt-1 text-xl md:text-2xl font-extrabold text-ink">{streak}</p>
           </div>
         </div>
@@ -117,4 +125,3 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     </div>
   );
 };
-

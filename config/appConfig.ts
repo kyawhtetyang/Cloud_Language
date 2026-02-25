@@ -15,9 +15,9 @@ export const TEXT_SCALE_PERCENT_KEY = 'lingo_burmese_text_scale_percent';
 export const BOLD_TEXT_ENABLED_KEY = 'lingo_burmese_bold_text_enabled';
 export const RANDOM_LESSON_ORDER_ENABLED_KEY = 'lingo_burmese_random_lesson_order_enabled';
 export const REMOVE_REVIEW_QUESTIONS_ENABLED_KEY = 'lingo_burmese_remove_review_questions_enabled';
+export const AUTO_SCROLL_ENABLED_KEY = 'lingo_burmese_auto_scroll_enabled';
 export const RELOAD_TO_LESSON_KEY = 'lingo_burmese_reload_to_lesson';
 export const APP_THEME_KEY = 'lingo_burmese_app_theme';
-export const LESSON_LAYOUT_DEFAULT_KEY = 'lingo_burmese_lesson_layout_default';
 export const VOICE_PROVIDER_KEY = 'lingo_burmese_voice_provider';
 export const LESSON_HIGHLIGHTS_KEY = 'lingo_burmese_lesson_highlights';
 
@@ -149,18 +149,13 @@ const LESSON_TRANSLATION_POLICY: Record<LearnLanguage, { englishUiUsesLessonTran
 };
 
 export const APP_THEME_OPTIONS = [
-  { code: 'apple_notes', label: 'Orange (Apple)' },
-  { code: 'dark', label: 'Dark (Apple)' },
+  { code: 'apple_notes', label: 'Orange' },
+  { code: 'dark', label: 'Dark Mode' },
   { code: 'system', label: 'Light mode' },
   { code: 'duolingo', label: 'Duolingo' },
 ] as const;
 export type AppTheme = (typeof APP_THEME_OPTIONS)[number]['code'];
 
-export const LESSON_LAYOUT_OPTIONS = [
-  { code: 'paged', label: 'Paged' },
-  { code: 'list', label: 'List' },
-] as const;
-export type LessonLayoutMode = (typeof LESSON_LAYOUT_OPTIONS)[number]['code'];
 
 export const VOICE_PROVIDER_OPTIONS = [
   { code: 'default', label: 'Default' },
@@ -181,10 +176,10 @@ export const APP_DEFAULTS = {
   isPronunciationEnabled: false,
   textScalePercent: DEFAULT_TEXT_SCALE_PERCENT,
   isBoldTextEnabled: false,
+  isAutoScrollEnabled: true,
   isRandomLessonOrderEnabled: false,
   isReviewQuestionsRemoved: false,
   appTheme: 'apple_notes' as AppTheme,
-  lessonLayoutDefault: 'list' as LessonLayoutMode,
   voiceProvider: 'default' as VoiceProvider,
 };
 
@@ -213,10 +208,6 @@ export function isAppTheme(value: unknown): value is AppTheme {
   return APP_THEME_OPTIONS.some((option) => option.code === value);
 }
 
-export function isLessonLayoutMode(value: unknown): value is LessonLayoutMode {
-  if (typeof value !== 'string') return false;
-  return LESSON_LAYOUT_OPTIONS.some((option) => option.code === value);
-}
 
 export function isVoiceProvider(value: unknown): value is VoiceProvider {
   if (typeof value !== 'string') return false;

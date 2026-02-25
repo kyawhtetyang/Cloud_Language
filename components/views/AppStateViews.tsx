@@ -1,4 +1,13 @@
 import React from 'react';
+import {
+  VIEW_BODY_TEXT_CLASS,
+  VIEW_H2_CLASS,
+  VIEW_H3_CLASS,
+  VIEW_PAGE_CLASS,
+  VIEW_PANEL_CLASS,
+  VIEW_PANEL_PAD_CLASS,
+  VIEW_STATUS_TEXT_CLASS,
+} from './viewShared';
 
 type LessonsUnavailableViewProps = {
   errorMessage: string | null;
@@ -18,7 +27,7 @@ export const LoadingView: React.FC = () => (
   <div className="flex items-center justify-center min-h-screen">
     <div className="flex flex-col items-center gap-3">
       <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-base font-bold text-ink">Loading lessons...</p>
+      <p className={`${VIEW_STATUS_TEXT_CLASS} text-ink`}>Loading lessons...</p>
     </div>
   </div>
 );
@@ -28,10 +37,10 @@ export const LessonsUnavailableView: React.FC<LessonsUnavailableViewProps> = ({
   apiBaseUrl,
 }) => (
   <div className="flex items-center justify-center min-h-screen p-6">
-    <div className="bg-white rounded-2xl shadow-lg p-6 text-center max-w-md w-full">
-      <h2 className="text-xl font-bold text-ink mb-2">Lessons unavailable</h2>
-      <p className="text-gray-500">{errorMessage || 'No lessons available right now.'}</p>
-      <p className="text-sm text-gray-400 mt-3">Check backend API at {apiBaseUrl}/api/health</p>
+    <div className={`${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS} text-center max-w-md w-full`}>
+      <h2 className={`${VIEW_H3_CLASS} mb-2`}>Lessons unavailable</h2>
+      <p className={VIEW_BODY_TEXT_CLASS}>{errorMessage || 'No lessons available right now.'}</p>
+      <p className={`${VIEW_BODY_TEXT_CLASS} mt-3`}>Check backend API at {apiBaseUrl}/api/health</p>
     </div>
   </div>
 );
@@ -45,15 +54,15 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
   onApplyProfileName,
 }) => (
   <div className="min-h-screen flex items-center justify-center p-6 bg-app-radial">
-    <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-7 w-full max-w-md">
-      <h1 className="text-2xl font-extrabold text-ink mb-2">Welcome</h1>
-      <p className="text-sm text-gray-500 mb-5">Enter your name to create a local profile.</p>
+    <div className={`${VIEW_PANEL_CLASS} p-7 w-full max-w-md`}>
+      <h1 className={`${VIEW_H3_CLASS} mb-2`}>Welcome</h1>
+      <p className={`${VIEW_BODY_TEXT_CLASS} mb-5`}>Enter your name to create a local profile.</p>
       <input
         value={profileInput}
         onChange={(event) => onProfileInputChange(event.target.value)}
         onKeyDown={(event) => event.key === 'Enter' && onApplyProfileName()}
         placeholder="Username (no spaces)"
-        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-brand outline-none font-semibold text-ink"
+        className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-4 py-3 text-sm font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)]"
       />
       {(profileError || hasProfileWhitespace) && (
         <p className="mt-2 text-xs font-bold text-danger">Username cannot contain spaces.</p>
@@ -74,9 +83,9 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
 );
 
 export const CompletedView: React.FC<{ onRestart: () => void }> = ({ onRestart }) => (
-  <div className="bg-white border-2 border-gray-100 rounded-[24px] shadow-xl p-4 md:p-5 w-full max-w-3xl text-center">
-    <h2 className="text-3xl font-extrabold text-ink mb-3">All Units Passed</h2>
-    <p className="text-gray-500 mb-6">You completed all sections and passed the random checks.</p>
+  <div className={`${VIEW_PAGE_CLASS} ${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS} text-center`}>
+    <h2 className={`${VIEW_H2_CLASS} mb-3`}>All Units Passed</h2>
+    <p className={`${VIEW_BODY_TEXT_CLASS} mb-6`}>You completed all sections and passed the random checks.</p>
     <button
       onClick={onRestart}
       className="w-full py-4 rounded-2xl bg-brand text-white font-extrabold text-lg uppercase tracking-wider duo-button-shadow hover:brightness-110 active:scale-95 transition-all"
@@ -85,5 +94,4 @@ export const CompletedView: React.FC<{ onRestart: () => void }> = ({ onRestart }
     </button>
   </div>
 );
-
 

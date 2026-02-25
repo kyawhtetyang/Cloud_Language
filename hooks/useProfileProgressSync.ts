@@ -9,7 +9,6 @@ import {
   DefaultLanguage,
   getLessonOrderIndex,
   LearnLanguage,
-  LessonLayoutMode,
   VoiceProvider,
   PROGRESS_KEY,
   STREAK_KEY,
@@ -37,10 +36,10 @@ type UseProfileProgressSyncParams = {
   isPronunciationEnabled: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
+  isAutoScrollEnabled: boolean;
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
   appTheme: AppTheme;
-  lessonLayoutDefault: LessonLayoutMode;
   voiceProvider: VoiceProvider;
   totalLevels: number;
   progressStorageKey: string;
@@ -54,10 +53,10 @@ type UseProfileProgressSyncParams = {
   setIsPronunciationEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setTextScalePercent: React.Dispatch<React.SetStateAction<number>>;
   setIsBoldTextEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsAutoScrollEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setIsRandomLessonOrderEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
   setAppTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
-  setLessonLayoutDefault: React.Dispatch<React.SetStateAction<LessonLayoutMode>>;
   setVoiceProvider: React.Dispatch<React.SetStateAction<VoiceProvider>>;
 };
 
@@ -74,10 +73,10 @@ export function useProfileProgressSync({
   isPronunciationEnabled,
   textScalePercent,
   isBoldTextEnabled,
+  isAutoScrollEnabled,
   isRandomLessonOrderEnabled,
   isReviewQuestionsRemoved,
   appTheme,
-  lessonLayoutDefault,
   voiceProvider,
   totalLevels,
   progressStorageKey,
@@ -91,10 +90,10 @@ export function useProfileProgressSync({
   setIsPronunciationEnabled,
   setTextScalePercent,
   setIsBoldTextEnabled,
+  setIsAutoScrollEnabled,
   setIsRandomLessonOrderEnabled,
   setIsReviewQuestionsRemoved,
   setAppTheme,
-  setLessonLayoutDefault,
   setVoiceProvider,
 }: UseProfileProgressSyncParams) {
   const [hasHydratedProfile, setHasHydratedProfile] = useState(false);
@@ -175,10 +174,10 @@ export function useProfileProgressSync({
             setIsPronunciationEnabled,
             setTextScalePercent,
             setIsBoldTextEnabled,
+            setIsAutoScrollEnabled,
             setIsRandomLessonOrderEnabled,
             setIsReviewQuestionsRemoved,
             setAppTheme,
-            setLessonLayoutDefault,
             setVoiceProvider,
           });
         }
@@ -204,10 +203,10 @@ export function useProfileProgressSync({
     setIsPronunciationEnabled,
     setTextScalePercent,
     setIsBoldTextEnabled,
+    setIsAutoScrollEnabled,
     setIsRandomLessonOrderEnabled,
     setIsReviewQuestionsRemoved,
     setAppTheme,
-    setLessonLayoutDefault,
     setVoiceProvider,
     setLearnLanguage,
     setStreak,
@@ -273,10 +272,10 @@ export function useProfileProgressSync({
         isPronunciationEnabled,
         textScalePercent,
         isBoldTextEnabled,
+        isAutoScrollEnabled,
         isRandomLessonOrderEnabled,
         isReviewQuestionsRemoved,
         appTheme,
-        lessonLayoutDefault,
         voiceProvider,
       }),
     };
@@ -313,10 +312,10 @@ export function useProfileProgressSync({
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,
+    isAutoScrollEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     appTheme,
-    lessonLayoutDefault,
     voiceProvider,
     learnLanguage,
     lessons.length,

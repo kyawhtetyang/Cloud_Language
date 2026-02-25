@@ -3,7 +3,6 @@ import {
   AppTheme,
   DefaultLanguage,
   LearnLanguage,
-  LessonLayoutMode,
   VoiceProvider,
 } from '../config/appConfig';
 import { persistSyncedSettingsToStorage } from '../config/settingsSync';
@@ -16,10 +15,10 @@ type UseSettingsPersistenceParams = {
   isPronunciationEnabled: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
+  isAutoScrollEnabled: boolean;
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
   appTheme: AppTheme;
-  lessonLayoutDefault: LessonLayoutMode;
   voiceProvider: VoiceProvider;
 };
 
@@ -31,10 +30,10 @@ export function useSettingsPersistence({
   isPronunciationEnabled,
   textScalePercent,
   isBoldTextEnabled,
+  isAutoScrollEnabled,
   isRandomLessonOrderEnabled,
   isReviewQuestionsRemoved,
   appTheme,
-  lessonLayoutDefault,
   voiceProvider,
 }: UseSettingsPersistenceParams) {
   useEffect(() => {
@@ -45,13 +44,12 @@ export function useSettingsPersistence({
       isPronunciationEnabled,
       textScalePercent,
       isBoldTextEnabled,
+      isAutoScrollEnabled,
       isRandomLessonOrderEnabled,
       isReviewQuestionsRemoved,
       appTheme,
-      lessonLayoutDefault,
       voiceProvider,
     }, profileStorageId);
-    document.documentElement.style.fontSize = `${textScalePercent}%`;
   }, [
     profileStorageId,
     enabled,
@@ -60,11 +58,10 @@ export function useSettingsPersistence({
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,
+    isAutoScrollEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     appTheme,
-    lessonLayoutDefault,
     voiceProvider,
   ]);
 }
-

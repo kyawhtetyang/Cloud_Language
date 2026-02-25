@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { cancelSpeech, speakText } from '../AudioButton';
 import { LessonData } from '../../types';
 import {
   getPlayableLessonText,
   LearnLanguage,
   resolveLessonTranslationText,
-  VoiceProvider,
 } from '../../config/appConfig';
+import {
+  LESSON_AUTO_SCROLL_MIN_INTERVAL_MS,
+  LESSON_AUTO_SCROLL_RESUME_DELAY_MS,
+  LESSON_AUTO_SCROLL_SAFE_ZONE_RATIO,
+  LESSON_LONG_PRESS_MS,
+} from '../../config/interactionConfig';
 import { buildLessonReferenceKey } from '../../utils/lessonReference';
 import { localizeRoadmapTopic } from '../../config/roadmapI18n';
 
@@ -33,21 +37,21 @@ type LessonViewProps = {
   allBatchGroups?: LessonEntry[][];
   currentStep?: number;
   isReading?: boolean;
-  onSelectStep?: (step: number) => void;
+  onSelectStep?: (step: number) => void | Promise<void>;
   englishReferenceByKey: Map<string, string>;
   defaultLanguage: 'burmese' | 'english';
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
+  isAutoScrollEnabled?: boolean;
+  textScalePercent?: number;
   learnLanguage: LearnLanguage;
-  voiceProvider: VoiceProvider;
-  defaultLayoutMode?: 'paged' | 'list';
-  onLayoutModeChange?: (mode: 'paged' | 'list') => void;
+  activeSpeakingLessonIndex?: number | null;
+  onPlayLesson?: (lesson: LessonData, lessonIndex: number) => void;
   savedHighlightPhrasesByLessonKey?: Map<string, string[]>;
   onSaveLessonHighlight?: (lesson: LessonData, selectedText: string) => boolean;
+  onClearLessonHighlight?: (lesson: LessonData) => boolean;
 };
 
-const LONG_PRESS_MS = 480;
-const HIGHLIGHT_TIP_DISMISSED_KEY = 'lingo_burmese_highlight_tip_dismissed_v3';
 const TOUCH_HIT_X_OFFSETS = [0, -16, 16];
 const TOUCH_HIT_Y_OFFSETS = [0, -24, -40, -56, -72];
 const VOCAB_HIGHLIGHT_STYLE: React.CSSProperties = {
@@ -58,6 +62,9 @@ const LESSON_ROW_NO_SELECT_STYLE: React.CSSProperties = {
   userSelect: 'none',
   WebkitUserSelect: 'none',
   WebkitTouchCallout: 'none',
+};
+const ACTIVE_SPEAKING_TEXT_STYLE: React.CSSProperties = {
+  color: 'var(--color-danger)',
 };
 
 function tokenizeLessonTextForHighlight(rawText: string): TokenizedHighlightText {
@@ -160,23 +167,28 @@ export const LessonView: React.FC<LessonViewProps> = ({
   defaultLanguage,
   isPronunciationEnabled,
   isBoldTextEnabled,
+  isAutoScrollEnabled = true,
+  textScalePercent = 100,
   learnLanguage,
-  voiceProvider,
-  defaultLayoutMode = 'list',
-  onLayoutModeChange,
+  activeSpeakingLessonIndex,
+  onPlayLesson,
   savedHighlightPhrasesByLessonKey,
   onSaveLessonHighlight,
+  onClearLessonHighlight,
 }) => {
-  const [lessonLayout, setLessonLayout] = useState<'paged' | 'list'>(defaultLayoutMode);
   const [localSelectedGroup, setLocalSelectedGroup] = useState<number | null>(null);
   const [highlightModeRowKey, setHighlightModeRowKey] = useState<string | null>(null);
   const [dragStartTokenIndex, setDragStartTokenIndex] = useState<number | null>(null);
   const [dragEndTokenIndex, setDragEndTokenIndex] = useState<number | null>(null);
-  const [showHighlightTip, setShowHighlightTip] = useState(false);
   const batchRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const lessonRowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const longPressTimerRef = useRef<number | null>(null);
   const suppressRowClickRef = useRef<string | null>(null);
   const pendingPressPointRef = useRef<{ rowKey: string; x: number; y: number } | null>(null);
+  const latestTapRequestRef = useRef(0);
+  const autoScrollPausedUntilRef = useRef(0);
+  const lastAutoScrolledLessonIndexRef = useRef<number | null>(null);
+  const lastAutoScrollAtRef = useRef(0);
 
   const leadLesson = currentBatchEntries[0]?.lesson;
   const level = leadLesson?.level || 1;
@@ -192,9 +204,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
     typeof currentStep === 'number' && currentStep >= 0 ? currentStep : (localSelectedGroup ?? 0);
   const activeGroup = selectedGroupIndex + 1;
   const topRightProgressLabel =
-    lessonLayout === 'list' && totalGroups > 0
+    totalGroups > 0
       ? `${Math.min(activeGroup, totalGroups)}/${totalGroups}`
       : (progressLabel ?? '');
+  const lessonTextScale = Number.isFinite(textScalePercent)
+    ? Math.min(1.2, Math.max(0.9, textScalePercent / 100))
+    : 1;
+  const lessonTextScaleStyle = { '--lesson-text-scale': String(lessonTextScale) } as React.CSSProperties;
 
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current !== null && typeof window !== 'undefined') {
@@ -209,14 +225,6 @@ export const LessonView: React.FC<LessonViewProps> = ({
     setDragEndTokenIndex(null);
   };
 
-  const dismissHighlightTip = () => {
-    setShowHighlightTip(false);
-    try {
-      localStorage.setItem(HIGHLIGHT_TIP_DISMISSED_KEY, '1');
-    } catch {
-      // localStorage can fail in private mode or restricted environments.
-    }
-  };
 
   const getTokenIndexAtPoint = (rowKey: string, x: number, y: number): number | null => {
     if (typeof document === 'undefined') return null;
@@ -268,6 +276,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
     closeHighlightMode();
   };
 
+  const clearSavedSelection = (lesson: LessonData) => {
+    onClearLessonHighlight?.(lesson);
+    closeHighlightMode();
+  };
+
+  const selectWholeSentence = (lessonText: string) => {
+    const tokenized = tokenizeLessonTextForHighlight(lessonText);
+    if (tokenized.tokens.length === 0) return;
+    setDragStartTokenIndex(0);
+    setDragEndTokenIndex(tokenized.tokens.length - 1);
+  };
+
   const startLongPress = (rowKey: string, x: number, y: number) => {
     if (typeof window === 'undefined') return;
     clearLongPressTimer();
@@ -283,29 +303,39 @@ export const LessonView: React.FC<LessonViewProps> = ({
         if (!pending || pending.rowKey !== rowKey) return;
         updateDragSelectionByPoint(rowKey, pending.x, pending.y);
       });
-    }, LONG_PRESS_MS);
+    }, LESSON_LONG_PRESS_MS);
   };
 
-  const playLesson = (lesson: LessonData) => {
-    cancelSpeech();
+  const playLesson = (lesson: LessonData, lessonIndex: number) => {
     const speakValue = getPlayableLessonText(lesson);
     if (!speakValue) return;
-    void speakText(speakValue, {
-      learnLanguage,
-      unitId: lesson.unitId ?? lesson.unit,
-      audioUrl: lesson.audioPath,
-      voiceProvider,
-    });
+    onPlayLesson?.(lesson, lessonIndex);
   };
 
-  const handleRowClick = (lesson: LessonData, rowKey: string, onBeforePlay?: () => void) => {
+  const handleRowClick = async (
+    lesson: LessonData,
+    lessonIndex: number,
+    rowKey: string,
+    onBeforePlay?: () => void | Promise<void>,
+  ) => {
+    const requestId = latestTapRequestRef.current + 1;
+    latestTapRequestRef.current = requestId;
     if (suppressRowClickRef.current === rowKey) {
       suppressRowClickRef.current = null;
       return;
     }
     if (highlightModeRowKey) return;
-    onBeforePlay?.();
-    playLesson(lesson);
+    if (onBeforePlay) {
+      try {
+        await onBeforePlay();
+      } catch {
+        // Keep tap-to-play resilient even if optional pre-play step handling fails.
+      }
+    }
+    if (latestTapRequestRef.current !== requestId) {
+      return;
+    }
+    playLesson(lesson, lessonIndex);
   };
 
   const renderInteractiveSelectionText = (lessonText: string, rowKey: string): React.ReactNode => {
@@ -342,8 +372,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
   const renderLessonRow = (
     lesson: LessonData,
+    lessonIndex: number,
     rowKey: string,
-    onBeforePlay?: () => void,
+    onBeforePlay?: () => void | Promise<void>,
+    rowRef?: React.Ref<HTMLDivElement>,
   ) => {
     const lessonKey = buildLessonReferenceKey(lesson);
     const translatedText = resolveLessonTranslationText({
@@ -355,10 +387,28 @@ export const LessonView: React.FC<LessonViewProps> = ({
     });
     const savedPhrases = savedHighlightPhrasesByLessonKey?.get(lessonKey) ?? [];
     const isInteractiveSelecting = highlightModeRowKey === rowKey;
+    const isActiveSpeaking = activeSpeakingLessonIndex === lessonIndex;
     const selectedPhraseDraft = isInteractiveSelecting ? getDraftSelectionPhrase(lesson.english) : '';
+    const hasSavedPhrases = savedPhrases.length > 0;
+    const canSelectWholeSentence = tokenizeLessonTextForHighlight(lesson.english).tokens.length > 0;
+    const setCombinedRowRef = (node: HTMLDivElement | null) => {
+      if (node) {
+        lessonRowRefs.current.set(lessonIndex, node);
+      } else {
+        lessonRowRefs.current.delete(lessonIndex);
+      }
+      if (!rowRef) return;
+      if (typeof rowRef === 'function') {
+        rowRef(node);
+        return;
+      }
+      if ('current' in rowRef) {
+        rowRef.current = node;
+      }
+    };
 
     return (
-      <div key={rowKey}>
+      <div key={rowKey} ref={setCombinedRowRef}>
         <button
           type="button"
           onMouseDown={(event) => {
@@ -412,36 +462,39 @@ export const LessonView: React.FC<LessonViewProps> = ({
             closeHighlightMode();
           }}
           onClick={() => {
-            handleRowClick(lesson, rowKey, onBeforePlay);
+            void handleRowClick(lesson, lessonIndex, rowKey, onBeforePlay);
           }}
           className="selection-hover w-full rounded-lg px-3 py-3 text-left transition-colors"
           style={LESSON_ROW_NO_SELECT_STYLE}
           aria-label={`Play audio for ${lesson.english}`}
           title="Tap to hear pronunciation. Tap and hold, then drag to highlight phrase."
         >
-          <div className="text-left leading-tight">
+          <div className="text-left leading-tight" style={lessonTextScaleStyle}>
             {isPronunciationEnabled && (
               <p
-                className={`text-xs md:text-sm text-[var(--text-secondary)] ${isBoldTextEnabled ? 'font-semibold' : 'font-normal'}`}
+                className={`lesson-row-pronunciation text-[var(--text-secondary)] ${isBoldTextEnabled ? 'font-semibold' : 'font-normal'}`}
               >
                 {lesson.pronunciation}
               </p>
             )}
-            <p className={`text-base md:text-lg text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-medium'}`}>
+            <p
+              className={`lesson-row-source text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-medium'}`}
+              style={isActiveSpeaking ? ACTIVE_SPEAKING_TEXT_STYLE : undefined}
+            >
               {isInteractiveSelecting
                 ? renderInteractiveSelectionText(lesson.english, rowKey)
                 : renderHighlightedText(lesson.english, savedPhrases)}
             </p>
-            <p className={`text-sm md:text-base text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}>
+            <p
+              className={`lesson-row-translation text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}
+              style={isActiveSpeaking ? ACTIVE_SPEAKING_TEXT_STYLE : undefined}
+            >
               {translatedText}
             </p>
           </div>
         </button>
         {isInteractiveSelecting && (
-          <div className="mx-3 mb-2 mt-1 flex items-center justify-between gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-2 py-1.5">
-            <p className="truncate text-xs text-[var(--text-secondary)]">
-              {selectedPhraseDraft ? `Selected: ${selectedPhraseDraft}` : 'Drag across words to select phrase'}
-            </p>
+          <div className="mx-3 mb-2 mt-1 flex items-center justify-end gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-2 py-1.5">
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
@@ -452,6 +505,36 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 className="rounded-full border border-[var(--border-subtle)] bg-[var(--surface-default)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]"
               >
                 Cancel
+              </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  clearSavedSelection(lesson);
+                }}
+                disabled={!hasSavedPhrases}
+                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                  hasSavedPhrases
+                    ? 'selection-selected-badge'
+                    : 'border-[var(--border-subtle)] bg-[var(--surface-default)] text-[var(--text-muted)]'
+                }`}
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  selectWholeSentence(lesson.english);
+                }}
+                disabled={!canSelectWholeSentence}
+                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                  canSelectWholeSentence
+                    ? 'selection-selected-badge'
+                    : 'border-[var(--border-subtle)] bg-[var(--surface-default)] text-[var(--text-muted)]'
+                }`}
+              >
+                All
               </button>
               <button
                 type="button"
@@ -482,36 +565,71 @@ export const LessonView: React.FC<LessonViewProps> = ({
   }, [currentStep]);
 
   useEffect(() => {
-    if (lessonLayout !== 'list') return;
+    if (!isAutoScrollEnabled) return;
     if (!isReading) return;
     if (typeof currentStep !== 'number' || currentStep < 0) return;
     const node = batchRefs.current[currentStep];
     if (!node) return;
     if (typeof node.scrollIntoView !== 'function') return;
     node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [currentStep, lessonLayout, isReading]);
-
-  useEffect(() => {
-    onLayoutModeChange?.(lessonLayout);
-  }, [lessonLayout, onLayoutModeChange]);
-
-  useEffect(() => {
-    setLessonLayout(defaultLayoutMode);
-  }, [defaultLayoutMode]);
+  }, [currentStep, isAutoScrollEnabled, isReading]);
 
   useEffect(() => {
     closeHighlightMode();
-  }, [currentStep, lessonLayout]);
-
-  useEffect(() => () => clearLongPressTimer(), []);
+  }, [currentStep]);
 
   useEffect(() => {
-    try {
-      setShowHighlightTip(localStorage.getItem(HIGHLIGHT_TIP_DISMISSED_KEY) !== '1');
-    } catch {
-      setShowHighlightTip(true);
+    if (!isAutoScrollEnabled) return;
+    if (typeof window === 'undefined') return;
+    const pauseAutoScroll = () => {
+      autoScrollPausedUntilRef.current = Date.now() + LESSON_AUTO_SCROLL_RESUME_DELAY_MS;
+    };
+    window.addEventListener('touchstart', pauseAutoScroll, { passive: true });
+    window.addEventListener('touchmove', pauseAutoScroll, { passive: true });
+    window.addEventListener('wheel', pauseAutoScroll, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', pauseAutoScroll);
+      window.removeEventListener('touchmove', pauseAutoScroll);
+      window.removeEventListener('wheel', pauseAutoScroll);
+    };
+  }, [isAutoScrollEnabled]);
+
+  useEffect(() => {
+    if (!isAutoScrollEnabled) return;
+    if (!isReading) return;
+    if (typeof activeSpeakingLessonIndex !== 'number') return;
+    if (typeof window === 'undefined') return;
+    if (Date.now() < autoScrollPausedUntilRef.current) return;
+
+    const rowNode = lessonRowRefs.current.get(activeSpeakingLessonIndex);
+    if (!rowNode) return;
+
+    const now = Date.now();
+    if (
+      lastAutoScrolledLessonIndexRef.current === activeSpeakingLessonIndex
+      && (now - lastAutoScrollAtRef.current) < LESSON_AUTO_SCROLL_MIN_INTERVAL_MS
+    ) {
+      return;
     }
-  }, []);
+
+    const rect = rowNode.getBoundingClientRect();
+    const viewportHeight = Math.max(window.innerHeight, 1);
+    const viewportCenterY = viewportHeight / 2;
+    const safeZoneDistance = viewportHeight * LESSON_AUTO_SCROLL_SAFE_ZONE_RATIO;
+    const rowCenterY = (rect.top + rect.bottom) / 2;
+
+    if (Math.abs(rowCenterY - viewportCenterY) <= safeZoneDistance) return;
+
+    const targetScrollTop = Math.max(
+      0,
+      window.scrollY + rowCenterY - viewportCenterY,
+    );
+    window.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+    lastAutoScrolledLessonIndexRef.current = activeSpeakingLessonIndex;
+    lastAutoScrollAtRef.current = now;
+  }, [activeSpeakingLessonIndex, isAutoScrollEnabled, isReading]);
+
+  useEffect(() => () => clearLongPressTimer(), []);
 
   return (
     <div className="w-full max-w-3xl">
@@ -539,77 +657,46 @@ export const LessonView: React.FC<LessonViewProps> = ({
             {topRightProgressLabel}
           </p>
         </div>
-        {showHighlightTip && (
-          <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-2.5 py-1.5">
-            <p className="text-xs text-[var(--text-secondary)]">
-              Tip: Tap and hold, drag to select, then tap Save.
-            </p>
-            <button
-              type="button"
-              onClick={dismissHighlightTip}
-              className="selection-selected-badge shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold"
-            >
-              Got it
-            </button>
-          </div>
-        )}
       </div>
       <div className="overflow-hidden bg-transparent">
-        {lessonLayout === 'list' && allBatchGroups && allBatchGroups.length > 0 ? (
-          <div className="divide-y divide-[var(--border-subtle)]">
+        {allBatchGroups && allBatchGroups.length > 0 ? (
+          <div className="px-0">
             {allBatchGroups.map((entries, batchIdx) => {
-              const isBatchSelected = batchIdx === selectedGroupIndex;
-              const shouldShowBatchSelectionBox = isBatchSelected && Boolean(isReading);
               return (
-                <div
-                  key={`batch-${batchIdx}`}
-                  ref={(node) => {
-                    batchRefs.current[batchIdx] = node;
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => {
-                    setLocalSelectedGroup(batchIdx);
-                    onSelectStep?.(batchIdx);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      setLocalSelectedGroup(batchIdx);
-                      onSelectStep?.(batchIdx);
-                    }
-                  }}
-                  className="relative rounded-xl bg-transparent px-0 py-1.5 transition-all"
-                >
-                  {shouldShowBatchSelectionBox && (
-                    <span
+                <React.Fragment key={`batch-${batchIdx}`}>
+                  {entries.map(({ lesson, lessonIndex }, idx) => {
+                    const rowKey = `${lesson.english}-${batchIdx}-${idx}`;
+                    return renderLessonRow(
+                      lesson,
+                      lessonIndex,
+                      rowKey,
+                      () => {
+                        setLocalSelectedGroup(batchIdx);
+                        if (batchIdx === selectedGroupIndex) return;
+                        return onSelectStep?.(batchIdx);
+                      },
+                      idx === 0
+                        ? (node) => {
+                            batchRefs.current[batchIdx] = node;
+                          }
+                        : undefined,
+                    );
+                  })}
+                  {batchIdx < allBatchGroups.length - 1 && (
+                    <div
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 rounded-xl border border-[var(--border-strong)] ring-1 ring-[var(--color-selection-selected-ring)]"
+                      className="mx-1 my-1 border-t border-[var(--border-subtle)]"
                     />
                   )}
-                  {shouldShowBatchSelectionBox && (
-                    <span className="pointer-events-none absolute right-2 top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-1.5 text-[10px] font-semibold text-[var(--text-secondary)]">
-                      {batchIdx + 1}
-                    </span>
-                  )}
-                  <div className="space-y-1.5 px-1 pb-1">
-                    {entries.map(({ lesson }, idx) => {
-                      const rowKey = `${lesson.english}-${batchIdx}-${idx}`;
-                      return renderLessonRow(lesson, rowKey, () => {
-                        setLocalSelectedGroup(batchIdx);
-                        onSelectStep?.(batchIdx);
-                      });
-                    })}
-                  </div>
-                </div>
+                </React.Fragment>
               );
             })}
           </div>
         ) : (
           <div className="divide-y divide-[var(--border-subtle)] px-0">
-            {currentBatchEntries.map(({ lesson }, idx) => {
+            {currentBatchEntries.map(({ lesson, lessonIndex }, idx) => {
               const rowKey = `${lesson.english}-${currentIndex + idx}`;
-              return renderLessonRow(lesson, rowKey);
+              return renderLessonRow(lesson, lessonIndex, rowKey);
             })}
           </div>
         )}

@@ -13,10 +13,6 @@ export type LessonModalText = {
   unitCompleteModalMessage: string;
   unitCompleteModalCancelLabel: string;
   unitCompleteModalConfirmLabel: string;
-  lessonUnitBoundaryModalTitle: string;
-  lessonUnitBoundaryModalMessage: string;
-  lessonUnitBoundaryModalCancelLabel: string;
-  lessonUnitBoundaryModalConfirmLabel: string;
 };
 
 export function getLessonModalText(defaultLanguage: DefaultLanguage): LessonModalText {
@@ -34,10 +30,6 @@ export function getLessonModalText(defaultLanguage: DefaultLanguage): LessonModa
       unitCompleteModalMessage: 'ဒီယူနစ်ကို အောင်မြင်စွာပြီးပါပြီ။ နောက်ယူနစ်သို့ ဆက်သွားမလား?',
       unitCompleteModalCancelLabel: 'ပြန်စမယ်',
       unitCompleteModalConfirmLabel: 'နောက်ယူနစ်',
-      lessonUnitBoundaryModalTitle: '10/10 ပြီးပါပြီ',
-      lessonUnitBoundaryModalMessage: 'ဒီယူနစ် Lesson ပိုင်းကို ပြီးပါပြီ။ ရှေ့ဆက်မလား?',
-      lessonUnitBoundaryModalCancelLabel: 'ဒီနေရာမှာ နေမယ်',
-      lessonUnitBoundaryModalConfirmLabel: 'နောက်ယူနစ်သို့ ဆက်မယ်',
     };
   }
 
@@ -54,11 +46,6 @@ export function getLessonModalText(defaultLanguage: DefaultLanguage): LessonModa
     unitCompleteModalMessage: 'You finished this unit successfully. Continue to the next unit?',
     unitCompleteModalCancelLabel: 'Again',
     unitCompleteModalConfirmLabel: 'Next Unit',
-    lessonUnitBoundaryModalTitle: '10/10 Complete',
-    lessonUnitBoundaryModalMessage: 'You finished the lesson part of this unit. Continue?',
-    lessonUnitBoundaryModalCancelLabel: 'Stay here',
-    lessonUnitBoundaryModalConfirmLabel: 'Continue to next unit',
   };
 }
-
 

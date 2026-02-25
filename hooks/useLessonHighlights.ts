@@ -84,6 +84,19 @@ export function useLessonHighlights(profileStorageId: string, learnLanguage: Lea
     return didSave;
   }, [learnLanguage, profileStorageId, storageKey]);
 
+  const clearHighlightSelection = useCallback((lesson: LessonData): boolean => {
+    const lessonKey = buildLessonReferenceKey(lesson);
+    let didClear = false;
+    setHighlights((prev) => {
+      const next = prev.filter((entry) => entry.lessonKey !== lessonKey);
+      didClear = next.length !== prev.length;
+      if (!didClear) return prev;
+      writeHighlightsToStorage(storageKey, next);
+      return next;
+    });
+    return didClear;
+  }, [storageKey]);
+
   const highlightCountByLessonKey = useMemo(() => {
     const counts = new Map<string, number>();
     for (const item of highlights) {
@@ -116,5 +129,6 @@ export function useLessonHighlights(profileStorageId: string, learnLanguage: Lea
     highlightCountByLessonKey,
     highlightPhrasesByLessonKey,
     saveHighlightSelection,
+    clearHighlightSelection,
   };
 }

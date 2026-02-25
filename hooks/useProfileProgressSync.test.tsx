@@ -58,10 +58,10 @@ describe('useProfileProgressSync debounce', () => {
       isPronunciationEnabled: false,
       textScalePercent: 100,
       isBoldTextEnabled: false,
+      isAutoScrollEnabled: true,
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
       appTheme: 'apple_notes' as const,
-      lessonLayoutDefault: 'list' as const,
       voiceProvider: 'default' as const,
       totalLevels: 12,
       progressStorageKey: 'progress:tester',
@@ -75,10 +75,10 @@ describe('useProfileProgressSync debounce', () => {
       setIsPronunciationEnabled: vi.fn(),
       setTextScalePercent: vi.fn(),
       setIsBoldTextEnabled: vi.fn(),
+      setIsAutoScrollEnabled: vi.fn(),
       setIsRandomLessonOrderEnabled: vi.fn(),
       setIsReviewQuestionsRemoved: vi.fn(),
       setAppTheme: vi.fn(),
-      setLessonLayoutDefault: vi.fn(),
       setVoiceProvider: vi.fn(),
     };
 
@@ -141,6 +141,7 @@ describe('useProfileProgressSync debounce', () => {
             isPronunciationEnabled: false,
             textScalePercent: 100,
             isBoldTextEnabled: false,
+            isAutoScrollEnabled: true,
             isRandomLessonOrderEnabled: false,
             isReviewQuestionsRemoved: false,
           }),
@@ -164,10 +165,10 @@ describe('useProfileProgressSync debounce', () => {
       isPronunciationEnabled: false,
       textScalePercent: 100,
       isBoldTextEnabled: false,
+      isAutoScrollEnabled: true,
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
       appTheme: 'apple_notes' as const,
-      lessonLayoutDefault: 'list' as const,
       voiceProvider: 'default' as const,
       totalLevels: 12,
       progressStorageKey: 'progress:tester',
@@ -181,10 +182,10 @@ describe('useProfileProgressSync debounce', () => {
       setIsPronunciationEnabled: vi.fn(),
       setTextScalePercent: vi.fn(),
       setIsBoldTextEnabled: vi.fn(),
+      setIsAutoScrollEnabled: vi.fn(),
       setIsRandomLessonOrderEnabled: vi.fn(),
       setIsReviewQuestionsRemoved: vi.fn(),
       setAppTheme: vi.fn(),
-      setLessonLayoutDefault: vi.fn(),
       setVoiceProvider: vi.fn(),
     };
 
@@ -245,4 +246,3 @@ describe('useProfileProgressSync debounce', () => {
     expect(setLearnLanguage).toHaveBeenCalledTimes(1);
   });
 });
-

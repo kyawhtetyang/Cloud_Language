@@ -11,6 +11,7 @@ import {
   UNITS_PER_ALBUM,
 } from '../../config/appConfig';
 import { getRoadmapText, localizeRoadmapTopic, localizeRoadmapTopicConcise } from '../../config/roadmapI18n';
+import { VIEW_PAGE_CLASS, VIEW_PANEL_CLASS } from './viewShared';
 
 type LevelsViewProps = {
   lessons: LessonData[];
@@ -493,7 +494,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
     const albumTitle = shortenLabel(getDisplayAlbumTitle(selectedAlbum.firstTopicConcise, defaultLanguage), 58);
 
     return (
-      <div className="w-full max-w-3xl">
+      <div className={VIEW_PAGE_CLASS}>
         <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
           <div className="top-toolbar-row flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2.5">
@@ -501,18 +502,18 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                 type="button"
                 onClick={() => setSelectedAlbumKey(null)}
                 aria-label="Back"
-                className="top-toolbar-icon inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-base font-normal text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+                className="top-toolbar-icon inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
               >
                 <span aria-hidden="true">←</span>
               </button>
-              <p className="truncate text-sm font-normal text-ink-strong md:text-base">
+              <p className="truncate text-sm font-semibold text-ink-strong md:text-base">
                 {albumTitle}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-default)] shadow-sm">
+        <div className={`overflow-hidden ${VIEW_PANEL_CLASS}`}>
           <div className={`px-3 py-2.5 ${stageHeaderUi.barClass}`}>
             <div className="flex items-center gap-3">
               <div className="relative aspect-[3/4] w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)]">
@@ -526,10 +527,10 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                 />
               </div>
               <div className="min-w-0">
-                <h3 className="text-lg font-normal leading-tight text-ink-strong">
+                <h3 className="text-lg font-extrabold leading-tight text-ink-strong">
                   {albumTitle}
                 </h3>
-                <p className="mt-0.5 text-sm font-normal text-ink-muted">
+                <p className="mt-0.5 text-sm font-semibold text-ink-muted">
                   {formatAlbumMeta(
                     selectedAlbum.stage,
                     selectedAlbum.groupIndex,
@@ -591,7 +592,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[15px] font-normal leading-tight text-ink">
+                      <p className="truncate text-[15px] font-semibold leading-tight text-ink">
                         {localizeRoadmapTopic(entry.topic, defaultLanguage)}
                       </p>
                     </div>
@@ -611,7 +612,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
   }
 
   return (
-    <div className="w-full max-w-3xl">
+    <div className={VIEW_PAGE_CLASS}>
       <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
         <label htmlFor="library-search" className="sr-only">
           Search library
@@ -646,10 +647,10 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
           return (
             <div
               key={section.key}
-              className="mb-6 last:mb-0 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-default)] shadow-sm"
+              className={`mb-6 last:mb-0 overflow-hidden ${VIEW_PANEL_CLASS}`}
             >
               <div className={`px-3 py-2 ${stageHeaderUi.barClass}`}>
-                <p className={`text-sm font-normal uppercase tracking-[0.08em] md:text-sm ${stageHeaderUi.textClass}`}>
+                <p className={`text-xs font-extrabold uppercase tracking-[0.16em] md:text-xs ${stageHeaderUi.textClass}`}>
                   {section.label}
                 </p>
               </div>
@@ -674,10 +675,10 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-base font-normal leading-tight text-ink">
+                        <p className="truncate text-base font-semibold leading-tight text-ink">
                           {shortenLabel(getDisplayAlbumTitle(group.firstTopicConcise, defaultLanguage), 48)}
                         </p>
-                        <p className="mt-1 truncate text-xs font-normal text-[var(--text-muted)]">
+                        <p className="mt-1 truncate text-xs font-semibold text-[var(--text-muted)]">
                           {formatAlbumMeta('A1', group.groupIndex, group.units.length, group)}
                         </p>
                       </div>
@@ -702,10 +703,10 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
           return (
             <div
               key={stage}
-              className="mb-6 last:mb-0 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-default)] shadow-sm"
+              className={`mb-6 last:mb-0 overflow-hidden ${VIEW_PANEL_CLASS}`}
             >
               <div className={`px-3 py-2 ${stageHeaderUi.barClass}`}>
-                <p className={`text-sm font-normal uppercase tracking-[0.08em] md:text-sm ${stageHeaderUi.textClass}`}>
+                <p className={`text-xs font-extrabold uppercase tracking-[0.16em] md:text-xs ${stageHeaderUi.textClass}`}>
                   {isHskLanguage ? hskStageLabel : text.stageLabels[stage]}
                 </p>
               </div>
@@ -731,10 +732,10 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-base font-normal leading-tight text-ink">
+                        <p className="truncate text-base font-semibold leading-tight text-ink">
                           {shortenLabel(getDisplayAlbumTitle(group.firstTopicConcise, defaultLanguage), 48)}
                         </p>
-                        <p className="mt-1 truncate text-xs font-normal text-[var(--text-muted)]">
+                        <p className="mt-1 truncate text-xs font-semibold text-[var(--text-muted)]">
                           {formatAlbumMeta(stage, group.groupIndex, group.units.length, group)}
                         </p>
                       </div>

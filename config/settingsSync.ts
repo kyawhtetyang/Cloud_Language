@@ -1,6 +1,7 @@
 import { Dispatch, SetStateAction } from 'react';
 import {
   APP_DEFAULTS,
+  AUTO_SCROLL_ENABLED_KEY,
   APP_THEME_KEY,
   AppTheme,
   isAppTheme,
@@ -9,10 +10,7 @@ import {
   DEFAULT_LANGUAGE_KEY,
   DefaultLanguage,
   isDefaultLanguage,
-  isLessonLayoutMode,
   isLearnLanguage,
-  LESSON_LAYOUT_DEFAULT_KEY,
-  LessonLayoutMode,
   LEARN_LANGUAGE_KEY,
   LearnLanguage,
   PRONUNCIATION_ENABLED_KEY,
@@ -30,10 +28,10 @@ export type SyncedAppSettings = {
   isPronunciationEnabled: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
+  isAutoScrollEnabled: boolean;
   isRandomLessonOrderEnabled: boolean;
   isReviewQuestionsRemoved: boolean;
   appTheme: AppTheme;
-  lessonLayoutDefault: LessonLayoutMode;
   voiceProvider: VoiceProvider;
 };
 
@@ -43,10 +41,10 @@ export type SyncedAppSettingsSetters = {
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
+  setIsAutoScrollEnabled: Dispatch<SetStateAction<boolean>>;
   setIsRandomLessonOrderEnabled: Dispatch<SetStateAction<boolean>>;
   setIsReviewQuestionsRemoved: Dispatch<SetStateAction<boolean>>;
   setAppTheme: Dispatch<SetStateAction<AppTheme>>;
-  setLessonLayoutDefault: Dispatch<SetStateAction<LessonLayoutMode>>;
   setVoiceProvider: Dispatch<SetStateAction<VoiceProvider>>;
 };
 
@@ -86,6 +84,11 @@ function parseBoolean(value: string | null): boolean {
   return value === 'true';
 }
 
+function parseBooleanWithFallback(value: string | null, fallback: boolean): boolean {
+  if (value === null) return fallback;
+  return parseBoolean(value);
+}
+
 function parseTextScale(value: string | null): number {
   return clampTextScale(Number(value || DEFAULT_SYNCED_SETTINGS.textScalePercent));
 }
@@ -94,9 +97,6 @@ function parseAppTheme(value: string | null): AppTheme {
   return isAppTheme(value) ? value : APP_DEFAULTS.appTheme;
 }
 
-function parseLessonLayoutDefault(value: string | null): LessonLayoutMode {
-  return isLessonLayoutMode(value) ? value : APP_DEFAULTS.lessonLayoutDefault;
-}
 
 function parseVoiceProvider(value: string | null): VoiceProvider {
   if (value === 'google') return 'apple_siri';
@@ -119,10 +119,13 @@ export function readSyncedSettingsFromStorage(profileStorageId?: string): Synced
     isPronunciationEnabled: parseBoolean(readWithFallback(PRONUNCIATION_ENABLED_KEY, profileStorageId)),
     textScalePercent: parseTextScale(readWithFallback(TEXT_SCALE_PERCENT_KEY, profileStorageId)),
     isBoldTextEnabled: parseBoolean(readWithFallback(BOLD_TEXT_ENABLED_KEY, profileStorageId)),
+    isAutoScrollEnabled: parseBooleanWithFallback(
+      readWithFallback(AUTO_SCROLL_ENABLED_KEY, profileStorageId),
+      APP_DEFAULTS.isAutoScrollEnabled,
+    ),
     isRandomLessonOrderEnabled: parseBoolean(readWithFallback(RANDOM_LESSON_ORDER_ENABLED_KEY, profileStorageId)),
     isReviewQuestionsRemoved: parseBoolean(readWithFallback(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY, profileStorageId)),
     appTheme: parseAppTheme(readWithFallback(APP_THEME_KEY, profileStorageId)),
-    lessonLayoutDefault: parseLessonLayoutDefault(readWithFallback(LESSON_LAYOUT_DEFAULT_KEY, profileStorageId)),
     voiceProvider: parseVoiceProvider(readWithFallback(VOICE_PROVIDER_KEY, profileStorageId)),
   };
 }
@@ -138,10 +141,10 @@ export function persistSyncedSettingsToStorage(
   safeWrite(resolveKey(PRONUNCIATION_ENABLED_KEY), String(settings.isPronunciationEnabled));
   safeWrite(resolveKey(TEXT_SCALE_PERCENT_KEY), String(settings.textScalePercent));
   safeWrite(resolveKey(BOLD_TEXT_ENABLED_KEY), String(settings.isBoldTextEnabled));
+  safeWrite(resolveKey(AUTO_SCROLL_ENABLED_KEY), String(settings.isAutoScrollEnabled));
   safeWrite(resolveKey(RANDOM_LESSON_ORDER_ENABLED_KEY), String(settings.isRandomLessonOrderEnabled));
   safeWrite(resolveKey(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY), String(settings.isReviewQuestionsRemoved));
   safeWrite(resolveKey(APP_THEME_KEY), settings.appTheme);
-  safeWrite(resolveKey(LESSON_LAYOUT_DEFAULT_KEY), settings.lessonLayoutDefault);
   safeWrite(resolveKey(VOICE_PROVIDER_KEY), settings.voiceProvider);
 }
 
@@ -152,10 +155,10 @@ export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedA
     isPronunciationEnabled: settings.isPronunciationEnabled,
     textScalePercent: settings.textScalePercent,
     isBoldTextEnabled: settings.isBoldTextEnabled,
+    isAutoScrollEnabled: settings.isAutoScrollEnabled,
     isRandomLessonOrderEnabled: settings.isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved: settings.isReviewQuestionsRemoved,
     appTheme: settings.appTheme,
-    lessonLayoutDefault: settings.lessonLayoutDefault,
     voiceProvider: settings.voiceProvider,
   };
 }
@@ -179,6 +182,9 @@ export function applyRemoteSyncedSettings(
   if (typeof remote.isBoldTextEnabled === 'boolean') {
     setters.setIsBoldTextEnabled(remote.isBoldTextEnabled);
   }
+  if (typeof remote.isAutoScrollEnabled === 'boolean') {
+    setters.setIsAutoScrollEnabled(remote.isAutoScrollEnabled);
+  }
   if (typeof remote.isRandomLessonOrderEnabled === 'boolean') {
     setters.setIsRandomLessonOrderEnabled(remote.isRandomLessonOrderEnabled);
   }
@@ -188,13 +194,9 @@ export function applyRemoteSyncedSettings(
   if (isAppTheme(remote.appTheme)) {
     setters.setAppTheme(remote.appTheme);
   }
-  if (isLessonLayoutMode(remote.lessonLayoutDefault)) {
-    setters.setLessonLayoutDefault(remote.lessonLayoutDefault);
-  }
   if (remote.voiceProvider === 'google') {
     setters.setVoiceProvider('apple_siri');
   } else if (isVoiceProvider(remote.voiceProvider)) {
     setters.setVoiceProvider(remote.voiceProvider);
   }
 }
-

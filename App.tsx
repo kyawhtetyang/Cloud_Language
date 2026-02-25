@@ -36,7 +36,6 @@ import {
   MATCH_PAIRS_PER_REVIEW,
   PROFILE_NAME_KEY,
   PROGRESS_KEY,
-  QUICK_REVIEW_CHECKPOINTS,
   ReviewResult,
   STREAK_KEY,
   toProfileStorageId,
@@ -45,6 +44,11 @@ import {
   resolveStageCode,
 } from './config/appConfig';
 import { getLessonModalText } from './config/lessonModalText';
+import {
+  PREVIOUS_TRACK_SEEK_THRESHOLD_MS,
+  SPEECH_IDLE_POLL_INTERVAL_MS,
+  SPEECH_IDLE_TIMEOUT_MS,
+} from './config/interactionConfig';
 import { LevelsView } from './components/views/LevelsView';
 import { AppSidebar } from './components/layout/AppSidebar';
 import {
@@ -65,7 +69,7 @@ function normalizeApiBaseUrl(rawApiBaseUrl: string | undefined): string {
 
 type RepeatMode = 'off' | 'all' | 'one';
 type PendingUnitTarget = { level: number; unit: number; albumKey?: string | null };
-type SpeakEntry = { text: string; unitId?: number; audioUrl?: string };
+type SpeakEntry = { text: string; unitId: number; audioUrl: string | undefined; lessonIndex: number };
 
 const App: React.FC = () => {
   const {
@@ -101,14 +105,14 @@ const App: React.FC = () => {
     setTextScalePercent,
     isBoldTextEnabled,
     setIsBoldTextEnabled,
+    isAutoScrollEnabled,
+    setIsAutoScrollEnabled,
     isRandomLessonOrderEnabled,
     setIsRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     setIsReviewQuestionsRemoved,
     appTheme,
     setAppTheme,
-    lessonLayoutDefault,
-    setLessonLayoutDefault,
     voiceProvider,
     setVoiceProvider,
     hasHydratedSettings,
@@ -123,21 +127,21 @@ const App: React.FC = () => {
   const [isLeaveQuizModalOpen, setIsLeaveQuizModalOpen] = useState(false);
   const [isLeaveCompletedUnitModalOpen, setIsLeaveCompletedUnitModalOpen] = useState(false);
   const [isUnitCompleteModalOpen, setIsUnitCompleteModalOpen] = useState(false);
-  const [isLessonUnitBoundaryModalOpen, setIsLessonUnitBoundaryModalOpen] = useState(false);
   const [isReading, setIsReading] = useState(false);
-  const [lessonLayoutMode, setLessonLayoutMode] = useState<'paged' | 'list'>(lessonLayoutDefault);
+  const [activeSpeakingLessonIndex, setActiveSpeakingLessonIndex] = useState<number | null>(null);
   const [isMobileBottomBarsVisible, setIsMobileBottomBarsVisible] = useState(true);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   const [pendingUnitTarget, setPendingUnitTarget] = useState<PendingUnitTarget | null>(null);
+  const [pendingAutoPlayUnitKey, setPendingAutoPlayUnitKey] = useState<string | null>(null);
+
   const [roadmapSelectedAlbumKey, setRoadmapSelectedAlbumKey] = useState<string | null>(null);
   const readSessionRef = useRef(0);
-  const isContinuousListPlaybackRef = useRef(false);
-  const modeRef = useRef<AppMode>('learn');
-  const learnStepRef = useRef(0);
-  const learnStepCountRef = useRef(1);
-  const orderedUnitIndexesRef = useRef<number[]>([]);
-  const sectionStartRef = useRef(0);
-  const repeatModeRef = useRef<RepeatMode>('off');
+  const isTrackPlaybackRef = useRef(false);
+  const lastPlayAnchorLessonIndexRef = useRef<number | null>(null);
+  const unitPlaybackStartedAtRef = useRef<number | null>(null);
+  const lastUnitKeyRef = useRef<string>('');
+  const isUnitNavigationLockedRef = useRef(false);
+  const playbackTokenRef = useRef(0);
   const lastScrollYRef = useRef(0);
   const scrollTickingRef = useRef(false);
   const [randomOrderVersion, setRandomOrderVersion] = useState(0);
@@ -151,7 +155,6 @@ const App: React.FC = () => {
     matchMistakes,
     isMatchReviewComplete,
     resetQuizState,
-    startQuizForLevel,
     handleSelectPrompt,
     handleSelectAnswer,
   } = useLessonFlow(MATCH_PAIRS_PER_REVIEW);
@@ -178,7 +181,7 @@ const App: React.FC = () => {
     return map;
   }, [englishReferenceLessons]);
   const profileStorageId = profileName ? toProfileStorageId(profileName) : '';
-  const { highlightPhrasesByLessonKey, saveHighlightSelection } = useLessonHighlights(
+  const { highlightPhrasesByLessonKey, saveHighlightSelection, clearHighlightSelection } = useLessonHighlights(
     profileStorageId,
     learnLanguage,
   );
@@ -199,10 +202,10 @@ const App: React.FC = () => {
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,
+    isAutoScrollEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     appTheme,
-    lessonLayoutDefault,
     voiceProvider,
     totalLevels,
     progressStorageKey,
@@ -216,10 +219,10 @@ const App: React.FC = () => {
     setIsPronunciationEnabled,
     setTextScalePercent,
     setIsBoldTextEnabled,
+    setIsAutoScrollEnabled,
     setIsRandomLessonOrderEnabled,
     setIsReviewQuestionsRemoved,
     setAppTheme,
-    setLessonLayoutDefault,
     setVoiceProvider,
   });
 
@@ -231,10 +234,10 @@ const App: React.FC = () => {
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,
+    isAutoScrollEnabled,
     isRandomLessonOrderEnabled,
     isReviewQuestionsRemoved,
     appTheme,
-    lessonLayoutDefault,
     voiceProvider,
   });
 
@@ -251,10 +254,6 @@ const App: React.FC = () => {
     unitCompleteModalMessage,
     unitCompleteModalCancelLabel,
     unitCompleteModalConfirmLabel,
-    lessonUnitBoundaryModalTitle,
-    lessonUnitBoundaryModalMessage,
-    lessonUnitBoundaryModalCancelLabel,
-    lessonUnitBoundaryModalConfirmLabel,
   } = getLessonModalText(defaultLanguage);
   const {
     currentLevel,
@@ -298,10 +297,37 @@ const App: React.FC = () => {
     orderedUnitIndexes,
     sectionTotal,
   });
+  useEffect(() => {
+    const unitKey = `${currentLevel}:${currentUnit}`;
+    if (lastUnitKeyRef.current === unitKey) return;
+    lastUnitKeyRef.current = unitKey;
+    unitPlaybackStartedAtRef.current = null;
+    lastPlayAnchorLessonIndexRef.current = null;
+  }, [currentLevel, currentUnit]);
   const learnStepCount = useMemo(
     () => Math.max(1, Math.ceil(sectionTotal / LESSONS_PER_BATCH)),
     [sectionTotal],
   );
+  const orderedCourseUnitStartIndexes = useMemo(() => {
+    const seen = new Set<string>();
+    const starts: number[] = [];
+    lessons.forEach((lesson, index) => {
+      const key = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      starts.push(index);
+    });
+    return starts;
+  }, [lessons]);
+  const playableCourseUnitKeys = useMemo(() => {
+    const playable = new Set<string>();
+    lessons.forEach((lesson) => {
+      const speakTextValue = getPlayableLessonText(lesson);
+      if (!speakTextValue) return;
+      playable.add(`${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`);
+    });
+    return playable;
+  }, [lessons]);
 
   const handleApplyProfileName = () => {
     applyProfileName(() => {
@@ -316,14 +342,57 @@ const App: React.FC = () => {
     });
   };
 
+  const bumpPlaybackToken = (): number => {
+    playbackTokenRef.current += 1;
+    return playbackTokenRef.current;
+  };
+
+  const isPlaybackTokenCurrent = (token: number): boolean => playbackTokenRef.current === token;
+
+  const waitForSpeechIdle = async (timeoutMs = SPEECH_IDLE_TIMEOUT_MS): Promise<void> => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    const synth = window.speechSynthesis;
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      if (!synth.speaking && !synth.pending) return;
+      await new Promise((resolve) => window.setTimeout(resolve, SPEECH_IDLE_POLL_INTERVAL_MS));
+    }
+  };
+
+  const stopActivePlayback = async (): Promise<void> => {
+    isTrackPlaybackRef.current = false;
+    readSessionRef.current += 1;
+    bumpPlaybackToken();
+    setIsReading(false);
+    setActiveSpeakingLessonIndex(null);
+    cancelSpeech();
+    await waitForSpeechIdle();
+  };
+
+  const runWithUnitNavigationLock = async (
+    task: () => Promise<void> | void,
+  ): Promise<void> => {
+    if (isUnitNavigationLockedRef.current) return;
+    isUnitNavigationLockedRef.current = true;
+    setIsNextDisabled(true);
+    try {
+      await task();
+    } finally {
+      isUnitNavigationLockedRef.current = false;
+      setIsNextDisabled(false);
+    }
+  };
+
   useEffect(() => {
-    if (mode !== 'learn' && isReading) {
-      isContinuousListPlaybackRef.current = false;
+    if (mode !== 'learn' && (isReading || activeSpeakingLessonIndex !== null)) {
+      isTrackPlaybackRef.current = false;
       readSessionRef.current += 1;
+      bumpPlaybackToken();
       setIsReading(false);
+      setActiveSpeakingLessonIndex(null);
       cancelSpeech();
     }
-  }, [isReading, mode]);
+  }, [activeSpeakingLessonIndex, isReading, mode]);
 
   useEffect(() => {
     document.body.classList.toggle('lang-burmese', defaultLanguage === 'burmese');
@@ -331,27 +400,6 @@ const App: React.FC = () => {
   }, [defaultLanguage]);
 
   useAppTheme(appTheme);
-
-  const previousSidebarTabRef = useRef(sidebarTab);
-  useEffect(() => {
-    const movedIntoLessonTab = previousSidebarTabRef.current !== 'lesson' && sidebarTab === 'lesson';
-    if (movedIntoLessonTab && isReading) {
-      isContinuousListPlaybackRef.current = false;
-      readSessionRef.current += 1;
-      setIsReading(false);
-      cancelSpeech();
-    }
-    previousSidebarTabRef.current = sidebarTab;
-  }, [isReading, sidebarTab]);
-
-  useEffect(() => {
-    modeRef.current = mode;
-    learnStepRef.current = learnStep;
-    learnStepCountRef.current = learnStepCount;
-    orderedUnitIndexesRef.current = orderedUnitIndexes;
-    sectionStartRef.current = sectionStart;
-    repeatModeRef.current = repeatMode;
-  }, [mode, learnStep, learnStepCount, orderedUnitIndexes, sectionStart, repeatMode]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -403,38 +451,51 @@ const App: React.FC = () => {
   const playTextsSequentially = async (entries: SpeakEntry[]): Promise<boolean> => {
     if (mode !== 'learn' || entries.length === 0) return false;
     const sessionId = readSessionRef.current + 1;
+    const playbackToken = bumpPlaybackToken();
     readSessionRef.current = sessionId;
+    unitPlaybackStartedAtRef.current = Date.now();
     setIsReading(true);
+    setActiveSpeakingLessonIndex(null);
     cancelSpeech();
+    await waitForSpeechIdle();
 
     for (const entry of entries) {
       if (readSessionRef.current !== sessionId) break;
+      if (isPlaybackTokenCurrent(playbackToken)) {
+        lastPlayAnchorLessonIndexRef.current = entry.lessonIndex;
+        setActiveSpeakingLessonIndex(entry.lessonIndex);
+      }
       await speakText(entry.text, {
         learnLanguage,
         unitId: entry.unitId,
         audioUrl: entry.audioUrl,
         voiceProvider,
+        onStart: () => {
+          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
+            lastPlayAnchorLessonIndexRef.current = entry.lessonIndex;
+            setActiveSpeakingLessonIndex(entry.lessonIndex);
+          }
+        },
+        onEnd: () => {
+          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
+            setActiveSpeakingLessonIndex(null);
+          }
+        },
       });
     }
 
-    if (readSessionRef.current === sessionId) {
+    if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
       setIsReading(false);
+      setActiveSpeakingLessonIndex(null);
       return true;
     }
     return false;
   };
 
-  const getBatchTextsForStep = (step: number): SpeakEntry[] => {
-    const safeStep = Math.max(0, Math.min(learnStepCountRef.current - 1, step));
-    const offset = safeStep * LESSONS_PER_BATCH;
-    const batchIndexes = Array.from({ length: LESSONS_PER_BATCH }, (_, idx) => {
-      const orderedIndex = orderedUnitIndexesRef.current[offset + idx];
-      return typeof orderedIndex === 'number' ? orderedIndex : null;
-    });
-    return batchIndexes
-      .map((index) => {
-        if (typeof index !== 'number') return null;
-        const lesson = lessons[index];
+  const getCurrentUnitSpeakEntries = (startFromLessonIndex?: number | null): SpeakEntry[] => {
+    const entries = orderedUnitIndexes
+      .map((lessonIndex) => {
+        const lesson = lessons[lessonIndex];
         if (!lesson) return null;
         const speakTextValue = getPlayableLessonText(lesson);
         if (!speakTextValue) return null;
@@ -442,124 +503,226 @@ const App: React.FC = () => {
           text: speakTextValue,
           unitId: getLessonUnitId(lesson),
           audioUrl: lesson.audioPath,
+          lessonIndex,
         };
       })
       .filter((entry): entry is SpeakEntry => entry !== null);
+
+    if (typeof startFromLessonIndex !== 'number') {
+      return entries;
+    }
+
+    const startPosition = entries.findIndex((entry) => entry.lessonIndex === startFromLessonIndex);
+    if (startPosition < 0) {
+      return entries;
+    }
+    return entries.slice(startPosition);
   };
 
-  const proceedUnitCompletionWithoutReviewRef = useRef<() => void>(() => {});
+  const resolveCurrentUnitStart = (): number | null => resolveUnitStartFromAnchor(sectionStart);
 
-  const runContinuousListPlayback = async () => {
-    const waitForUnitContextChange = async (
-      previousSectionStart: number,
-      previousFirstOrderedIndex: number | null,
-    ): Promise<boolean> => {
-      const startedAt = Date.now();
-      while (isContinuousListPlaybackRef.current && modeRef.current === 'learn') {
-        const firstOrderedIndex = orderedUnitIndexesRef.current[0];
-        const normalizedFirstIndex = typeof firstOrderedIndex === 'number' ? firstOrderedIndex : null;
-        if (
-          sectionStartRef.current !== previousSectionStart
-          || normalizedFirstIndex !== previousFirstOrderedIndex
-        ) {
-          return true;
-        }
-        if (Date.now() - startedAt >= 400) {
-          return false;
-        }
-        await new Promise((resolve) => window.setTimeout(resolve, 16));
-      }
-      return false;
-    };
+  const resolvePreviousUnitStartWithinStage = (): number | null => {
+    let previousAnchor = sectionStart - 1;
+    const isBeforeCurrentStage =
+      previousAnchor < 0
+      || resolveStageCode(getLessonOrderIndex(lessons[previousAnchor]), lessons[previousAnchor]?.stage) !== currentStageCode;
 
-    let cursorStep = learnStepRef.current;
-    while (isContinuousListPlaybackRef.current && modeRef.current === 'learn') {
-      const texts = getBatchTextsForStep(cursorStep);
-      if (texts.length === 0) break;
-      const finished = await playTextsSequentially(texts);
-      if (!finished || !isContinuousListPlaybackRef.current || modeRef.current !== 'learn') break;
-
-      if (cursorStep >= learnStepCountRef.current - 1) {
-        if (repeatModeRef.current === 'one') {
-          setCurrentIndex(sectionStartRef.current);
-          setLearnStep(0);
-          learnStepRef.current = 0;
-          cursorStep = 0;
-          setRandomOrderVersion((prev) => prev + 1);
-          await new Promise((resolve) => window.setTimeout(resolve, 0));
-        } else {
-          const previousSectionStart = sectionStartRef.current;
-          const previousFirstOrderedIndex = typeof orderedUnitIndexesRef.current[0] === 'number'
-            ? orderedUnitIndexesRef.current[0]
-            : null;
-          proceedUnitCompletionWithoutReviewRef.current();
-          const didChangeUnitContext = await waitForUnitContextChange(
-            previousSectionStart,
-            previousFirstOrderedIndex,
-          );
-          if (!didChangeUnitContext) {
-            // Stop instead of risking stale sentence/audio mapping after unit boundary.
-            break;
-          }
-          cursorStep = learnStepRef.current;
-        }
+    if (isBeforeCurrentStage) {
+      if (repeatMode === 'all') {
+        previousAnchor = currentStageRange.end;
       } else {
-        const nextStep = cursorStep + 1;
-        const nextOffset = nextStep * LESSONS_PER_BATCH;
-        setLearnStep(nextStep);
-        learnStepRef.current = nextStep;
-        setCurrentIndex(orderedUnitIndexesRef.current[nextOffset] ?? sectionStartRef.current);
-        cursorStep = nextStep;
-        // Yield once so selection UI updates before the next batch starts speaking.
-        await new Promise((resolve) => window.setTimeout(resolve, 0));
+        return null;
       }
     }
-    isContinuousListPlaybackRef.current = false;
+
+    if (previousAnchor < 0) return null;
+    return resolveUnitStartFromAnchor(previousAnchor);
+  };
+
+  const shouldPreviousJumpToPreviousUnit = (): boolean => {
+    const firstLessonIndex = orderedUnitIndexes[0];
+    if (typeof firstLessonIndex !== 'number') return true;
+
+    const currentPositionLessonIndex = typeof activeSpeakingLessonIndex === 'number'
+      ? activeSpeakingLessonIndex
+      : lastPlayAnchorLessonIndexRef.current;
+    const isOnFirstSentence = currentPositionLessonIndex === firstLessonIndex;
+    const isKnownCurrentUnitPosition =
+      typeof currentPositionLessonIndex === 'number'
+      && orderedUnitIndexes.includes(currentPositionLessonIndex);
+    const elapsedMs = unitPlaybackStartedAtRef.current === null
+      ? 0
+      : Math.max(0, Date.now() - unitPlaybackStartedAtRef.current);
+    const isWithinSeekThreshold = elapsedMs <= PREVIOUS_TRACK_SEEK_THRESHOLD_MS;
+
+    return (isOnFirstSentence || !isKnownCurrentUnitPosition) && isWithinSeekThreshold;
+  };
+
+  const resolveUnitStartFromAnchor = (anchorIndex: number): number | null => {
+    const anchorLesson = lessons[anchorIndex];
+    if (!anchorLesson) return null;
+    const targetLevel = getLessonOrderIndex(anchorLesson);
+    const targetUnit = getLessonUnitId(anchorLesson);
+    const unitStart = lessons.findIndex(
+      (lesson) => getLessonOrderIndex(lesson) === targetLevel && getLessonUnitId(lesson) === targetUnit,
+    );
+    return unitStart >= 0 ? unitStart : null;
+  };
+
+  const resolveNextUnitStartForTrackPlayback = (): number | null => {
+    const currentUnitStart = resolveUnitStartFromAnchor(sectionStart);
+    if (currentUnitStart === null) return null;
+    const currentLesson = lessons[currentUnitStart];
+    if (!currentLesson) return null;
+    const currentUnitKey = `${getLessonOrderIndex(currentLesson)}:${getLessonUnitId(currentLesson)}`;
+
+    if (repeatMode === 'one') {
+      return playableCourseUnitKeys.has(currentUnitKey) ? currentUnitStart : null;
+    }
+
+    const currentUnitPosition = orderedCourseUnitStartIndexes.findIndex((index) => {
+      const lesson = lessons[index];
+      if (!lesson) return false;
+      return `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}` === currentUnitKey;
+    });
+    if (currentUnitPosition < 0) return null;
+
+    const findPlayableStart = (indexes: number[]): number | null => {
+      for (const startIndex of indexes) {
+        const lesson = lessons[startIndex];
+        if (!lesson) continue;
+        const unitKey = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
+        if (playableCourseUnitKeys.has(unitKey)) {
+          return startIndex;
+        }
+      }
+      return null;
+    };
+
+    const forwardCandidates = orderedCourseUnitStartIndexes.slice(currentUnitPosition + 1);
+    const forwardMatch = findPlayableStart(forwardCandidates);
+    if (forwardMatch !== null) return forwardMatch;
+
+    if (repeatMode === 'all') {
+      const wrapCandidates = orderedCourseUnitStartIndexes.slice(0, currentUnitPosition + 1);
+      return findPlayableStart(wrapCandidates);
+    }
+
+    return null;
+  };
+
+  const continueTrackPlaybackIfNeeded = (): void => {
+    if (!isTrackPlaybackRef.current) return;
+    const targetUnitStart = resolveNextUnitStartForTrackPlayback();
+    if (targetUnitStart === null) {
+      isTrackPlaybackRef.current = false;
+      return;
+    }
+    queueAutoPlayForUnitStart(targetUnitStart);
+  };
+
+  const handlePlaySingleLesson = (lesson: LessonData, lessonIndex: number) => {
+    const speakValue = getPlayableLessonText(lesson);
+    void (async () => {
+      isTrackPlaybackRef.current = false;
+      readSessionRef.current += 1;
+      const sessionId = readSessionRef.current;
+      const playbackToken = bumpPlaybackToken();
+      unitPlaybackStartedAtRef.current = Date.now();
+      setIsReading(false);
+      lastPlayAnchorLessonIndexRef.current = lessonIndex;
+      setActiveSpeakingLessonIndex(lessonIndex);
+      cancelSpeech();
+      await waitForSpeechIdle();
+
+      if (!speakValue || readSessionRef.current !== sessionId || !isPlaybackTokenCurrent(playbackToken)) {
+        return;
+      }
+
+      lastPlayAnchorLessonIndexRef.current = lessonIndex;
+      setActiveSpeakingLessonIndex(lessonIndex);
+      await speakText(speakValue, {
+        learnLanguage,
+        unitId: getLessonUnitId(lesson),
+        audioUrl: lesson.audioPath,
+        voiceProvider,
+        onStart: () => {
+          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
+            lastPlayAnchorLessonIndexRef.current = lessonIndex;
+            setActiveSpeakingLessonIndex(lessonIndex);
+          }
+        },
+        onEnd: () => {
+          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
+            setActiveSpeakingLessonIndex(null);
+          }
+        },
+      });
+
+      if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
+        setActiveSpeakingLessonIndex(null);
+      }
+    })();
   };
 
   const handleReadCurrentBatch = async () => {
     if (mode !== 'learn') return;
 
-    if (isReading) {
-      isContinuousListPlaybackRef.current = false;
-      readSessionRef.current += 1;
-      setIsReading(false);
-      cancelSpeech();
+    if (isReading || activeSpeakingLessonIndex !== null) {
+      await stopActivePlayback();
       return;
     }
 
-    const texts = currentBatchEntries
-      .map(({ lesson }) => {
-        const speakTextValue = getPlayableLessonText(lesson);
-        if (!speakTextValue) return null;
-        return {
-          text: speakTextValue,
-          unitId: getLessonUnitId(lesson),
-          audioUrl: lesson.audioPath,
-        };
-      })
-      .filter((entry): entry is SpeakEntry => entry !== null);
-
-    if (lessonLayoutMode === 'list') {
-      isContinuousListPlaybackRef.current = true;
-      await runContinuousListPlayback();
+    isTrackPlaybackRef.current = true;
+    unitPlaybackStartedAtRef.current = Date.now();
+    const texts = getCurrentUnitSpeakEntries(lastPlayAnchorLessonIndexRef.current);
+    if (texts.length === 0) {
+      continueTrackPlaybackIfNeeded();
       return;
     }
-
-    isContinuousListPlaybackRef.current = false;
-    await playTextsSequentially(texts);
+    const finished = await playTextsSequentially(texts);
+    if (!finished) return;
+    continueTrackPlaybackIfNeeded();
   };
 
-  const handleSelectLessonStep = (step: number) => {
+  useEffect(() => {
+    if (!pendingAutoPlayUnitKey) return;
     if (mode !== 'learn') return;
+    if (sidebarTab !== 'lesson' && sidebarTab !== 'levels') return;
+    if (orderedUnitIndexes.length === 0) return;
+
+    const activeUnitKeyNow = `${currentLevel}:${currentUnit}`;
+    if (activeUnitKeyNow !== pendingAutoPlayUnitKey) return;
+
+    setPendingAutoPlayUnitKey(null);
+    void (async () => {
+      const texts = getCurrentUnitSpeakEntries();
+      if (texts.length === 0) {
+        continueTrackPlaybackIfNeeded();
+        return;
+      }
+      const finished = await playTextsSequentially(texts);
+      if (!finished) return;
+      continueTrackPlaybackIfNeeded();
+    })();
+  }, [
+    playableCourseUnitKeys,
+    currentLevel,
+    currentUnit,
+    mode,
+    orderedUnitIndexes.length,
+    orderedCourseUnitStartIndexes,
+    pendingAutoPlayUnitKey,
+    sidebarTab,
+  ]);
+
+  const handleSelectLessonStep = async (step: number) => {
+    if (mode !== 'learn') return;
+    isTrackPlaybackRef.current = false;
     const safeStep = Math.max(0, Math.min(learnStepCount - 1, step));
-    if (isReading) {
-      isContinuousListPlaybackRef.current = false;
-      readSessionRef.current += 1;
-      setIsReading(false);
-      cancelSpeech();
+    if (isReading || activeSpeakingLessonIndex !== null) {
+      await stopActivePlayback();
     }
-    learnStepRef.current = safeStep;
     setLearnStep(safeStep);
     const nextOffset = safeStep * LESSONS_PER_BATCH;
     setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
@@ -571,6 +734,7 @@ const App: React.FC = () => {
   ) => {
     if (mode !== 'learn') return;
     if (units.length === 0) return;
+    isTrackPlaybackRef.current = false;
 
     const firstUnit = units[0];
     const safeLevel = Math.min(Math.max(firstUnit.level, 1), totalLevels);
@@ -587,46 +751,62 @@ const App: React.FC = () => {
     setLearnStep(0);
     setUnlockedLevel((prev) => Math.max(prev, safeLevel));
 
-    if (isReading) {
-      readSessionRef.current += 1;
-      setIsReading(false);
-      cancelSpeech();
+    if (isReading || activeSpeakingLessonIndex !== null) {
+      await stopActivePlayback();
     }
 
     const unitKeySet = new Set(units.map((item) => `${Math.max(1, item.level)}:${Math.max(1, item.unit)}`));
-    const texts = lessons
-      .filter((lesson) => {
-        const key = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
-        return unitKeySet.has(key) && getPlayableLessonText(lesson).length > 0;
-      })
-      .map((lesson) => {
-        const speakTextValue = getPlayableLessonText(lesson);
-        return {
-          text: speakTextValue,
-          unitId: getLessonUnitId(lesson),
-          audioUrl: lesson.audioPath,
-        };
-      });
+    const texts = lessons.flatMap((lesson, lessonIndex) => {
+      const key = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
+      const speakTextValue = getPlayableLessonText(lesson);
+      if (!unitKeySet.has(key) || !speakTextValue) return [];
+      return [{
+        text: speakTextValue,
+        unitId: getLessonUnitId(lesson),
+        audioUrl: lesson.audioPath,
+        lessonIndex,
+      }];
+    });
 
     if (texts.length === 0) return;
 
     const sessionId = readSessionRef.current + 1;
+    const playbackToken = bumpPlaybackToken();
     readSessionRef.current = sessionId;
+    unitPlaybackStartedAtRef.current = Date.now();
     setIsReading(true);
+    setActiveSpeakingLessonIndex(null);
     cancelSpeech();
+    await waitForSpeechIdle();
 
     for (const entry of texts) {
       if (readSessionRef.current !== sessionId) break;
+      if (isPlaybackTokenCurrent(playbackToken)) {
+        lastPlayAnchorLessonIndexRef.current = entry.lessonIndex;
+        setActiveSpeakingLessonIndex(entry.lessonIndex);
+      }
       await speakText(entry.text, {
         learnLanguage,
         unitId: entry.unitId,
         audioUrl: entry.audioUrl,
         voiceProvider,
+        onStart: () => {
+          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
+            lastPlayAnchorLessonIndexRef.current = entry.lessonIndex;
+            setActiveSpeakingLessonIndex(entry.lessonIndex);
+          }
+        },
+        onEnd: () => {
+          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
+            setActiveSpeakingLessonIndex(null);
+          }
+        },
       });
     }
 
-    if (readSessionRef.current === sessionId) {
+    if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
       setIsReading(false);
+      setActiveSpeakingLessonIndex(null);
     }
   };
 
@@ -683,174 +863,109 @@ const App: React.FC = () => {
     resetQuizState();
   };
 
-  useEffect(() => {
-    proceedUnitCompletionWithoutReviewRef.current = proceedUnitCompletionWithoutReview;
-  }, [proceedUnitCompletionWithoutReview]);
+  const queueAutoPlayForUnitStart = (unitStart: number): void => {
+    const lesson = lessons[unitStart];
+    if (!lesson) return;
 
-  const startCheckpointQuizForStep = (nextStep: number) => {
-    const previousCheckpoint =
-      QUICK_REVIEW_CHECKPOINTS.filter((checkpoint) => checkpoint < nextStep).at(-1) || 0;
-    const startOffset = previousCheckpoint * LESSONS_PER_BATCH;
-    const endOffset = nextStep * LESSONS_PER_BATCH;
-    const reviewSourceIndexes = orderedUnitIndexes.slice(startOffset, endOffset);
-    const reviewSourceLessons = reviewSourceIndexes
-      .map((index) => lessons[index])
-      .filter((lesson): lesson is LessonData => Boolean(lesson));
+    const targetLevel = getLessonOrderIndex(lesson);
+    const targetUnit = getLessonUnitId(lesson);
+    unitPlaybackStartedAtRef.current = null;
+    lastPlayAnchorLessonIndexRef.current = null;
 
-    setQuizSectionStart(sectionStart);
-    setQuizSectionEnd(sectionEnd);
-    if (reviewSourceLessons.length > 0) {
-      startQuizForLevel(reviewSourceLessons, 0, reviewSourceLessons.length - 1);
-    } else {
-      startQuizForLevel(lessons, sectionStart, sectionEnd);
-    }
-    setMode('quiz');
-  };
-
-  const handleNext = () => {
-    if (isNextDisabled || mode !== 'learn') return;
-    isContinuousListPlaybackRef.current = false;
-
-    setIsNextDisabled(true);
-    const nextStep = learnStep + 1;
-    setLearnStep(nextStep);
-
-    const isCheckpointStep = false;
-
-    if (nextStep >= learnStepCount) {
-      setIsLessonUnitBoundaryModalOpen(true);
-      setIsNextDisabled(false);
-      return;
-    }
-
-    const needsCheckpoint = isCheckpointStep;
-    if (needsCheckpoint) {
-      startCheckpointQuizForStep(nextStep);
-    } else {
-      const nextOffset = nextStep * LESSONS_PER_BATCH;
-      setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
-      if (lessonLayoutMode === 'list') {
-        void playTextsSequentially(getBatchTextsForStep(nextStep));
-      }
-    }
-
-    setIsNextDisabled(false);
-  };
-
-  const handlePrevious = () => {
-    if (mode !== 'learn' || isNextDisabled) return;
-
-    if (isReading) {
-      readSessionRef.current += 1;
-      setIsReading(false);
-      cancelSpeech();
-    }
-
-    setIsNextDisabled(true);
-
-    if (learnStep <= 0) {
-      if (repeatMode === 'one') {
-        const lastStep = Math.max(0, learnStepCount - 1);
-        const lastOffset = lastStep * LESSONS_PER_BATCH;
-        setCurrentIndex(orderedUnitIndexes[lastOffset] ?? sectionStart);
-        setLearnStep(lastStep);
-        setIsNextDisabled(false);
-        return;
-      }
-
-      if (sectionStart <= 0) {
-        if (repeatMode !== 'all') {
-          setIsNextDisabled(false);
-          return;
-        }
-        const lastLessonIndex = currentStageRange.end;
-        const lastLesson = lessons[lastLessonIndex];
-        if (!lastLesson) {
-          setIsNextDisabled(false);
-          return;
-        }
-        const lastLevel = getLessonOrderIndex(lastLesson);
-        const lastUnit = getLessonUnitId(lastLesson);
-        const lastUnitIndexes = lessons.reduce<number[]>((acc, lesson, idx) => {
-          if (getLessonOrderIndex(lesson) === lastLevel && getLessonUnitId(lesson) === lastUnit) {
-            acc.push(idx);
-          }
-          return acc;
-        }, []);
-        const lastUnitStepCount = Math.max(1, Math.ceil(lastUnitIndexes.length / LESSONS_PER_BATCH));
-        const lastStep = Math.max(0, lastUnitStepCount - 1);
-        const lastOffset = lastStep * LESSONS_PER_BATCH;
-        setCurrentIndex(lastUnitIndexes[lastOffset] ?? lastUnitIndexes[0] ?? lastLessonIndex);
-        setLearnStep(lastStep);
-        setIsNextDisabled(false);
-        return;
-      }
-
-      let previousUnitAnchor = sectionStart - 1;
-      if (repeatMode === 'all') {
-        const previousStageCode = lessons[previousUnitAnchor]
-          ? resolveStageCode(getLessonOrderIndex(lessons[previousUnitAnchor]), lessons[previousUnitAnchor]?.stage)
-          : currentStageCode;
-        if (previousUnitAnchor < 0 || previousStageCode !== currentStageCode) {
-          previousUnitAnchor = currentStageRange.end;
-        }
-      }
-      const previousUnitLesson = lessons[previousUnitAnchor];
-      if (!previousUnitLesson) {
-        setIsNextDisabled(false);
-        return;
-      }
-
-      const previousLevel = getLessonOrderIndex(previousUnitLesson);
-      const previousUnit = getLessonUnitId(previousUnitLesson);
-      const previousUnitIndexes = lessons.reduce<number[]>((acc, lesson, idx) => {
-        if (getLessonOrderIndex(lesson) === previousLevel && getLessonUnitId(lesson) === previousUnit) {
-          acc.push(idx);
-        }
-        return acc;
-      }, []);
-
-      const previousUnitStepCount = Math.max(1, Math.ceil(previousUnitIndexes.length / LESSONS_PER_BATCH));
-      const lastStep = Math.max(0, previousUnitStepCount - 1);
-      const lastOffset = lastStep * LESSONS_PER_BATCH;
-      setCurrentIndex(previousUnitIndexes[lastOffset] ?? previousUnitIndexes[0] ?? previousUnitAnchor);
-      setLearnStep(lastStep);
-      setIsNextDisabled(false);
-      return;
-    }
-
-    const previousStep = Math.max(0, learnStep - 1);
-    setLearnStep(previousStep);
-    const previousOffset = previousStep * LESSONS_PER_BATCH;
-    setCurrentIndex(orderedUnitIndexes[previousOffset] ?? sectionStart);
-    setIsNextDisabled(false);
-  };
-
-  const navigateToLevelUnit = (level: number, unit: number, albumKey?: string | null) => {
-    const safeLevel = Math.min(Math.max(level, 1), totalLevels);
-    const safeUnit = Math.max(1, unit);
-    const target = lessons.findIndex(
-      (lesson) => getLessonOrderIndex(lesson) === safeLevel && getLessonUnitId(lesson) === safeUnit,
-    );
-    if (target < 0) return;
-    if (isReading) {
-      readSessionRef.current += 1;
-      setIsReading(false);
-      cancelSpeech();
-    }
-    if (albumKey !== undefined) {
-      setRoadmapSelectedAlbumKey(albumKey);
-    }
     setMode('learn');
-    setCurrentIndex(target);
-    setUnlockedLevel((prev) => Math.max(prev, safeLevel));
-    setSidebarTab('lesson');
+    setCurrentIndex(unitStart);
     setLearnStep(0);
+    setUnlockedLevel((prev) => Math.max(prev, targetLevel));
+    setPendingAutoPlayUnitKey(`${targetLevel}:${targetUnit}`);
     setRandomOrderVersion((prev) => prev + 1);
     setUnitXp(0);
     setReviewResult(null);
     resetQuizState();
-    setIsSidebarOpen(false);
+  };
+
+  const handleNext = async () => {
+    if (mode !== 'learn') return;
+    await runWithUnitNavigationLock(async () => {
+      await stopActivePlayback();
+
+      let targetUnitStart: number | null = null;
+      if (repeatMode === 'one') {
+        targetUnitStart = resolveUnitStartFromAnchor(sectionStart);
+      } else {
+        const nextAnchor = sectionEnd + 1;
+        const isBeyondCurrentStage =
+          nextAnchor >= lessons.length
+          || resolveStageCode(getLessonOrderIndex(lessons[nextAnchor]), lessons[nextAnchor]?.stage) !== currentStageCode;
+
+        if (isBeyondCurrentStage) {
+          if (repeatMode === 'all') {
+            targetUnitStart = resolveUnitStartFromAnchor(currentStageRange.start);
+          }
+        } else {
+          targetUnitStart = resolveUnitStartFromAnchor(nextAnchor);
+        }
+      }
+
+      if (targetUnitStart !== null) {
+        queueAutoPlayForUnitStart(targetUnitStart);
+      }
+    });
+  };
+
+  const handlePrevious = async () => {
+    if (mode !== 'learn') return;
+    await runWithUnitNavigationLock(async () => {
+      const shouldJumpToPreviousUnit =
+        repeatMode !== 'one' && shouldPreviousJumpToPreviousUnit();
+
+      await stopActivePlayback();
+
+      let targetUnitStart: number | null = null;
+      if (repeatMode === 'one') {
+        targetUnitStart = resolveCurrentUnitStart();
+      } else {
+        if (shouldJumpToPreviousUnit) {
+          targetUnitStart = resolvePreviousUnitStartWithinStage();
+        }
+        if (targetUnitStart === null) {
+          targetUnitStart = resolveCurrentUnitStart();
+        }
+      }
+
+      if (targetUnitStart !== null) {
+        queueAutoPlayForUnitStart(targetUnitStart);
+      }
+    });
+  };
+
+  const navigateToLevelUnit = async (level: number, unit: number, albumKey?: string | null) => {
+    await runWithUnitNavigationLock(async () => {
+      const safeLevel = Math.min(Math.max(level, 1), totalLevels);
+      const safeUnit = Math.max(1, unit);
+      const target = lessons.findIndex(
+        (lesson) => getLessonOrderIndex(lesson) === safeLevel && getLessonUnitId(lesson) === safeUnit,
+      );
+      if (target < 0) return;
+
+      await stopActivePlayback();
+      unitPlaybackStartedAtRef.current = null;
+      lastPlayAnchorLessonIndexRef.current = null;
+
+      if (albumKey !== undefined) {
+        setRoadmapSelectedAlbumKey(albumKey);
+      }
+      setMode('learn');
+      setCurrentIndex(target);
+      setUnlockedLevel((prev) => Math.max(prev, safeLevel));
+      setSidebarTab('lesson');
+      setLearnStep(0);
+      setPendingAutoPlayUnitKey(`${safeLevel}:${safeUnit}`);
+      setRandomOrderVersion((prev) => prev + 1);
+      setUnitXp(0);
+      setReviewResult(null);
+      resetQuizState();
+      setIsSidebarOpen(false);
+    });
   };
 
   const goToLevelUnit = (level: number, unit: number, albumKey?: string | null) => {
@@ -876,7 +991,7 @@ const App: React.FC = () => {
       return;
     }
 
-    navigateToLevelUnit(level, unit, albumKey);
+    void navigateToLevelUnit(level, unit, albumKey);
   };
 
   const handleLeaveQuizCancel = () => {
@@ -886,7 +1001,7 @@ const App: React.FC = () => {
 
   const handleLeaveQuizConfirm = () => {
     if (pendingUnitTarget) {
-      navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
+      void navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
     }
     setIsLeaveQuizModalOpen(false);
     setPendingUnitTarget(null);
@@ -901,7 +1016,7 @@ const App: React.FC = () => {
 
   const handleLeaveCompletedUnitConfirm = () => {
     if (pendingUnitTarget) {
-      navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
+      void navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
     }
     setIsLeaveCompletedUnitModalOpen(false);
     setPendingUnitTarget(null);
@@ -1005,20 +1120,23 @@ const App: React.FC = () => {
     continueFromPassedResult();
   };
 
-  const handleLessonUnitBoundaryStay = () => {
-    setIsLessonUnitBoundaryModalOpen(false);
-    setIsNextDisabled(false);
-  };
-
-  const handleLessonUnitBoundaryContinue = () => {
-    setIsLessonUnitBoundaryModalOpen(false);
-    setIsNextDisabled(false);
-    proceedUnitCompletionWithoutReview();
-  };
-
   const handleToggleShuffle = () => {
+    const wasPlaying = isReading || activeSpeakingLessonIndex !== null;
+    if (wasPlaying) {
+      readSessionRef.current += 1;
+      bumpPlaybackToken();
+      setIsReading(false);
+      setActiveSpeakingLessonIndex(null);
+      cancelSpeech();
+    }
+
     setIsRandomLessonOrderEnabled((prev) => !prev);
     setRandomOrderVersion((prev) => prev + 1);
+
+    if (wasPlaying && mode === 'learn') {
+      setLearnStep(0);
+      setPendingAutoPlayUnitKey(`${currentLevel}:${currentUnit}`);
+    }
   };
 
   const handleToggleRepeat = () => {
@@ -1096,16 +1214,6 @@ const App: React.FC = () => {
         onCancel={handleUnitCompleteStay}
         onConfirm={handleUnitCompleteContinue}
       />
-      <LeaveQuizModal
-        isOpen={isLessonUnitBoundaryModalOpen}
-        title={lessonUnitBoundaryModalTitle}
-        message={lessonUnitBoundaryModalMessage}
-        cancelLabel={lessonUnitBoundaryModalCancelLabel}
-        confirmLabel={lessonUnitBoundaryModalConfirmLabel}
-        onCancel={handleLessonUnitBoundaryStay}
-        onConfirm={handleLessonUnitBoundaryContinue}
-      />
-
       {isSidebarOpen && (
         <button
           className="fixed inset-0 bg-black/30 z-30 md:hidden"
@@ -1164,21 +1272,21 @@ const App: React.FC = () => {
               learnLanguage={learnLanguage}
               isPronunciationEnabled={isPronunciationEnabled}
               isBoldTextEnabled={isBoldTextEnabled}
+              isAutoScrollEnabled={isAutoScrollEnabled}
               textScalePercent={textScalePercent}
               canDecreaseTextSize={textScalePercent > 90}
               canIncreaseTextSize={textScalePercent < 120}
               translationLabel={translationLabel}
               appTheme={appTheme}
-              lessonLayoutDefault={lessonLayoutDefault}
               voiceProvider={voiceProvider}
               onDefaultLanguageChange={setDefaultLanguage}
               onLearnLanguageChange={setLearnLanguage}
               onTogglePronunciation={() => setIsPronunciationEnabled((prev) => !prev)}
               onToggleBoldText={() => setIsBoldTextEnabled((prev) => !prev)}
+              onToggleAutoScroll={() => setIsAutoScrollEnabled((prev) => !prev)}
               onDecreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev - 5))}
               onIncreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev + 5))}
               onAppThemeChange={setAppTheme}
-              onLessonLayoutDefaultChange={setLessonLayoutDefault}
               onVoiceProviderChange={setVoiceProvider}
             />
           ) : mode === 'quiz' ? (
@@ -1224,26 +1332,27 @@ const App: React.FC = () => {
               defaultLanguage={defaultLanguage}
               isPronunciationEnabled={isPronunciationEnabled}
               isBoldTextEnabled={isBoldTextEnabled}
+              isAutoScrollEnabled={isAutoScrollEnabled}
+              textScalePercent={textScalePercent}
               learnLanguage={learnLanguage}
-              voiceProvider={voiceProvider}
-              defaultLayoutMode={lessonLayoutDefault}
-              onLayoutModeChange={setLessonLayoutMode}
+              activeSpeakingLessonIndex={activeSpeakingLessonIndex}
+              onPlayLesson={handlePlaySingleLesson}
               savedHighlightPhrasesByLessonKey={highlightPhrasesByLessonKey}
               onSaveLessonHighlight={saveHighlightSelection}
+              onClearLessonHighlight={clearHighlightSelection}
             />
           )}
         </main>
 
-        {isLessonView && (
+        {(isLessonView || isLevelsView) && (
           <LessonActionFooter
             mode={mode}
-            isNextDisabled={isNextDisabled}
+            isNextDisabled={isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end)}
             isPreviousDisabled={
               mode !== 'learn'
               || isNextDisabled
-              || (learnStep <= 0 && sectionStart <= 0 && repeatMode !== 'all' && repeatMode !== 'one')
             }
-            isReadDisabled={mode !== 'learn' || currentBatchEntries.length === 0}
+            isReadDisabled={mode !== 'learn' || orderedUnitIndexes.length === 0}
             isReading={isReading}
             isShuffleEnabled={isRandomLessonOrderEnabled}
             repeatMode={repeatMode}

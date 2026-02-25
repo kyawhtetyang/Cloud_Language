@@ -1,41 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cancelSpeech, speakText } from './AudioButton';
 
-type MockAudioPlan = {
-  delayMs: number;
-  fireEnd: boolean;
-};
-
-class MockAudio {
-  static instances: MockAudio[] = [];
-  static nextPlan: MockAudioPlan = { delayMs: 0, fireEnd: true };
-
-  src: string;
-  currentTime = 0;
-  onplaying: (() => void) | null = null;
-  onended: (() => void) | null = null;
-  onerror: (() => void) | null = null;
-  pause = vi.fn();
-  load = vi.fn();
-  private plan: MockAudioPlan;
-
-  constructor(url: string) {
-    this.src = url;
-    this.plan = MockAudio.nextPlan;
-    MockAudio.instances.push(this);
-  }
-
-  play = vi.fn(() => {
-    window.setTimeout(() => {
-      this.onplaying?.();
-      if (this.plan.fireEnd) {
-        this.onended?.();
-      }
-    }, this.plan.delayMs);
-    return Promise.resolve();
-  });
-}
-
 class MockUtterance {
   text: string;
   lang = '';
@@ -59,9 +24,6 @@ describe('AudioButton audio behavior', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    MockAudio.instances = [];
-    MockAudio.nextPlan = { delayMs: 0, fireEnd: true };
-    vi.stubGlobal('Audio', MockAudio as unknown as typeof Audio);
     vi.stubGlobal('SpeechSynthesisUtterance', MockUtterance as unknown as typeof SpeechSynthesisUtterance);
     vi.stubGlobal('speechSynthesis', speechSynthesisMock);
     speechSynthesisMock.cancel.mockClear();
@@ -100,22 +62,12 @@ describe('AudioButton audio behavior', () => {
     expect(utteranceArg.voice).toBe(zhVoice);
   });
 
-  it('stops timed-out clip playback and falls back to speech synthesis', async () => {
-    MockAudio.nextPlan = { delayMs: 600, fireEnd: true };
-
-    const playPromise = speakText('Needs fallback', { audioUrl: '/clip.mp3' });
-    await vi.advanceTimersByTimeAsync(460);
-
-    const createdAudio = MockAudio.instances[0];
-    expect(createdAudio).toBeDefined();
-    expect(createdAudio.pause).toHaveBeenCalled();
-    expect(createdAudio.load).toHaveBeenCalled();
-    expect(createdAudio.src).toBe('');
-    expect(speechSynthesisMock.speak).toHaveBeenCalledTimes(1);
-
+  it('keeps using speech synthesis when audioUrl is provided', async () => {
+    const playPromise = speakText('Speech only', { audioUrl: '/clip.mp3' });
     await vi.runAllTimersAsync();
     await playPromise;
+
+    expect(speechSynthesisMock.speak).toHaveBeenCalledTimes(1);
   });
 });
-
 

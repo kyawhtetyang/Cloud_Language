@@ -18,10 +18,11 @@ describe('settingsSync', () => {
       isPronunciationEnabled: false,
       textScalePercent: 100,
       isBoldTextEnabled: false,
+      isAutoScrollEnabled: true,
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
       appTheme: 'apple_notes',
-      lessonLayoutDefault: 'list',
+      voiceProvider: 'default',
     });
   });
 
@@ -32,10 +33,11 @@ describe('settingsSync', () => {
       isPronunciationEnabled: true,
       textScalePercent: 115,
       isBoldTextEnabled: true,
+      isAutoScrollEnabled: false,
       isRandomLessonOrderEnabled: true,
       isReviewQuestionsRemoved: true,
       appTheme: 'duolingo' as const,
-      lessonLayoutDefault: 'paged' as const,
+      voiceProvider: 'apple_siri' as const,
     };
 
     persistSyncedSettingsToStorage(settings);
@@ -50,10 +52,11 @@ describe('settingsSync', () => {
       isPronunciationEnabled: false,
       textScalePercent: 100,
       isBoldTextEnabled: false,
+      isAutoScrollEnabled: true,
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
       appTheme: 'apple_notes' as const,
-      lessonLayoutDefault: 'list' as const,
+      voiceProvider: 'default' as const,
     };
     const profileSettings = {
       learnLanguage: 'chinese' as const,
@@ -61,10 +64,11 @@ describe('settingsSync', () => {
       isPronunciationEnabled: true,
       textScalePercent: 115,
       isBoldTextEnabled: true,
+      isAutoScrollEnabled: false,
       isRandomLessonOrderEnabled: true,
       isReviewQuestionsRemoved: true,
       appTheme: 'duolingo' as const,
-      lessonLayoutDefault: 'paged' as const,
+      voiceProvider: 'apple_siri' as const,
     };
 
     persistSyncedSettingsToStorage(legacyGlobal);
@@ -82,10 +86,11 @@ describe('settingsSync', () => {
       setIsPronunciationEnabled: vi.fn(),
       setTextScalePercent: vi.fn(),
       setIsBoldTextEnabled: vi.fn(),
+      setIsAutoScrollEnabled: vi.fn(),
       setIsRandomLessonOrderEnabled: vi.fn(),
       setIsReviewQuestionsRemoved: vi.fn(),
       setAppTheme: vi.fn(),
-      setLessonLayoutDefault: vi.fn(),
+      setVoiceProvider: vi.fn(),
     };
 
     applyRemoteSyncedSettings(
@@ -95,10 +100,11 @@ describe('settingsSync', () => {
         isPronunciationEnabled: true,
         textScalePercent: 999,
         isBoldTextEnabled: true,
+        isAutoScrollEnabled: false,
         isRandomLessonOrderEnabled: true,
         isReviewQuestionsRemoved: true,
         appTheme: 'duolingo',
-        lessonLayoutDefault: 'paged',
+        voiceProvider: 'google',
       },
       setters,
     );
@@ -108,11 +114,11 @@ describe('settingsSync', () => {
     expect(setters.setIsPronunciationEnabled).toHaveBeenCalledWith(true);
     expect(setters.setTextScalePercent).toHaveBeenCalledWith(120);
     expect(setters.setIsBoldTextEnabled).toHaveBeenCalledWith(true);
+    expect(setters.setIsAutoScrollEnabled).toHaveBeenCalledWith(false);
     expect(setters.setIsRandomLessonOrderEnabled).toHaveBeenCalledWith(true);
     expect(setters.setIsReviewQuestionsRemoved).toHaveBeenCalledWith(true);
     expect(setters.setAppTheme).toHaveBeenCalledWith('duolingo');
-    expect(setters.setLessonLayoutDefault).toHaveBeenCalledWith('paged');
+    expect(setters.setVoiceProvider).toHaveBeenCalledWith('apple_siri');
   });
 });
-
 

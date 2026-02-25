@@ -358,6 +358,32 @@
     .top-toolbar-control {
       height: var(--top-toolbar-height);
     }
+    .lesson-row-pronunciation {
+      font-size: calc(0.875rem * var(--lesson-text-scale, 1));
+      line-height: calc(1.25rem * var(--lesson-text-scale, 1));
+    }
+    .lesson-row-source {
+      font-size: calc(1rem * var(--lesson-text-scale, 1));
+      line-height: calc(1.5rem * var(--lesson-text-scale, 1));
+    }
+    .lesson-row-translation {
+      font-size: calc(0.875rem * var(--lesson-text-scale, 1));
+      line-height: calc(1.25rem * var(--lesson-text-scale, 1));
+    }
+    @media (min-width: 768px) {
+      .lesson-row-pronunciation {
+        font-size: calc(1rem * var(--lesson-text-scale, 1));
+        line-height: calc(1.5rem * var(--lesson-text-scale, 1));
+      }
+      .lesson-row-source {
+        font-size: calc(1.125rem * var(--lesson-text-scale, 1));
+        line-height: calc(1.75rem * var(--lesson-text-scale, 1));
+      }
+      .lesson-row-translation {
+        font-size: calc(1rem * var(--lesson-text-scale, 1));
+        line-height: calc(1.5rem * var(--lesson-text-scale, 1));
+      }
+    }
     .top-toolbar-icon {
       width: var(--top-toolbar-height);
       height: var(--top-toolbar-height);

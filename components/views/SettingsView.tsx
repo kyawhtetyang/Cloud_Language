@@ -6,37 +6,44 @@ import {
   DefaultLanguage,
   LEARN_LANGUAGE_OPTIONS,
   LearnLanguage,
-  LESSON_LAYOUT_OPTIONS,
-  LessonLayoutMode,
   VOICE_PROVIDER_OPTIONS,
   VoiceProvider,
 } from '../../config/appConfig';
+import {
+  VIEW_BODY_TEXT_CLASS,
+  VIEW_DIVIDER_CLASS,
+  VIEW_PAGE_CLASS,
+  VIEW_PANEL_CLASS,
+  VIEW_PANEL_PAD_CLASS,
+  VIEW_SECTION_LABEL_CLASS,
+  VIEW_SECTION_TITLE_CLASS,
+} from './viewShared';
 
 type SettingsViewProps = {
   defaultLanguage: DefaultLanguage;
   learnLanguage: LearnLanguage;
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
+  isAutoScrollEnabled: boolean;
   textScalePercent: number;
   canDecreaseTextSize: boolean;
   canIncreaseTextSize: boolean;
   translationLabel: string;
   appTheme: AppTheme;
-  lessonLayoutDefault: LessonLayoutMode;
   voiceProvider: VoiceProvider;
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
   onLearnLanguageChange: (value: LearnLanguage) => void;
   onTogglePronunciation: () => void;
   onToggleBoldText: () => void;
+  onToggleAutoScroll: () => void;
   onDecreaseTextSize: () => void;
   onIncreaseTextSize: () => void;
   onAppThemeChange: (value: AppTheme) => void;
-  onLessonLayoutDefaultChange: (value: LessonLayoutMode) => void;
   onVoiceProviderChange: (value: VoiceProvider) => void;
 };
 
-const sectionTitleClass = 'text-sm font-extrabold uppercase tracking-wide text-brand-ink';
-const sectionCardClass = 'rounded-xl px-1 py-1';
+const sectionTitleClass = VIEW_SECTION_TITLE_CLASS;
+const sectionCardClass = 'rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-3';
 const optionButtonBaseClass = 'w-full min-h-10 px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide text-center leading-tight transition-all';
 
 type ToggleCardProps = {
@@ -51,7 +58,7 @@ const ToggleCard: React.FC<ToggleCardProps> = ({ title, description, isOn, onTog
     <div className="flex items-start justify-between gap-4">
       <div>
         <p className={sectionTitleClass}>{title}</p>
-        <p className="text-sm text-gray-600 mt-1">{description}</p>
+        <p className={`${VIEW_BODY_TEXT_CLASS} mt-1`}>{description}</p>
       </div>
       <button
         type="button"
@@ -73,31 +80,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   learnLanguage,
   isPronunciationEnabled,
   isBoldTextEnabled,
+  isAutoScrollEnabled,
   textScalePercent,
   canDecreaseTextSize,
   canIncreaseTextSize,
   translationLabel,
   appTheme,
-  lessonLayoutDefault,
   voiceProvider,
   onDefaultLanguageChange,
   onLearnLanguageChange,
   onTogglePronunciation,
   onToggleBoldText,
+  onToggleAutoScroll,
   onDecreaseTextSize,
   onIncreaseTextSize,
   onAppThemeChange,
-  onLessonLayoutDefaultChange,
   onVoiceProviderChange,
 }) => {
   return (
-    <div className="w-full max-w-3xl rounded-[24px] border-2 border-gray-100 bg-white p-4 shadow-xl md:p-5">
+    <div className={`${VIEW_PAGE_CLASS} ${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS}`}>
       <section className="mb-4">
-        <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] text-gray-500 mb-2">Language</h3>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Language</h3>
         <div className="space-y-3">
           <div className={sectionCardClass}>
             <p className={sectionTitleClass}>Default Language</p>
-            <p className="text-sm text-gray-600 mt-1 mb-3">Choose the app interface language.</p>
+            <p className={`${VIEW_BODY_TEXT_CLASS} mt-1 mb-3`}>Choose the app interface language.</p>
             <div className="grid grid-cols-2 gap-2">
               {DEFAULT_LANGUAGE_OPTIONS.map((option) => (
                 <button
@@ -117,7 +124,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
           <div className={sectionCardClass}>
             <p className={sectionTitleClass}>Learn Language</p>
-            <p className="text-sm text-gray-600 mt-1 mb-3">Choose your target learning language.</p>
+            <p className={`${VIEW_BODY_TEXT_CLASS} mt-1 mb-3`}>Choose your target learning language.</p>
             <div className="grid grid-cols-2 gap-2">
               {LEARN_LANGUAGE_OPTIONS.map((option) => (
                 <button
@@ -138,11 +145,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      <section className="mb-4 border-t border-gray-100 pt-4">
-        <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] text-gray-500 mb-2">Theme</h3>
+      <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Theme</h3>
         <div className={sectionCardClass}>
           <p className={sectionTitleClass}>Current Theme</p>
-          <p className="text-sm text-gray-600 mt-1 mb-3">Choose visual style for the app.</p>
+          <p className={`${VIEW_BODY_TEXT_CLASS} mt-1 mb-3`}>Choose visual style for the app.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {APP_THEME_OPTIONS.map((option) => (
               <button
@@ -162,8 +169,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      <section className="mb-4 border-t border-gray-100 pt-4">
-        <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] text-gray-500 mb-2">Display</h3>
+      <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Display</h3>
         <div className="space-y-3">
           <ToggleCard
             title="Bold Text"
@@ -171,31 +178,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             isOn={isBoldTextEnabled}
             onToggle={onToggleBoldText}
           />
-          <div className={sectionCardClass}>
-            <p className={sectionTitleClass}>Lesson Layout Default</p>
-            <p className="text-sm text-gray-600 mt-1 mb-3">Choose default view for lesson screen.</p>
-            <div className="grid grid-cols-2 gap-2">
-              {LESSON_LAYOUT_OPTIONS.map((option) => (
-                <button
-                  key={option.code}
-                  type="button"
-                  onClick={() => onLessonLayoutDefaultChange(option.code)}
-                  className={`${optionButtonBaseClass} ${
-                    lessonLayoutDefault === option.code
-                      ? 'btn-selected'
-                      : 'btn-unselected'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <ToggleCard
+            title="Auto Scroll"
+            description="Keep speaking sentence near the center while audio plays."
+            isOn={isAutoScrollEnabled}
+            onToggle={onToggleAutoScroll}
+          />
           <div className={sectionCardClass}>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className={sectionTitleClass}>Text Size</p>
-                <p className="text-sm text-gray-600 mt-1">Global text scale for the whole app.</p>
+                <p className={`${VIEW_BODY_TEXT_CLASS} mt-1`}>Global text scale for the whole app.</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -233,8 +226,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      <section className="mb-4 border-t border-gray-100 pt-4">
-        <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] text-gray-500 mb-2">Audio</h3>
+      <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Audio</h3>
         <div className="space-y-3">
           <ToggleCard
             title="Pronunciation"
@@ -244,7 +237,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           />
           <div className={sectionCardClass}>
             <p className={sectionTitleClass}>Voice Provider</p>
-            <p className="text-sm text-gray-600 mt-1 mb-3">Choose Default voice or prefer Apple Siri-style female voice when available.</p>
+            <p className={`${VIEW_BODY_TEXT_CLASS} mt-1 mb-3`}>Choose Default voice or prefer Apple Siri-style female voice when available.</p>
             <div className="grid grid-cols-2 gap-2">
               {VOICE_PROVIDER_OPTIONS.map((option) => (
                 <button
@@ -265,12 +258,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      <section className="border-t border-gray-100 pt-4">
+      <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
         <div className={sectionCardClass}>
           <p className={sectionTitleClass}>Current Mapping</p>
           <div className="mt-3 space-y-1.5 text-xs">
-            <p className="text-gray-600 font-bold">
-              <span className="text-brand-ink uppercase tracking-wide">Translation:</span> {translationLabel}
+            <p className="font-semibold text-[var(--text-secondary)]">
+              <span className="uppercase tracking-wide text-[var(--text-primary)]">Translation:</span> {translationLabel}
             </p>
           </div>
         </div>
@@ -278,4 +271,3 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     </div>
   );
 };
-
