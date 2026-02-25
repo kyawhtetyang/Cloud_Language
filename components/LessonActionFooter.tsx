@@ -9,6 +9,7 @@ type LessonActionFooterProps = {
   isReading: boolean;
   isShuffleEnabled: boolean;
   repeatMode: 'off' | 'all' | 'one';
+  isVisible?: boolean;
   onToggleShuffle: () => void;
   onToggleRepeat: () => void;
   onPrevious: () => void;
@@ -71,6 +72,7 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
   isReading,
   isShuffleEnabled,
   repeatMode,
+  isVisible = true,
   onToggleShuffle,
   onToggleRepeat,
   onPrevious,
@@ -78,7 +80,13 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
   onNext,
 }) => {
   return (
-    <footer className="fixed left-0 right-0 z-30 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-4 md:left-1/2 md:right-auto md:w-full md:max-w-[720px] md:-translate-x-1/2 md:px-6 md:pb-0">
+    <footer
+      className={`fixed left-0 right-0 z-30 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] bottom-[calc(76px+env(safe-area-inset-bottom))] transition-all duration-200 ease-out md:bottom-4 md:left-1/2 md:right-auto md:w-full md:max-w-[720px] md:-translate-x-1/2 md:px-6 md:pb-0 ${
+        isVisible
+          ? 'translate-y-0 opacity-100'
+          : 'pointer-events-none translate-y-[160%] opacity-0 md:pointer-events-auto md:translate-y-0 md:opacity-100'
+      }`}
+    >
       <div className="mx-auto flex max-w-md flex-col gap-2.5 md:gap-3">
         {mode === 'learn' && (
           <div className="mx-auto flex w-full max-w-[340px] items-center justify-between gap-1.5 rounded-[22px] bg-white/96 px-2 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.16)] backdrop-blur-md">
@@ -177,6 +185,5 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
     </footer>
   );
 };
-
 
 

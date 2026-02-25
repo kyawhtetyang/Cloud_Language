@@ -1,5 +1,6 @@
 import React from 'react';
 import { SidebarTab } from '../../config/appConfig';
+import { NAV_TAB_META } from '../nav/navConfig';
 
 type AppSidebarProps = {
   isSidebarOpen: boolean;
@@ -22,6 +23,26 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         ? 'btn-selected'
         : 'btn-unselected'
     }`;
+
+  const renderNavButton = (tab: SidebarTab) => {
+    const { label, Icon } = NAV_TAB_META[tab];
+    const isActive = sidebarTab === tab;
+    return (
+      <button
+        onClick={() => onSelectTab(tab)}
+        className={navClass(isActive)}
+      >
+        <span className="flex items-center gap-2">
+          <Icon isActive={isActive} className="h-4 w-4 shrink-0" />
+          <span>{label}</span>
+        </span>
+      </button>
+    );
+  };
+
+  const profileMeta = NAV_TAB_META.profile;
+  const isProfileActive = sidebarTab === 'profile';
+  const ProfileIcon = profileMeta.Icon;
 
   return (
     <aside
@@ -48,42 +69,27 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         </div>
 
         <div className="mb-4 flex flex-col gap-2">
-          <button
-            onClick={() => onSelectTab('levels')}
-            className={navClass(sidebarTab === 'levels')}
-          >
-            Library
-          </button>
-          <button
-            onClick={() => onSelectTab('lesson')}
-            className={navClass(sidebarTab === 'lesson')}
-          >
-            Lesson
-          </button>
-          <button
-            onClick={() => onSelectTab('settings')}
-            className={navClass(sidebarTab === 'settings')}
-          >
-            Settings
-          </button>
+          {renderNavButton('levels')}
+          {renderNavButton('lesson')}
+          {renderNavButton('settings')}
         </div>
 
         <div className="mt-auto">
           <button
             onClick={() => onSelectTab('profile')}
             className={`w-full px-3 py-3 rounded-xl text-sm font-extrabold uppercase tracking-wide border-2 transition-all ${
-              sidebarTab === 'profile'
+              isProfileActive
                 ? 'btn-selected'
                 : 'btn-unselected'
             }`}
           >
-            Profile
+            <span className="flex items-center gap-2">
+              <ProfileIcon isActive={isProfileActive} className="h-4 w-4 shrink-0" />
+              <span>{profileMeta.label}</span>
+            </span>
           </button>
         </div>
       </div>
     </aside>
   );
 };
-
-
-

@@ -3,7 +3,7 @@ import { LearnLanguage } from '../config/appConfig';
 import { LessonData } from '../types';
 import { readDownloadedLessonsByLanguage } from '../offline/offlineStore';
 
-const LESSON_FETCH_TIMEOUT_MS = 12000;
+const LESSON_FETCH_TIMEOUT_MS = 25000;
 
 async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
   const controller = new AbortController();
@@ -34,7 +34,7 @@ export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage):
         setLoading(true);
         setErrorMessage(null);
         const response = await fetchWithTimeout(
-          `${apiBaseUrl}/api/lessons?language=${learnLanguage}`,
+          `${apiBaseUrl}/api/lessons?language=${encodeURIComponent(learnLanguage)}`,
           LESSON_FETCH_TIMEOUT_MS,
         );
         if (!response.ok) throw new Error(`API responded with ${response.status}`);
@@ -44,14 +44,18 @@ export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage):
 
         let englishData: LessonData[] = data;
         if (learnLanguage !== 'english') {
-          const englishResponse = await fetchWithTimeout(
-            `${apiBaseUrl}/api/lessons?language=english`,
-            LESSON_FETCH_TIMEOUT_MS,
-          );
-          if (!englishResponse.ok) throw new Error(`API responded with ${englishResponse.status}`);
-          englishData = (await englishResponse.json()) as LessonData[];
-          if (!Array.isArray(englishData) || englishData.length === 0) {
-            throw new Error('No english lessons returned from API');
+          try {
+            const englishResponse = await fetchWithTimeout(
+              `${apiBaseUrl}/api/lessons?language=english`,
+              LESSON_FETCH_TIMEOUT_MS,
+            );
+            if (!englishResponse.ok) throw new Error(`API responded with ${englishResponse.status}`);
+            const englishLessons = (await englishResponse.json()) as LessonData[];
+            if (Array.isArray(englishLessons) && englishLessons.length > 0) {
+              englishData = englishLessons;
+            }
+          } catch (englishFetchError) {
+            console.warn('Failed to load english reference lessons. Using selected language lessons as fallback.', englishFetchError);
           }
         }
 
@@ -84,5 +88,4 @@ export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage):
 
   return { lessons, englishReferenceLessons, loading, errorMessage };
 }
-
 

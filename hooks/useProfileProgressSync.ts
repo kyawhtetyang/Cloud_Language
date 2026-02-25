@@ -115,7 +115,7 @@ export function useProfileProgressSync({
   }, [apiBaseUrl]);
 
   useEffect(() => {
-    if (lessons.length === 0 || !profileName) return;
+    if (lessons.length === 0 || !profileName || hasHydratedProfile) return;
     let cancelled = false;
 
     const hydrateProfileProgress = async () => {
@@ -195,6 +195,7 @@ export function useProfileProgressSync({
     };
   }, [
     apiBaseUrl,
+    hasHydratedProfile,
     lessons,
     profileName,
     progressStorageKey,
@@ -327,4 +328,3 @@ export function useProfileProgressSync({
 
   return { markHydrationStale };
 }
-

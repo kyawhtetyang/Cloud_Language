@@ -1,5 +1,16 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const audioButtonMocks = vi.hoisted(() => ({
+  speakTextMock: vi.fn(() => Promise.resolve()),
+  cancelSpeechMock: vi.fn(),
+}));
+
+vi.mock('./components/AudioButton', () => ({
+  speakText: audioButtonMocks.speakTextMock,
+  cancelSpeech: audioButtonMocks.cancelSpeechMock,
+}));
+
 import App from './App';
 
 function createLessons() {
@@ -75,6 +86,29 @@ function createTwoStageLessons() {
   ];
 }
 
+function createTwoUnitHskLessons() {
+  return [
+    ...Array.from({ length: 10 }, (_, index) => ({
+      level: 1,
+      unit: 1,
+      topic: 'HSK Unit 1',
+      english: `句子 ${index + 1}`,
+      burmese: `Translation ${index + 1}`,
+      pronunciation: `Pinyin ${index + 1}`,
+      audioPath: `/api/hsk-audio-sentence/hsk1/1.1/${index + 1}`,
+    })),
+    ...Array.from({ length: 10 }, (_, index) => ({
+      level: 1,
+      unit: 2,
+      topic: 'HSK Unit 2',
+      english: `句子 ${index + 11}`,
+      burmese: `Translation ${index + 11}`,
+      pronunciation: `Pinyin ${index + 11}`,
+      audioPath: `/api/hsk-audio-sentence/hsk1/1.2/${index + 1}`,
+    })),
+  ];
+}
+
 function mockJsonResponse(body: unknown, status = 200): Response {
   return {
     ok: status >= 200 && status < 300,
@@ -91,6 +125,8 @@ describe('App quick review navigation guard', () => {
     localStorage.clear();
     localStorage.setItem('lingo_burmese_profile_name', 'tester');
     localStorage.setItem('lingo_burmese_default_language', 'english');
+    audioButtonMocks.speakTextMock.mockClear();
+    audioButtonMocks.cancelSpeechMock.mockClear();
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
@@ -287,7 +323,55 @@ describe('App quick review navigation guard', () => {
     expect((await screen.findAllByText('English 40')).length).toBeGreaterThan(0);
   });
 
-});
+  it('keeps HSK autoplay selection/audio aligned when crossing to next unit', async () => {
+    const twoUnitHskLessons = createTwoUnitHskLessons();
+    localStorage.setItem('lingo_burmese_learn_language', 'hsk_chinese');
+    audioButtonMocks.speakTextMock.mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/lessons')) {
+        return Promise.resolve(mockJsonResponse(twoUnitHskLessons));
+      }
+      if (url.includes('/api/progress?profileName=')) {
+        return Promise.resolve(mockJsonResponse({ message: 'not found' }, 404));
+      }
+      if (url.includes('/api/progress') && init?.method === 'PUT') {
+        return Promise.resolve(mockJsonResponse({ ok: true }));
+      }
+      return Promise.resolve(mockJsonResponse({}));
+    });
 
+    render(<App />);
+    await screen.findByRole('button', { name: 'Read' });
+    fireEvent.click(screen.getByRole('button', { name: 'Read' }));
+
+    await waitFor(() => {
+      expect(audioButtonMocks.speakTextMock.mock.calls.length).toBeGreaterThanOrEqual(20);
+    }, { timeout: 5000 });
+
+    const firstTwenty = audioButtonMocks.speakTextMock.mock.calls.slice(0, 20);
+    for (let i = 0; i < 20; i += 1) {
+      const text = firstTwenty[i]?.[0];
+      const context = firstTwenty[i]?.[1] as { audioUrl?: string } | undefined;
+      const expectedText = `句子 ${i + 1}`;
+      const expectedAudio =
+        i < 10
+          ? `/api/hsk-audio-sentence/hsk1/1.1/${i + 1}`
+          : `/api/hsk-audio-sentence/hsk1/1.2/${i - 9}`;
+      expect(text).toBe(expectedText);
+      expect(context?.audioUrl).toBe(expectedAudio);
+    }
+
+    expect(firstTwenty[9]?.[0]).toBe('句子 10');
+    expect(firstTwenty[10]?.[0]).toBe('句子 11');
+    expect((firstTwenty[9]?.[1] as { audioUrl?: string } | undefined)?.audioUrl)
+      .toBe('/api/hsk-audio-sentence/hsk1/1.1/10');
+    expect((firstTwenty[10]?.[1] as { audioUrl?: string } | undefined)?.audioUrl)
+      .toBe('/api/hsk-audio-sentence/hsk1/1.2/1');
+  });
+
+});
 
 

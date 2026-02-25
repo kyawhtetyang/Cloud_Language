@@ -11,6 +11,7 @@ import { useLessonUnitState } from './hooks/useLessonUnitState';
 import { useLessonBatchGroups } from './hooks/useLessonBatchGroups';
 import { useOfflineLessonPacks } from './hooks/useOfflineLessonPacks';
 import { useAppTheme } from './hooks/useAppTheme';
+import { useLessonHighlights } from './hooks/useLessonHighlights';
 import { buildLessonReferenceKey } from './utils/lessonReference';
 import { ProfileView } from './components/views/ProfileView';
 import { SettingsView } from './components/views/SettingsView';
@@ -125,6 +126,7 @@ const App: React.FC = () => {
   const [isLessonUnitBoundaryModalOpen, setIsLessonUnitBoundaryModalOpen] = useState(false);
   const [isReading, setIsReading] = useState(false);
   const [lessonLayoutMode, setLessonLayoutMode] = useState<'paged' | 'list'>(lessonLayoutDefault);
+  const [isMobileBottomBarsVisible, setIsMobileBottomBarsVisible] = useState(true);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   const [pendingUnitTarget, setPendingUnitTarget] = useState<PendingUnitTarget | null>(null);
   const [roadmapSelectedAlbumKey, setRoadmapSelectedAlbumKey] = useState<string | null>(null);
@@ -136,6 +138,8 @@ const App: React.FC = () => {
   const orderedUnitIndexesRef = useRef<number[]>([]);
   const sectionStartRef = useRef(0);
   const repeatModeRef = useRef<RepeatMode>('off');
+  const lastScrollYRef = useRef(0);
+  const scrollTickingRef = useRef(false);
   const [randomOrderVersion, setRandomOrderVersion] = useState(0);
   const {
     answerChecked,
@@ -174,6 +178,10 @@ const App: React.FC = () => {
     return map;
   }, [englishReferenceLessons]);
   const profileStorageId = profileName ? toProfileStorageId(profileName) : '';
+  const { highlightPhrasesByLessonKey, saveHighlightSelection } = useLessonHighlights(
+    profileStorageId,
+    learnLanguage,
+  );
   const progressStorageKey = profileStorageId ? `${PROGRESS_KEY}:${profileStorageId}` : PROGRESS_KEY;
   const unlockedStorageKey = profileStorageId ? `${UNLOCKED_LEVEL_KEY}:${profileStorageId}` : UNLOCKED_LEVEL_KEY;
   const streakStorageKey = profileStorageId ? `${STREAK_KEY}:${profileStorageId}` : STREAK_KEY;
@@ -345,6 +353,53 @@ const App: React.FC = () => {
     repeatModeRef.current = repeatMode;
   }, [mode, learnStep, learnStepCount, orderedUnitIndexes, sectionStart, repeatMode]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isMobileViewport = () => window.matchMedia('(max-width: 767px)').matches;
+    lastScrollYRef.current = window.scrollY || 0;
+
+    const onScroll = () => {
+      if (scrollTickingRef.current) return;
+      const currentScrollY = window.scrollY || 0;
+      scrollTickingRef.current = true;
+      window.requestAnimationFrame(() => {
+        if (!isMobileViewport()) {
+          setIsMobileBottomBarsVisible(true);
+          lastScrollYRef.current = currentScrollY;
+          scrollTickingRef.current = false;
+          return;
+        }
+
+        const delta = currentScrollY - lastScrollYRef.current;
+        if (currentScrollY <= 12 || delta < -8) {
+          setIsMobileBottomBarsVisible(true);
+        } else if (delta > 8) {
+          setIsMobileBottomBarsVisible(false);
+        }
+
+        lastScrollYRef.current = currentScrollY;
+        scrollTickingRef.current = false;
+      });
+    };
+
+    const onResize = () => {
+      if (!isMobileViewport()) {
+        setIsMobileBottomBarsVisible(true);
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    setIsMobileBottomBarsVisible(true);
+  }, [mode, sidebarTab]);
+
   const playTextsSequentially = async (entries: SpeakEntry[]): Promise<boolean> => {
     if (mode !== 'learn' || entries.length === 0) return false;
     const sessionId = readSessionRef.current + 1;
@@ -395,6 +450,28 @@ const App: React.FC = () => {
   const proceedUnitCompletionWithoutReviewRef = useRef<() => void>(() => {});
 
   const runContinuousListPlayback = async () => {
+    const waitForUnitContextChange = async (
+      previousSectionStart: number,
+      previousFirstOrderedIndex: number | null,
+    ): Promise<boolean> => {
+      const startedAt = Date.now();
+      while (isContinuousListPlaybackRef.current && modeRef.current === 'learn') {
+        const firstOrderedIndex = orderedUnitIndexesRef.current[0];
+        const normalizedFirstIndex = typeof firstOrderedIndex === 'number' ? firstOrderedIndex : null;
+        if (
+          sectionStartRef.current !== previousSectionStart
+          || normalizedFirstIndex !== previousFirstOrderedIndex
+        ) {
+          return true;
+        }
+        if (Date.now() - startedAt >= 400) {
+          return false;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 16));
+      }
+      return false;
+    };
+
     let cursorStep = learnStepRef.current;
     while (isContinuousListPlaybackRef.current && modeRef.current === 'learn') {
       const texts = getBatchTextsForStep(cursorStep);
@@ -409,10 +486,21 @@ const App: React.FC = () => {
           learnStepRef.current = 0;
           cursorStep = 0;
           setRandomOrderVersion((prev) => prev + 1);
-        } else {
-          proceedUnitCompletionWithoutReviewRef.current();
-          // Let state commit to the next unit before continuing.
           await new Promise((resolve) => window.setTimeout(resolve, 0));
+        } else {
+          const previousSectionStart = sectionStartRef.current;
+          const previousFirstOrderedIndex = typeof orderedUnitIndexesRef.current[0] === 'number'
+            ? orderedUnitIndexesRef.current[0]
+            : null;
+          proceedUnitCompletionWithoutReviewRef.current();
+          const didChangeUnitContext = await waitForUnitContextChange(
+            previousSectionStart,
+            previousFirstOrderedIndex,
+          );
+          if (!didChangeUnitContext) {
+            // Stop instead of risking stale sentence/audio mapping after unit boundary.
+            break;
+          }
           cursorStep = learnStepRef.current;
         }
       } else {
@@ -1140,6 +1228,8 @@ const App: React.FC = () => {
               voiceProvider={voiceProvider}
               defaultLayoutMode={lessonLayoutDefault}
               onLayoutModeChange={setLessonLayoutMode}
+              savedHighlightPhrasesByLessonKey={highlightPhrasesByLessonKey}
+              onSaveLessonHighlight={saveHighlightSelection}
             />
           )}
         </main>
@@ -1157,6 +1247,7 @@ const App: React.FC = () => {
             isReading={isReading}
             isShuffleEnabled={isRandomLessonOrderEnabled}
             repeatMode={repeatMode}
+            isVisible={isMobileBottomBarsVisible}
             onToggleShuffle={handleToggleShuffle}
             onToggleRepeat={handleToggleRepeat}
             onPrevious={handlePrevious}
@@ -1167,6 +1258,7 @@ const App: React.FC = () => {
 
         <MobileBottomNav
           activeTab={sidebarTab}
+          isVisible={isMobileBottomBarsVisible}
           onTabChange={selectTab}
         />
       </div>

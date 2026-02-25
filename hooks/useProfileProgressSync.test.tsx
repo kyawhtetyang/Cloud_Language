@@ -62,6 +62,7 @@ describe('useProfileProgressSync debounce', () => {
       isReviewQuestionsRemoved: false,
       appTheme: 'apple_notes' as const,
       lessonLayoutDefault: 'list' as const,
+      voiceProvider: 'default' as const,
       totalLevels: 12,
       progressStorageKey: 'progress:tester',
       unlockedStorageKey: 'unlocked:tester',
@@ -78,6 +79,7 @@ describe('useProfileProgressSync debounce', () => {
       setIsReviewQuestionsRemoved: vi.fn(),
       setAppTheme: vi.fn(),
       setLessonLayoutDefault: vi.fn(),
+      setVoiceProvider: vi.fn(),
     };
 
     const { rerender } = renderHook(
@@ -123,6 +125,124 @@ describe('useProfileProgressSync debounce', () => {
     );
     expect(putCalls.length).toBe(1);
   });
-});
 
+  it('does not re-apply remote learnLanguage after initial hydration when lessons reload', async () => {
+    const setLearnLanguage = vi.fn();
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/progress?profileName=')) {
+        return Promise.resolve(
+          mockJsonResponse({
+            currentIndex: 0,
+            unlockedLevel: 1,
+            streak: 0,
+            learnLanguage: 'english',
+            defaultLanguage: 'burmese',
+            isPronunciationEnabled: false,
+            textScalePercent: 100,
+            isBoldTextEnabled: false,
+            isRandomLessonOrderEnabled: false,
+            isReviewQuestionsRemoved: false,
+          }),
+        );
+      }
+      if (url.includes('/api/progress') && init?.method === 'PUT') {
+        return Promise.resolve(mockJsonResponse({ ok: true }));
+      }
+      return Promise.resolve(mockJsonResponse({}));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const baseParams = {
+      apiBaseUrl: 'http://localhost:4000',
+      profileName: 'tester',
+      mode: 'learn' as const,
+      currentIndex: 0,
+      unlockedLevel: 1,
+      streak: 0,
+      defaultLanguage: 'burmese' as const,
+      isPronunciationEnabled: false,
+      textScalePercent: 100,
+      isBoldTextEnabled: false,
+      isRandomLessonOrderEnabled: false,
+      isReviewQuestionsRemoved: false,
+      appTheme: 'apple_notes' as const,
+      lessonLayoutDefault: 'list' as const,
+      voiceProvider: 'default' as const,
+      totalLevels: 12,
+      progressStorageKey: 'progress:tester',
+      unlockedStorageKey: 'unlocked:tester',
+      streakStorageKey: 'streak:tester',
+      setCurrentIndex: vi.fn(),
+      setUnlockedLevel: vi.fn(),
+      setStreak: vi.fn(),
+      setLearnLanguage,
+      setDefaultLanguage: vi.fn(),
+      setIsPronunciationEnabled: vi.fn(),
+      setTextScalePercent: vi.fn(),
+      setIsBoldTextEnabled: vi.fn(),
+      setIsRandomLessonOrderEnabled: vi.fn(),
+      setIsReviewQuestionsRemoved: vi.fn(),
+      setAppTheme: vi.fn(),
+      setLessonLayoutDefault: vi.fn(),
+      setVoiceProvider: vi.fn(),
+    };
+
+    const { rerender } = renderHook(
+      ({ lessonRows, learnLanguage }) =>
+        useProfileProgressSync({
+          ...baseParams,
+          lessons: lessonRows,
+          learnLanguage,
+        }),
+      {
+        initialProps: {
+          lessonRows: lessons,
+          learnLanguage: 'hsk_chinese' as const,
+        },
+      },
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(setLearnLanguage).toHaveBeenCalledTimes(1);
+    expect(setLearnLanguage).toHaveBeenCalledWith('english');
+    const firstHydrationGetCalls = fetchMock.mock.calls.filter(([url]) =>
+      String(url).includes('/api/progress?profileName=tester'),
+    ).length;
+    expect(firstHydrationGetCalls).toBe(1);
+
+    const reloadedLessons: LessonData[] = [
+      ...lessons,
+      {
+        level: 1,
+        unit: 1,
+        topic: 'Topic 2',
+        english: 'Hi',
+        burmese: 'ဟိုင်း',
+        pronunciation: 'hi',
+      },
+    ];
+
+    rerender({
+      lessonRows: reloadedLessons,
+      learnLanguage: 'hsk_chinese' as const,
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const getCallsAfterReload = fetchMock.mock.calls.filter(([url]) =>
+      String(url).includes('/api/progress?profileName=tester'),
+    ).length;
+    expect(getCallsAfterReload).toBe(firstHydrationGetCalls);
+    expect(setLearnLanguage).toHaveBeenCalledTimes(1);
+  });
+});
 

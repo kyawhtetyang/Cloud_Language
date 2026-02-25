@@ -20,3 +20,12 @@ export interface ProgressState {
   completedCount: number;
 }
 
+export interface LessonHighlight {
+  id: string;
+  profileStorageId: string;
+  learnLanguage: string;
+  lessonKey: string;
+  lessonText: string;
+  selectedText: string;
+  createdAt: string;
+}
