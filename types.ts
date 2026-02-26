@@ -17,6 +17,9 @@ export interface LessonData {
   levelScheme?: string;
   levelCode?: string;
   levelOrder?: number;
+  framework?: string;
+  frameworkLevel?: string;
+  frameworkUnit?: number;
 }
 
 export interface ProgressState {

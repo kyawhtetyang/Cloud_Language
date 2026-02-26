@@ -2,13 +2,12 @@ import { useMemo } from 'react';
 import { LessonData } from '../types';
 import {
   AppMode,
-  buildStageUnitsFromLessons,
   getLevelTitle,
   getLessonOrderIndex,
   getLessonUnitId,
   LESSONS_PER_BATCH,
-  resolveStageCode,
 } from '../config/appConfig';
+import { resolveCurrentCourseCode } from '../utils/courseCode';
 
 type UseLessonUnitStateParams = {
   lessons: LessonData[];
@@ -49,12 +48,7 @@ export function useLessonUnitState({
   const fallbackLevel = lessons[0] ? getLessonOrderIndex(lessons[0]) : 1;
   const currentLevel = lessons[activeLevelIndex] ? getLessonOrderIndex(lessons[activeLevelIndex]) : fallbackLevel;
   const currentUnit = lessons[activeLevelIndex] ? getLessonUnitId(lessons[activeLevelIndex]) : 1;
-  const currentStage = resolveStageCode(currentLevel, lessons[activeLevelIndex]?.stage);
-  const currentStageUnits = buildStageUnitsFromLessons(lessons).filter((entry) => entry.stage === currentStage);
-  const currentStageUnitNumber =
-    currentStageUnits.find((entry) => entry.level === currentLevel && entry.unit === currentUnit)
-      ?.stageUnitNumber || 1;
-  const currentCourseCode = `${currentStage} Unit ${currentStageUnitNumber}`;
+  const currentCourseCode = resolveCurrentCourseCode(lessons, activeLevelIndex);
 
   const levelIndexes = useMemo(
     () =>
