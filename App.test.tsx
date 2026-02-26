@@ -117,7 +117,7 @@ function mockJsonResponse(body: unknown, status = 200): Response {
   } as Response;
 }
 
-describe('App quick review navigation guard', () => {
+describe('App lesson navigation guard', () => {
   const lessons = createLessons();
   let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -195,9 +195,61 @@ describe('App quick review navigation guard', () => {
     render(<App />);
 
     await screen.findByRole('button', { name: 'Next' });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Settings' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Profile' })[0]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Open settings' }));
     await screen.findByText('Default Language');
     expect(screen.queryByText('Review Questions')).not.toBeInTheDocument();
+  });
+
+  it('hydrates remote settings and persists updated default language for the active profile', async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/lessons')) {
+        return Promise.resolve(mockJsonResponse(lessons));
+      }
+      if (url.includes('/api/progress?profileName=')) {
+        return Promise.resolve(
+          mockJsonResponse({
+            currentIndex: 0,
+            unlockedLevel: 1,
+            streak: 5,
+            learnLanguage: 'english',
+            defaultLanguage: 'vietnamese',
+            isPronunciationEnabled: true,
+            textScalePercent: 110,
+            isBoldTextEnabled: false,
+            isAutoScrollEnabled: true,
+            isRandomLessonOrderEnabled: false,
+            isReviewQuestionsRemoved: false,
+            appTheme: 'light',
+            voiceProvider: 'default',
+          }),
+        );
+      }
+      if (url.includes('/api/progress') && init?.method === 'PUT') {
+        return Promise.resolve(mockJsonResponse({ ok: true }));
+      }
+      return Promise.resolve(mockJsonResponse({}));
+    });
+
+    render(<App />);
+
+    await screen.findByRole('button', { name: 'Next' });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Profile' })[0]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Open settings' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Default Language/i })).toHaveTextContent('Tiếng Việt');
+      expect(screen.getByRole('button', { name: /Pronunciation/i })).toHaveTextContent('On');
+      expect(screen.getByText('110%')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Default Language/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^English/i }));
+
+    await waitFor(() => {
+      expect(localStorage.getItem('lingo_burmese_default_language:tester')).toBe('english');
+    });
   });
 
   it('moves back to previous learn batch when previous is clicked', async () => {
