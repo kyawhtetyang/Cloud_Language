@@ -32,11 +32,9 @@ type BuildAppViewPropsArgs = {
   hasProfileWhitespace: boolean;
   isProfileInputValid: boolean;
   currentCourseCode: string;
-  unlockedLevel: number;
-  totalLevels: number;
-  streak: number;
   onProfileInputChange: (value: string) => void;
   onApplyProfileName: () => void;
+  onOpenCurrentCourse: () => void;
   onOpenSettings: () => void;
   onRequestLogout: () => void;
   learnLanguage: LearnLanguage;
@@ -116,11 +114,9 @@ export function buildAppViewProps({
   hasProfileWhitespace,
   isProfileInputValid,
   currentCourseCode,
-  unlockedLevel,
-  totalLevels,
-  streak,
   onProfileInputChange,
   onApplyProfileName,
+  onOpenCurrentCourse,
   onOpenSettings,
   onRequestLogout,
   learnLanguage,
@@ -218,17 +214,15 @@ export function buildAppViewProps({
     profileViewProps: {
       profileName,
       progressPercent: overallProgressPercent,
-      progressLabel: `${completedLessonsCount}/${totalLessonsCount} lessons completed`,
+      progressLabel: `${completedLessonsCount}/${totalLessonsCount}`,
       profileInput,
       profileError,
       hasProfileWhitespace,
       isProfileInputValid,
       currentCourseCode,
-      unlockedUnits: Math.max(unlockedLevel, 1),
-      totalUnits: Math.max(totalLevels, 1),
-      streak,
       onProfileInputChange,
       onApplyProfileName,
+      onOpenCurrentCourse,
       onOpenSettings,
       onRequestLogout,
     },

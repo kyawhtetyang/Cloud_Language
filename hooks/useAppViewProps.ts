@@ -41,9 +41,6 @@ type UseAppViewPropsArgs = {
   hasProfileWhitespace: boolean;
   isProfileInputValid: boolean;
   currentCourseCode: string;
-  unlockedLevel: number;
-  totalLevels: number;
-  streak: number;
   setProfileInput: (value: string) => void;
   handleApplyProfileName: () => void;
   setSidebarTab: Dispatch<SetStateAction<SidebarTab>>;
@@ -123,9 +120,6 @@ export function useAppViewProps({
   hasProfileWhitespace,
   isProfileInputValid,
   currentCourseCode,
-  unlockedLevel,
-  totalLevels,
-  streak,
   setProfileInput,
   handleApplyProfileName,
   setSidebarTab,
@@ -204,11 +198,12 @@ export function useAppViewProps({
     hasProfileWhitespace,
     isProfileInputValid,
     currentCourseCode,
-    unlockedLevel,
-    totalLevels,
-    streak,
     onProfileInputChange: setProfileInput,
     onApplyProfileName: handleApplyProfileName,
+    onOpenCurrentCourse: () => {
+      setSidebarTab('lesson');
+      setIsSidebarOpen(false);
+    },
     onOpenSettings: () => {
       setSidebarTab('settings');
       setIsSidebarOpen(false);

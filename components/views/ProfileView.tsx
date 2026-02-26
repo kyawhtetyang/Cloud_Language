@@ -17,11 +17,9 @@ type ProfileViewProps = {
   hasProfileWhitespace: boolean;
   isProfileInputValid: boolean;
   currentCourseCode: string;
-  unlockedUnits: number;
-  totalUnits: number;
-  streak: number;
   onProfileInputChange: (value: string) => void;
   onApplyProfileName: () => void;
+  onOpenCurrentCourse: () => void;
   onOpenSettings: () => void;
   onRequestLogout: () => void;
 };
@@ -35,11 +33,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   hasProfileWhitespace,
   isProfileInputValid,
   currentCourseCode,
-  unlockedUnits,
-  totalUnits,
-  streak,
   onProfileInputChange,
   onApplyProfileName,
+  onOpenCurrentCourse,
   onOpenSettings,
   onRequestLogout,
 }) => {
@@ -92,8 +88,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
           <div className={listDividerClass} />
           <div className="px-4 py-3">
-            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
-              <span>Overall Progress</span>
+            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-ink-subtle">
+              <span>{progressLabel}</span>
               <span>{normalizedProgress}%</span>
             </div>
             <div className="mt-2 h-3 overflow-hidden rounded-full border border-brand-border bg-brand-track">
@@ -108,7 +104,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 }}
               />
             </div>
-            <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-subtle">{progressLabel}</p>
           </div>
         </div>
       </section>
@@ -116,22 +111,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
         <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Progress Stats</h3>
         <div className={listCardClass}>
-          <div className={listRowClass}>
+          <button type="button" onClick={onOpenCurrentCourse} className={listRowClass}>
             <span className={sectionTitleClass}>Current Course</span>
-            <span className="text-base font-extrabold text-ink">{currentCourseCode}</span>
-          </div>
-          <div className={listDividerClass} />
-          <div className={listRowClass}>
-            <span className={sectionTitleClass}>Unlocked Groups</span>
-            <span className="text-base font-extrabold text-ink">
-              {unlockedUnits}/{totalUnits}
+            <span className="text-base font-extrabold text-ink flex items-center gap-2">
+              {currentCourseCode}
+              <span aria-hidden="true">&gt;</span>
             </span>
-          </div>
-          <div className={listDividerClass} />
-          <div className={listRowClass}>
-            <span className={sectionTitleClass}>Streak</span>
-            <span className="text-base font-extrabold text-ink">{streak}</span>
-          </div>
+          </button>
         </div>
       </section>
 
