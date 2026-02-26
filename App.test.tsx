@@ -148,18 +148,16 @@ describe('App quick review navigation guard', () => {
     vi.restoreAllMocks();
   });
 
-  it('shows 10/10 completion modal at unit boundary', async () => {
+  it('keeps next disabled at unit boundary when repeat is off', async () => {
     render(<App />);
 
-    await screen.findByRole('button', { name: 'Next' });
-    for (let i = 0; i < 10; i += 1) {
-      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    }
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText(/10\/10 Complete|10\/10 ပြီးပါပြီ/i)).toBeInTheDocument();
+    const nextButton = await screen.findByRole('button', { name: 'Next' });
+    expect(nextButton).toBeDisabled();
+    fireEvent.click(nextButton);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('continues to next unit when confirming boundary modal', async () => {
+  it('moves to next unit directly when next is clicked', async () => {
     const twoUnitLessons = createTwoUnitLessons();
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
@@ -177,16 +175,10 @@ describe('App quick review navigation guard', () => {
 
     render(<App />);
 
-    await screen.findByRole('button', { name: 'Next' });
-    for (let i = 0; i < 10; i += 1) {
-      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    }
-    await screen.findByRole('dialog');
-    fireEvent.click(screen.getByRole('button', { name: /Continue to next unit|နောက်ယူနစ်သို့ ဆက်မယ်/i }));
-
-    expect((await screen.findAllByText('English 11')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('English 12')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('English 13')).length).toBeGreaterThan(0);
+    const nextButton = await screen.findByRole('button', { name: 'Next' });
+    fireEvent.click(nextButton);
+    expect(await screen.findByText('Unit 2 Topic')).toBeInTheDocument();
+    expect(screen.getByText('1/4')).toBeInTheDocument();
   });
 
 
@@ -226,8 +218,9 @@ describe('App quick review navigation guard', () => {
     expect((await screen.findAllByText('English 3')).length).toBeGreaterThan(0);
   });
 
-  it('moves to previous unit last batch when previous is clicked at step 0', async () => {
+  it('moves to previous unit start when previous is clicked at unit start', async () => {
     const twoUnitLessons = createTwoUnitLessons();
+    audioButtonMocks.speakTextMock.mockImplementation(() => new Promise(() => {}));
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes('/api/lessons')) {
@@ -246,20 +239,20 @@ describe('App quick review navigation guard', () => {
     await screen.findByRole('button', { name: 'Next' });
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Library' })[0]);
-    await screen.findAllByRole('button', { name: /open album group/i });
-    fireEvent.click(screen.getAllByRole('button', { name: /open album group/i })[0]);
+    await screen.findAllByRole('button', { name: /open group/i });
+    fireEvent.click(screen.getAllByRole('button', { name: /open group/i })[0]);
     fireEvent.click(screen.getAllByRole('button', { name: /Unit 2 Topic/i })[0]);
     fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
 
-    expect((await screen.findAllByText('English 11')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('English 12')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('English 13')).length).toBeGreaterThan(0);
+    expect(await screen.findByText('Unit 2 Topic')).toBeInTheDocument();
+    expect(screen.getByText('1.2')).toBeInTheDocument();
+    expect(screen.getByText('1/4')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
 
-    expect((await screen.findAllByText('English 8')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('English 9')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('English 10')).length).toBeGreaterThan(0);
+    expect(await screen.findByText('Unit 1 Topic')).toBeInTheDocument();
+    expect(screen.getByText('1.1')).toBeInTheDocument();
+    expect(screen.getByText('1/4')).toBeInTheDocument();
   });
 
   it('loops current unit when repeat-one is enabled', async () => {
@@ -288,6 +281,7 @@ describe('App quick review navigation guard', () => {
 
   it('repeat-all wraps within current stage when previous is clicked at stage start', async () => {
     const twoStageLessons = createTwoStageLessons();
+    audioButtonMocks.speakTextMock.mockImplementation(() => new Promise(() => {}));
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes('/api/lessons')) {
@@ -306,21 +300,21 @@ describe('App quick review navigation guard', () => {
     await screen.findByRole('button', { name: 'Next' });
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Library' })[0]);
-    await screen.findAllByRole('button', { name: /open album group/i });
-    fireEvent.click(screen.getAllByRole('button', { name: /open album group/i })[1]);
+    await screen.findAllByRole('button', { name: /open group/i });
+    fireEvent.click(screen.getAllByRole('button', { name: /open group/i })[1]);
     fireEvent.click(screen.getAllByRole('button', { name: /A2 Unit 1 Topic/i })[0]);
     fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
 
-    expect((await screen.findAllByText('English 21')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('English 22')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('English 23')).length).toBeGreaterThan(0);
+    expect(await screen.findByText('A2 Unit 1 Topic')).toBeInTheDocument();
+    expect(screen.getByText('2.1')).toBeInTheDocument();
+    expect(screen.getByText('1/4')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Enable repeat all' }));
     fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
 
-    expect((await screen.findAllByText('English 38')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('English 39')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('English 40')).length).toBeGreaterThan(0);
+    expect(await screen.findByText('A2 Unit 2 Topic')).toBeInTheDocument();
+    expect(screen.getByText('2.2')).toBeInTheDocument();
+    expect(screen.getByText('1/4')).toBeInTheDocument();
   });
 
   it('keeps HSK autoplay selection/audio aligned when crossing to next unit', async () => {
@@ -373,5 +367,3 @@ describe('App quick review navigation guard', () => {
   });
 
 });
-
-

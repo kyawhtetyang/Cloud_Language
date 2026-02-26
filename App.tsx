@@ -12,16 +12,14 @@ import { useLessonBatchGroups } from './hooks/useLessonBatchGroups';
 import { useOfflineLessonPacks } from './hooks/useOfflineLessonPacks';
 import { useAppTheme } from './hooks/useAppTheme';
 import { useLessonHighlights } from './hooks/useLessonHighlights';
+import { useCourseProgression } from './hooks/useCourseProgression';
+import { SpeakEntry, useTrackPlayback } from './hooks/useTrackPlayback';
+import { useUnitLeaveGuards } from './hooks/useUnitLeaveGuards';
+import { RepeatMode, useUnitNavigation } from './hooks/useUnitNavigation';
 import { buildLessonReferenceKey } from './utils/lessonReference';
-import { ProfileView } from './components/views/ProfileView';
-import { SettingsView } from './components/views/SettingsView';
-import { LessonView } from './components/views/LessonView';
-import { MatchReviewView } from './components/views/MatchReviewView';
-import { ResultView } from './components/views/ResultView';
-import { MobileBottomNav } from './components/MobileBottomNav';
-import { LessonActionFooter } from './components/LessonActionFooter';
-import { LeaveQuizModal } from './components/modals/LeaveQuizModal';
-import { cancelSpeech, speakText } from './components/AudioButton';
+import { AppDialogs } from './components/app/AppDialogs';
+import { AppMainContent } from './components/app/AppMainContent';
+import { AppBottomBars } from './components/app/AppBottomBars';
 import {
   AppMode,
   buildStageUnitsFromLessons,
@@ -44,15 +42,8 @@ import {
   resolveStageCode,
 } from './config/appConfig';
 import { getLessonModalText } from './config/lessonModalText';
-import {
-  PREVIOUS_TRACK_SEEK_THRESHOLD_MS,
-  SPEECH_IDLE_POLL_INTERVAL_MS,
-  SPEECH_IDLE_TIMEOUT_MS,
-} from './config/interactionConfig';
-import { LevelsView } from './components/views/LevelsView';
 import { AppSidebar } from './components/layout/AppSidebar';
 import {
-  CompletedView,
   LessonsUnavailableView,
   LoadingView,
   WelcomeView,
@@ -66,10 +57,6 @@ function normalizeApiBaseUrl(rawApiBaseUrl: string | undefined): string {
   }
   return candidate;
 }
-
-type RepeatMode = 'off' | 'all' | 'one';
-type PendingUnitTarget = { level: number; unit: number; albumKey?: string | null };
-type SpeakEntry = { text: string; unitId: number; audioUrl: string | undefined; lessonIndex: number };
 
 const App: React.FC = () => {
   const {
@@ -117,31 +104,19 @@ const App: React.FC = () => {
     setVoiceProvider,
     hasHydratedSettings,
   } = useAppPreferences(profileName ? toProfileStorageId(profileName) : '');
-  const [isNextDisabled, setIsNextDisabled] = useState(false);
   const [learnStep, setLearnStep] = useState(0);
   const [unitXp, setUnitXp] = useState(0);
   const [reviewResult, setReviewResult] = useState<ReviewResult | null>(null);
   const [completedUnitKeys, setCompletedUnitKeys] = useState<Set<string>>(new Set());
   const [quizSectionStart, setQuizSectionStart] = useState(0);
   const [quizSectionEnd, setQuizSectionEnd] = useState(0);
-  const [isLeaveQuizModalOpen, setIsLeaveQuizModalOpen] = useState(false);
-  const [isLeaveCompletedUnitModalOpen, setIsLeaveCompletedUnitModalOpen] = useState(false);
   const [isUnitCompleteModalOpen, setIsUnitCompleteModalOpen] = useState(false);
-  const [isReading, setIsReading] = useState(false);
-  const [activeSpeakingLessonIndex, setActiveSpeakingLessonIndex] = useState<number | null>(null);
   const [isMobileBottomBarsVisible, setIsMobileBottomBarsVisible] = useState(true);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
-  const [pendingUnitTarget, setPendingUnitTarget] = useState<PendingUnitTarget | null>(null);
   const [pendingAutoPlayUnitKey, setPendingAutoPlayUnitKey] = useState<string | null>(null);
 
   const [roadmapSelectedAlbumKey, setRoadmapSelectedAlbumKey] = useState<string | null>(null);
-  const readSessionRef = useRef(0);
-  const isTrackPlaybackRef = useRef(false);
-  const lastPlayAnchorLessonIndexRef = useRef<number | null>(null);
-  const unitPlaybackStartedAtRef = useRef<number | null>(null);
   const lastUnitKeyRef = useRef<string>('');
-  const isUnitNavigationLockedRef = useRef(false);
-  const playbackTokenRef = useRef(0);
   const lastScrollYRef = useRef(0);
   const scrollTickingRef = useRef(false);
   const [randomOrderVersion, setRandomOrderVersion] = useState(0);
@@ -297,12 +272,28 @@ const App: React.FC = () => {
     orderedUnitIndexes,
     sectionTotal,
   });
+  const {
+    isReading,
+    activeSpeakingLessonIndex,
+    isTrackPlaybackRef,
+    lastPlayAnchorLessonIndexRef,
+    unitPlaybackStartedAtRef,
+    setTrackPlaybackEnabled,
+    stopActivePlayback,
+    interruptPlaybackImmediately,
+    playEntriesSequentially,
+    playSingleEntry,
+    resetUnitPlaybackAnchor,
+  } = useTrackPlayback({
+    mode,
+    learnLanguage,
+    voiceProvider,
+  });
   useEffect(() => {
     const unitKey = `${currentLevel}:${currentUnit}`;
     if (lastUnitKeyRef.current === unitKey) return;
     lastUnitKeyRef.current = unitKey;
-    unitPlaybackStartedAtRef.current = null;
-    lastPlayAnchorLessonIndexRef.current = null;
+    resetUnitPlaybackAnchor();
   }, [currentLevel, currentUnit]);
   const learnStepCount = useMemo(
     () => Math.max(1, Math.ceil(sectionTotal / LESSONS_PER_BATCH)),
@@ -341,58 +332,6 @@ const App: React.FC = () => {
       setIsSidebarOpen(false);
     });
   };
-
-  const bumpPlaybackToken = (): number => {
-    playbackTokenRef.current += 1;
-    return playbackTokenRef.current;
-  };
-
-  const isPlaybackTokenCurrent = (token: number): boolean => playbackTokenRef.current === token;
-
-  const waitForSpeechIdle = async (timeoutMs = SPEECH_IDLE_TIMEOUT_MS): Promise<void> => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    const synth = window.speechSynthesis;
-    const startedAt = Date.now();
-    while (Date.now() - startedAt < timeoutMs) {
-      if (!synth.speaking && !synth.pending) return;
-      await new Promise((resolve) => window.setTimeout(resolve, SPEECH_IDLE_POLL_INTERVAL_MS));
-    }
-  };
-
-  const stopActivePlayback = async (): Promise<void> => {
-    isTrackPlaybackRef.current = false;
-    readSessionRef.current += 1;
-    bumpPlaybackToken();
-    setIsReading(false);
-    setActiveSpeakingLessonIndex(null);
-    cancelSpeech();
-    await waitForSpeechIdle();
-  };
-
-  const runWithUnitNavigationLock = async (
-    task: () => Promise<void> | void,
-  ): Promise<void> => {
-    if (isUnitNavigationLockedRef.current) return;
-    isUnitNavigationLockedRef.current = true;
-    setIsNextDisabled(true);
-    try {
-      await task();
-    } finally {
-      isUnitNavigationLockedRef.current = false;
-      setIsNextDisabled(false);
-    }
-  };
-
-  useEffect(() => {
-    if (mode !== 'learn' && (isReading || activeSpeakingLessonIndex !== null)) {
-      isTrackPlaybackRef.current = false;
-      readSessionRef.current += 1;
-      bumpPlaybackToken();
-      setIsReading(false);
-      setActiveSpeakingLessonIndex(null);
-      cancelSpeech();
-    }
-  }, [activeSpeakingLessonIndex, isReading, mode]);
 
   useEffect(() => {
     document.body.classList.toggle('lang-burmese', defaultLanguage === 'burmese');
@@ -448,50 +387,6 @@ const App: React.FC = () => {
     setIsMobileBottomBarsVisible(true);
   }, [mode, sidebarTab]);
 
-  const playTextsSequentially = async (entries: SpeakEntry[]): Promise<boolean> => {
-    if (mode !== 'learn' || entries.length === 0) return false;
-    const sessionId = readSessionRef.current + 1;
-    const playbackToken = bumpPlaybackToken();
-    readSessionRef.current = sessionId;
-    unitPlaybackStartedAtRef.current = Date.now();
-    setIsReading(true);
-    setActiveSpeakingLessonIndex(null);
-    cancelSpeech();
-    await waitForSpeechIdle();
-
-    for (const entry of entries) {
-      if (readSessionRef.current !== sessionId) break;
-      if (isPlaybackTokenCurrent(playbackToken)) {
-        lastPlayAnchorLessonIndexRef.current = entry.lessonIndex;
-        setActiveSpeakingLessonIndex(entry.lessonIndex);
-      }
-      await speakText(entry.text, {
-        learnLanguage,
-        unitId: entry.unitId,
-        audioUrl: entry.audioUrl,
-        voiceProvider,
-        onStart: () => {
-          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
-            lastPlayAnchorLessonIndexRef.current = entry.lessonIndex;
-            setActiveSpeakingLessonIndex(entry.lessonIndex);
-          }
-        },
-        onEnd: () => {
-          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
-            setActiveSpeakingLessonIndex(null);
-          }
-        },
-      });
-    }
-
-    if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
-      setIsReading(false);
-      setActiveSpeakingLessonIndex(null);
-      return true;
-    }
-    return false;
-  };
-
   const getCurrentUnitSpeakEntries = (startFromLessonIndex?: number | null): SpeakEntry[] => {
     const entries = orderedUnitIndexes
       .map((lessonIndex) => {
@@ -519,150 +414,54 @@ const App: React.FC = () => {
     return entries.slice(startPosition);
   };
 
-  const resolveCurrentUnitStart = (): number | null => resolveUnitStartFromAnchor(sectionStart);
-
-  const resolvePreviousUnitStartWithinStage = (): number | null => {
-    let previousAnchor = sectionStart - 1;
-    const isBeforeCurrentStage =
-      previousAnchor < 0
-      || resolveStageCode(getLessonOrderIndex(lessons[previousAnchor]), lessons[previousAnchor]?.stage) !== currentStageCode;
-
-    if (isBeforeCurrentStage) {
-      if (repeatMode === 'all') {
-        previousAnchor = currentStageRange.end;
-      } else {
-        return null;
-      }
-    }
-
-    if (previousAnchor < 0) return null;
-    return resolveUnitStartFromAnchor(previousAnchor);
-  };
-
-  const shouldPreviousJumpToPreviousUnit = (): boolean => {
-    const firstLessonIndex = orderedUnitIndexes[0];
-    if (typeof firstLessonIndex !== 'number') return true;
-
-    const currentPositionLessonIndex = typeof activeSpeakingLessonIndex === 'number'
-      ? activeSpeakingLessonIndex
-      : lastPlayAnchorLessonIndexRef.current;
-    const isOnFirstSentence = currentPositionLessonIndex === firstLessonIndex;
-    const isKnownCurrentUnitPosition =
-      typeof currentPositionLessonIndex === 'number'
-      && orderedUnitIndexes.includes(currentPositionLessonIndex);
-    const elapsedMs = unitPlaybackStartedAtRef.current === null
-      ? 0
-      : Math.max(0, Date.now() - unitPlaybackStartedAtRef.current);
-    const isWithinSeekThreshold = elapsedMs <= PREVIOUS_TRACK_SEEK_THRESHOLD_MS;
-
-    return (isOnFirstSentence || !isKnownCurrentUnitPosition) && isWithinSeekThreshold;
-  };
-
-  const resolveUnitStartFromAnchor = (anchorIndex: number): number | null => {
-    const anchorLesson = lessons[anchorIndex];
-    if (!anchorLesson) return null;
-    const targetLevel = getLessonOrderIndex(anchorLesson);
-    const targetUnit = getLessonUnitId(anchorLesson);
-    const unitStart = lessons.findIndex(
-      (lesson) => getLessonOrderIndex(lesson) === targetLevel && getLessonUnitId(lesson) === targetUnit,
-    );
-    return unitStart >= 0 ? unitStart : null;
-  };
-
-  const resolveNextUnitStartForTrackPlayback = (): number | null => {
-    const currentUnitStart = resolveUnitStartFromAnchor(sectionStart);
-    if (currentUnitStart === null) return null;
-    const currentLesson = lessons[currentUnitStart];
-    if (!currentLesson) return null;
-    const currentUnitKey = `${getLessonOrderIndex(currentLesson)}:${getLessonUnitId(currentLesson)}`;
-
-    if (repeatMode === 'one') {
-      return playableCourseUnitKeys.has(currentUnitKey) ? currentUnitStart : null;
-    }
-
-    const currentUnitPosition = orderedCourseUnitStartIndexes.findIndex((index) => {
-      const lesson = lessons[index];
-      if (!lesson) return false;
-      return `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}` === currentUnitKey;
-    });
-    if (currentUnitPosition < 0) return null;
-
-    const findPlayableStart = (indexes: number[]): number | null => {
-      for (const startIndex of indexes) {
-        const lesson = lessons[startIndex];
-        if (!lesson) continue;
-        const unitKey = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
-        if (playableCourseUnitKeys.has(unitKey)) {
-          return startIndex;
-        }
-      }
-      return null;
-    };
-
-    const forwardCandidates = orderedCourseUnitStartIndexes.slice(currentUnitPosition + 1);
-    const forwardMatch = findPlayableStart(forwardCandidates);
-    if (forwardMatch !== null) return forwardMatch;
-
-    if (repeatMode === 'all') {
-      const wrapCandidates = orderedCourseUnitStartIndexes.slice(0, currentUnitPosition + 1);
-      return findPlayableStart(wrapCandidates);
-    }
-
-    return null;
-  };
-
-  const continueTrackPlaybackIfNeeded = (): void => {
-    if (!isTrackPlaybackRef.current) return;
-    const targetUnitStart = resolveNextUnitStartForTrackPlayback();
-    if (targetUnitStart === null) {
-      isTrackPlaybackRef.current = false;
-      return;
-    }
-    queueAutoPlayForUnitStart(targetUnitStart);
-  };
+  const {
+    isNextDisabled,
+    continueTrackPlaybackIfNeeded,
+    handleNext,
+    handlePrevious,
+    navigateToLevelUnit,
+  } = useUnitNavigation({
+    mode,
+    repeatMode,
+    lessons,
+    totalLevels,
+    sectionStart,
+    sectionEnd,
+    currentStageCode,
+    currentStageRange,
+    orderedUnitIndexes,
+    orderedCourseUnitStartIndexes,
+    playableCourseUnitKeys,
+    activeSpeakingLessonIndex,
+    isTrackPlaybackRef,
+    lastPlayAnchorLessonIndexRef,
+    unitPlaybackStartedAtRef,
+    stopActivePlayback,
+    setTrackPlaybackEnabled,
+    resetUnitPlaybackAnchor,
+    setMode,
+    setCurrentIndex,
+    setLearnStep,
+    setUnlockedLevel,
+    setPendingAutoPlayUnitKey,
+    setRandomOrderVersion,
+    setUnitXp,
+    setReviewResult,
+    resetQuizState,
+    setRoadmapSelectedAlbumKey,
+    setSidebarTab,
+    setIsSidebarOpen,
+  });
 
   const handlePlaySingleLesson = (lesson: LessonData, lessonIndex: number) => {
     const speakValue = getPlayableLessonText(lesson);
-    void (async () => {
-      isTrackPlaybackRef.current = false;
-      readSessionRef.current += 1;
-      const sessionId = readSessionRef.current;
-      const playbackToken = bumpPlaybackToken();
-      unitPlaybackStartedAtRef.current = Date.now();
-      setIsReading(false);
-      lastPlayAnchorLessonIndexRef.current = lessonIndex;
-      setActiveSpeakingLessonIndex(lessonIndex);
-      cancelSpeech();
-      await waitForSpeechIdle();
-
-      if (!speakValue || readSessionRef.current !== sessionId || !isPlaybackTokenCurrent(playbackToken)) {
-        return;
-      }
-
-      lastPlayAnchorLessonIndexRef.current = lessonIndex;
-      setActiveSpeakingLessonIndex(lessonIndex);
-      await speakText(speakValue, {
-        learnLanguage,
-        unitId: getLessonUnitId(lesson),
-        audioUrl: lesson.audioPath,
-        voiceProvider,
-        onStart: () => {
-          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
-            lastPlayAnchorLessonIndexRef.current = lessonIndex;
-            setActiveSpeakingLessonIndex(lessonIndex);
-          }
-        },
-        onEnd: () => {
-          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
-            setActiveSpeakingLessonIndex(null);
-          }
-        },
-      });
-
-      if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
-        setActiveSpeakingLessonIndex(null);
-      }
-    })();
+    if (!speakValue) return;
+    void playSingleEntry({
+      text: speakValue,
+      unitId: getLessonUnitId(lesson),
+      audioUrl: lesson.audioPath,
+      lessonIndex,
+    });
   };
 
   const handleReadCurrentBatch = async () => {
@@ -673,14 +472,14 @@ const App: React.FC = () => {
       return;
     }
 
-    isTrackPlaybackRef.current = true;
+    setTrackPlaybackEnabled(true);
     unitPlaybackStartedAtRef.current = Date.now();
     const texts = getCurrentUnitSpeakEntries(lastPlayAnchorLessonIndexRef.current);
     if (texts.length === 0) {
       continueTrackPlaybackIfNeeded();
       return;
     }
-    const finished = await playTextsSequentially(texts);
+    const finished = await playEntriesSequentially(texts);
     if (!finished) return;
     continueTrackPlaybackIfNeeded();
   };
@@ -701,7 +500,7 @@ const App: React.FC = () => {
         continueTrackPlaybackIfNeeded();
         return;
       }
-      const finished = await playTextsSequentially(texts);
+      const finished = await playEntriesSequentially(texts);
       if (!finished) return;
       continueTrackPlaybackIfNeeded();
     })();
@@ -718,7 +517,7 @@ const App: React.FC = () => {
 
   const handleSelectLessonStep = async (step: number) => {
     if (mode !== 'learn') return;
-    isTrackPlaybackRef.current = false;
+    setTrackPlaybackEnabled(false);
     const safeStep = Math.max(0, Math.min(learnStepCount - 1, step));
     if (isReading || activeSpeakingLessonIndex !== null) {
       await stopActivePlayback();
@@ -734,7 +533,7 @@ const App: React.FC = () => {
   ) => {
     if (mode !== 'learn') return;
     if (units.length === 0) return;
-    isTrackPlaybackRef.current = false;
+    setTrackPlaybackEnabled(false);
 
     const firstUnit = units[0];
     const safeLevel = Math.min(Math.max(firstUnit.level, 1), totalLevels);
@@ -769,365 +568,62 @@ const App: React.FC = () => {
     });
 
     if (texts.length === 0) return;
-
-    const sessionId = readSessionRef.current + 1;
-    const playbackToken = bumpPlaybackToken();
-    readSessionRef.current = sessionId;
-    unitPlaybackStartedAtRef.current = Date.now();
-    setIsReading(true);
-    setActiveSpeakingLessonIndex(null);
-    cancelSpeech();
-    await waitForSpeechIdle();
-
-    for (const entry of texts) {
-      if (readSessionRef.current !== sessionId) break;
-      if (isPlaybackTokenCurrent(playbackToken)) {
-        lastPlayAnchorLessonIndexRef.current = entry.lessonIndex;
-        setActiveSpeakingLessonIndex(entry.lessonIndex);
-      }
-      await speakText(entry.text, {
-        learnLanguage,
-        unitId: entry.unitId,
-        audioUrl: entry.audioUrl,
-        voiceProvider,
-        onStart: () => {
-          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
-            lastPlayAnchorLessonIndexRef.current = entry.lessonIndex;
-            setActiveSpeakingLessonIndex(entry.lessonIndex);
-          }
-        },
-        onEnd: () => {
-          if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
-            setActiveSpeakingLessonIndex(null);
-          }
-        },
-      });
-    }
-
-    if (readSessionRef.current === sessionId && isPlaybackTokenCurrent(playbackToken)) {
-      setIsReading(false);
-      setActiveSpeakingLessonIndex(null);
-    }
+    await playEntriesSequentially(texts);
   };
 
-  const proceedUnitCompletionWithoutReview = () => {
-    const completedUnitKey = lessons[sectionStart]
-      ? `${getLessonOrderIndex(lessons[sectionStart])}:${getLessonUnitId(lessons[sectionStart])}`
-      : null;
-    if (completedUnitKey) {
-      setCompletedUnitKeys((prev) => new Set([...prev, completedUnitKey]));
-    }
-    const passedLevel = lessons[sectionStart] ? getLessonOrderIndex(lessons[sectionStart]) : 1;
-    const nextUnlocked = Math.min(totalLevels, passedLevel + 1);
-    setUnlockedLevel((prev) => Math.max(prev, nextUnlocked));
-    setStreak((prev) => prev + 1);
-
-    const nextStart = sectionEnd + 1;
-    if (repeatMode === 'one') {
-      setMode('learn');
-      setCurrentIndex(sectionStart);
-      setLearnStep(0);
-      setRandomOrderVersion((prev) => prev + 1);
-      setUnitXp(0);
-      setReviewResult(null);
-      resetQuizState();
-      return;
-    }
-    const isBeyondCurrentStage =
-      nextStart >= lessons.length
-      || resolveStageCode(getLessonOrderIndex(lessons[nextStart]), lessons[nextStart]?.stage) !== currentStageCode;
-    if (isBeyondCurrentStage) {
-      if (repeatMode === 'all') {
-        setMode('learn');
-        setCurrentIndex(currentStageRange.start);
-        setLearnStep(0);
-        setRandomOrderVersion((prev) => prev + 1);
-        setUnitXp(0);
-        setReviewResult(null);
-        resetQuizState();
-      } else {
-        setMode('completed');
-        setUnlockedLevel(totalLevels);
-        setReviewResult(null);
-        resetQuizState();
-      }
-      return;
-    }
-
-    setMode('learn');
-    setCurrentIndex(nextStart);
-    setLearnStep(0);
-    setRandomOrderVersion((prev) => prev + 1);
-    setUnitXp(0);
-    setReviewResult(null);
-    resetQuizState();
-  };
-
-  const queueAutoPlayForUnitStart = (unitStart: number): void => {
-    const lesson = lessons[unitStart];
-    if (!lesson) return;
-
-    const targetLevel = getLessonOrderIndex(lesson);
-    const targetUnit = getLessonUnitId(lesson);
-    unitPlaybackStartedAtRef.current = null;
-    lastPlayAnchorLessonIndexRef.current = null;
-
-    setMode('learn');
-    setCurrentIndex(unitStart);
-    setLearnStep(0);
-    setUnlockedLevel((prev) => Math.max(prev, targetLevel));
-    setPendingAutoPlayUnitKey(`${targetLevel}:${targetUnit}`);
-    setRandomOrderVersion((prev) => prev + 1);
-    setUnitXp(0);
-    setReviewResult(null);
-    resetQuizState();
-  };
-
-  const handleNext = async () => {
-    if (mode !== 'learn') return;
-    await runWithUnitNavigationLock(async () => {
-      await stopActivePlayback();
-
-      let targetUnitStart: number | null = null;
-      if (repeatMode === 'one') {
-        targetUnitStart = resolveUnitStartFromAnchor(sectionStart);
-      } else {
-        const nextAnchor = sectionEnd + 1;
-        const isBeyondCurrentStage =
-          nextAnchor >= lessons.length
-          || resolveStageCode(getLessonOrderIndex(lessons[nextAnchor]), lessons[nextAnchor]?.stage) !== currentStageCode;
-
-        if (isBeyondCurrentStage) {
-          if (repeatMode === 'all') {
-            targetUnitStart = resolveUnitStartFromAnchor(currentStageRange.start);
-          }
-        } else {
-          targetUnitStart = resolveUnitStartFromAnchor(nextAnchor);
-        }
-      }
-
-      if (targetUnitStart !== null) {
-        queueAutoPlayForUnitStart(targetUnitStart);
-      }
-    });
-  };
-
-  const handlePrevious = async () => {
-    if (mode !== 'learn') return;
-    await runWithUnitNavigationLock(async () => {
-      const shouldJumpToPreviousUnit =
-        repeatMode !== 'one' && shouldPreviousJumpToPreviousUnit();
-
-      await stopActivePlayback();
-
-      let targetUnitStart: number | null = null;
-      if (repeatMode === 'one') {
-        targetUnitStart = resolveCurrentUnitStart();
-      } else {
-        if (shouldJumpToPreviousUnit) {
-          targetUnitStart = resolvePreviousUnitStartWithinStage();
-        }
-        if (targetUnitStart === null) {
-          targetUnitStart = resolveCurrentUnitStart();
-        }
-      }
-
-      if (targetUnitStart !== null) {
-        queueAutoPlayForUnitStart(targetUnitStart);
-      }
-    });
-  };
-
-  const navigateToLevelUnit = async (level: number, unit: number, albumKey?: string | null) => {
-    await runWithUnitNavigationLock(async () => {
-      const safeLevel = Math.min(Math.max(level, 1), totalLevels);
-      const safeUnit = Math.max(1, unit);
-      const target = lessons.findIndex(
-        (lesson) => getLessonOrderIndex(lesson) === safeLevel && getLessonUnitId(lesson) === safeUnit,
-      );
-      if (target < 0) return;
-
-      await stopActivePlayback();
-      unitPlaybackStartedAtRef.current = null;
-      lastPlayAnchorLessonIndexRef.current = null;
-
-      if (albumKey !== undefined) {
-        setRoadmapSelectedAlbumKey(albumKey);
-      }
-      setMode('learn');
-      setCurrentIndex(target);
-      setUnlockedLevel((prev) => Math.max(prev, safeLevel));
-      setSidebarTab('lesson');
-      setLearnStep(0);
-      setPendingAutoPlayUnitKey(`${safeLevel}:${safeUnit}`);
-      setRandomOrderVersion((prev) => prev + 1);
-      setUnitXp(0);
-      setReviewResult(null);
-      resetQuizState();
-      setIsSidebarOpen(false);
-    });
-  };
-
-  const goToLevelUnit = (level: number, unit: number, albumKey?: string | null) => {
-    const targetUnitKey = `${Math.max(1, level)}:${Math.max(1, unit)}`;
-    const isSwitchingUnit = targetUnitKey !== `${currentLevel}:${currentUnit}`;
-    const currentUnitKey = `${currentLevel}:${currentUnit}`;
-    const isCurrentUnitAlreadyCompleted = completedUnitKeys.has(currentUnitKey);
-    const isUnitLearnStepCompleted = mode === 'learn' && learnStep >= learnStepCount - 1;
-
-    if (mode === 'quiz') {
-      setPendingUnitTarget({ level, unit, albumKey });
-      setIsLeaveQuizModalOpen(true);
-      return;
-    }
-
-    if (
-      isSwitchingUnit
-      && isUnitLearnStepCompleted
-      && !isCurrentUnitAlreadyCompleted
-    ) {
-      setPendingUnitTarget({ level, unit, albumKey });
-      setIsLeaveCompletedUnitModalOpen(true);
-      return;
-    }
-
-    void navigateToLevelUnit(level, unit, albumKey);
-  };
-
-  const handleLeaveQuizCancel = () => {
-    setIsLeaveQuizModalOpen(false);
-    setPendingUnitTarget(null);
-  };
-
-  const handleLeaveQuizConfirm = () => {
-    if (pendingUnitTarget) {
-      void navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
-    }
-    setIsLeaveQuizModalOpen(false);
-    setPendingUnitTarget(null);
-  };
-
-  const handleLeaveCompletedUnitCancel = () => {
-    setIsLeaveCompletedUnitModalOpen(false);
-    setPendingUnitTarget(null);
-    setSidebarTab('lesson');
-    setIsSidebarOpen(false);
-  };
-
-  const handleLeaveCompletedUnitConfirm = () => {
-    if (pendingUnitTarget) {
-      void navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
-    }
-    setIsLeaveCompletedUnitModalOpen(false);
-    setPendingUnitTarget(null);
-  };
-
-  const continueFromPassedResult = () => {
-    const passedLevel = lessons[quizSectionStart] ? getLessonOrderIndex(lessons[quizSectionStart]) : 1;
-    const completedUnitKey = lessons[quizSectionStart]
-      ? `${getLessonOrderIndex(lessons[quizSectionStart])}:${getLessonUnitId(lessons[quizSectionStart])}`
-      : null;
-    if (completedUnitKey) {
-      setCompletedUnitKeys((prev) => new Set([...prev, completedUnitKey]));
-    }
-    const nextUnlocked = Math.min(totalLevels, passedLevel + 1);
-    setUnlockedLevel((prev) => Math.max(prev, nextUnlocked));
-    setStreak((prev) => prev + 1);
-
-    const nextStart = quizSectionEnd + 1;
-    if (repeatMode === 'one') {
-      setMode('learn');
-      setCurrentIndex(quizSectionStart);
-      setLearnStep(0);
-      setRandomOrderVersion((prev) => prev + 1);
-      setUnitXp(0);
-      setReviewResult(null);
-      resetQuizState();
-      return;
-    }
-    const isBeyondCurrentStage =
-      nextStart >= lessons.length
-      || resolveStageCode(getLessonOrderIndex(lessons[nextStart]), lessons[nextStart]?.stage) !== currentStageCode;
-    if (isBeyondCurrentStage) {
-      if (repeatMode === 'all') {
-        setMode('learn');
-        setCurrentIndex(currentStageRange.start);
-        setLearnStep(0);
-        setRandomOrderVersion((prev) => prev + 1);
-        setUnitXp(0);
-        setReviewResult(null);
-        resetQuizState();
-      } else {
-        setMode('completed');
-        setUnlockedLevel(totalLevels);
-        setReviewResult(null);
-        resetQuizState();
-      }
-      return;
-    }
-
-    setMode('learn');
-    setCurrentIndex(nextStart);
-    setLearnStep(0);
-    setRandomOrderVersion((prev) => prev + 1);
-    setUnitXp(0);
-    setReviewResult(null);
-    resetQuizState();
-  };
-
-  const handleReview = () => {
-    setMode('learn');
-    setCurrentIndex(0);
-    setLearnStep(0);
-    setRandomOrderVersion((prev) => prev + 1);
-    setUnitXp(0);
-    setReviewResult(null);
-    resetQuizState();
-    setIsSidebarOpen(false);
-  };
-
-  const handleResultContinue = () => {
-    if (!reviewResult) return;
-
-    if (!reviewResult.passed) {
-      setMode('learn');
-      setCurrentIndex(quizSectionStart);
-      setLearnStep(0);
-      setRandomOrderVersion((prev) => prev + 1);
-      setUnitXp(0);
-      setReviewResult(null);
-      resetQuizState();
-      setStreak(0);
-      return;
-    }
-
-    setIsUnitCompleteModalOpen(true);
-  };
-
-  const handleUnitCompleteStay = () => {
-    setIsUnitCompleteModalOpen(false);
-    setMode('learn');
-    setCurrentIndex(quizSectionStart);
-    setLearnStep(0);
-    setRandomOrderVersion((prev) => prev + 1);
-    setUnitXp(0);
-    setReviewResult(null);
-    resetQuizState();
-  };
-
-  const handleUnitCompleteContinue = () => {
-    setIsUnitCompleteModalOpen(false);
-    continueFromPassedResult();
-  };
+  const {
+    handleReview,
+    handleResultContinue,
+    handleUnitCompleteStay,
+    handleUnitCompleteContinue,
+  } = useCourseProgression({
+    lessons,
+    repeatMode,
+    totalLevels,
+    sectionStart,
+    sectionEnd,
+    quizSectionStart,
+    quizSectionEnd,
+    currentStageCode,
+    currentStageRange,
+    reviewResult,
+    setMode,
+    setCurrentIndex,
+    setLearnStep,
+    setRandomOrderVersion,
+    setUnitXp,
+    setReviewResult,
+    setUnlockedLevel,
+    setStreak,
+    setCompletedUnitKeys,
+    setIsSidebarOpen,
+    setIsUnitCompleteModalOpen,
+    resetQuizState,
+  });
+  const {
+    isLeaveQuizModalOpen,
+    isLeaveCompletedUnitModalOpen,
+    goToLevelUnit,
+    handleLeaveQuizCancel,
+    handleLeaveQuizConfirm,
+    handleLeaveCompletedUnitCancel,
+    handleLeaveCompletedUnitConfirm,
+  } = useUnitLeaveGuards({
+    mode,
+    currentLevel,
+    currentUnit,
+    learnStep,
+    learnStepCount,
+    completedUnitKeys,
+    navigateToLevelUnit,
+    setSidebarTab,
+    setIsSidebarOpen,
+  });
 
   const handleToggleShuffle = () => {
     const wasPlaying = isReading || activeSpeakingLessonIndex !== null;
     if (wasPlaying) {
-      readSessionRef.current += 1;
-      bumpPlaybackToken();
-      setIsReading(false);
-      setActiveSpeakingLessonIndex(null);
-      cancelSpeech();
+      interruptPlaybackImmediately();
     }
 
     setIsRandomLessonOrderEnabled((prev) => !prev);
@@ -1184,43 +680,176 @@ const App: React.FC = () => {
   const isProfileView = sidebarTab === 'profile';
   const isLessonView = sidebarTab === 'lesson';
   const isSettingsView = sidebarTab === 'settings';
+  const showLessonActions = isLessonView || isLevelsView;
+
+  const leaveQuizModalProps = {
+    isOpen: isLeaveQuizModalOpen,
+    title: leaveQuizModalTitle,
+    message: leaveQuizConfirmMessage,
+    cancelLabel: leaveQuizCancelLabel,
+    confirmLabel: leaveQuizConfirmLabel,
+    onCancel: handleLeaveQuizCancel,
+    onConfirm: handleLeaveQuizConfirm,
+  };
+  const leaveCompletedUnitModalProps = {
+    isOpen: isLeaveCompletedUnitModalOpen,
+    title: leaveCompletedUnitModalTitle,
+    message: leaveCompletedUnitConfirmMessage,
+    cancelLabel: leaveCompletedUnitCancelLabel,
+    confirmLabel: leaveCompletedUnitConfirmLabel,
+    onCancel: handleLeaveCompletedUnitCancel,
+    onConfirm: handleLeaveCompletedUnitConfirm,
+  };
+  const unitCompleteModalProps = {
+    isOpen: isUnitCompleteModalOpen,
+    title: unitCompleteModalTitle,
+    message: unitCompleteModalMessage,
+    cancelLabel: unitCompleteModalCancelLabel,
+    confirmLabel: unitCompleteModalConfirmLabel,
+    onCancel: handleUnitCompleteStay,
+    onConfirm: handleUnitCompleteContinue,
+  };
+
+  const profileViewProps = {
+    profileName,
+    progressPercent: overallProgressPercent,
+    progressLabel: `${completedLessonsCount}/${totalLessonsCount} lessons completed`,
+    profileInput,
+    profileError,
+    hasProfileWhitespace,
+    isProfileInputValid,
+    currentCourseCode,
+    unlockedUnits: Math.max(unlockedLevel, 1),
+    totalUnits: Math.max(totalLevels, 1),
+    streak,
+    onProfileInputChange: setProfileInput,
+    onApplyProfileName: handleApplyProfileName,
+  };
+
+  const levelsViewProps = {
+    lessons,
+    defaultLanguage,
+    learnLanguage,
+    onSelectUnit: goToLevelUnit,
+    onReadAlbum: (units: Array<{ level: number; unit: number }>, albumKey?: string | null) => {
+      void handleReadRoadmapAlbum(units, albumKey);
+    },
+    selectedAlbumKey: roadmapSelectedAlbumKey,
+    onSelectedAlbumKeyChange: setRoadmapSelectedAlbumKey,
+    completedUnitKeys: completedRoadmapKeys,
+    activeUnitKey,
+    downloadedUnitKeys,
+    onDownloadUnit: (level: number, unit: number) => { void downloadUnitPack(level, unit); },
+    onRemoveUnitDownload: (level: number, unit: number) => { void removeUnitPack(level, unit); },
+    isUnitDownloading,
+  };
+
+  const settingsViewProps = {
+    defaultLanguage,
+    learnLanguage,
+    isPronunciationEnabled,
+    isBoldTextEnabled,
+    isAutoScrollEnabled,
+    textScalePercent,
+    canDecreaseTextSize: textScalePercent > 90,
+    canIncreaseTextSize: textScalePercent < 120,
+    translationLabel,
+    appTheme,
+    voiceProvider,
+    onDefaultLanguageChange: setDefaultLanguage,
+    onLearnLanguageChange: setLearnLanguage,
+    onTogglePronunciation: () => setIsPronunciationEnabled((prev) => !prev),
+    onToggleBoldText: () => setIsBoldTextEnabled((prev) => !prev),
+    onToggleAutoScroll: () => setIsAutoScrollEnabled((prev) => !prev),
+    onDecreaseTextSize: () => setTextScalePercent((prev) => clampTextScale(prev - 5)),
+    onIncreaseTextSize: () => setTextScalePercent((prev) => clampTextScale(prev + 5)),
+    onAppThemeChange: setAppTheme,
+    onVoiceProviderChange: setVoiceProvider,
+  };
+
+  const matchReviewViewProps = {
+    currentCourseCode,
+    currentLevelTitle,
+    unitXp,
+    matchPairs,
+    matchAnswerOptions,
+    matchedPairIds,
+    selectedPromptId,
+    selectedAnswerId,
+    answerChecked,
+    matchMistakes,
+    matchPairsPerReview: MATCH_PAIRS_PER_REVIEW,
+    isMatchReviewComplete,
+    onSelectPrompt: handleSelectPrompt,
+    onSelectAnswer: handleSelectAnswer,
+  };
+
+  const resultViewProps = reviewResult
+    ? {
+      reviewResult,
+      unitXp,
+      totalXp: TOTAL_XP_PER_COURSE,
+      onContinue: handleResultContinue,
+    }
+    : null;
+
+  const lessonViewProps = {
+    onBackToRoadmap: () => {
+      setSidebarTab('levels');
+      setIsSidebarOpen(false);
+    },
+    progressLabel: `${Math.min(learnStepCount, learnStep + 1)}/${learnStepCount}`,
+    currentIndex,
+    currentBatchEntries,
+    allBatchGroups: lessonBatchGroups,
+    currentStep: learnStep,
+    isReading,
+    onSelectStep: handleSelectLessonStep,
+    englishReferenceByKey,
+    defaultLanguage,
+    isPronunciationEnabled,
+    isBoldTextEnabled,
+    isAutoScrollEnabled,
+    textScalePercent,
+    learnLanguage,
+    activeSpeakingLessonIndex,
+    onPlayLesson: handlePlaySingleLesson,
+    savedHighlightPhrasesByLessonKey: highlightPhrasesByLessonKey,
+    onSaveLessonHighlight: saveHighlightSelection,
+    onClearLessonHighlight: clearHighlightSelection,
+  };
+
+  const lessonActionFooterProps = {
+    mode,
+    isNextDisabled: isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end),
+    isPreviousDisabled: mode !== 'learn' || isNextDisabled,
+    isReadDisabled: mode !== 'learn' || orderedUnitIndexes.length === 0,
+    isReading,
+    isShuffleEnabled: isRandomLessonOrderEnabled,
+    repeatMode,
+    isVisible: isMobileBottomBarsVisible,
+    onToggleShuffle: handleToggleShuffle,
+    onToggleRepeat: handleToggleRepeat,
+    onPrevious: handlePrevious,
+    onRead: () => { void handleReadCurrentBatch(); },
+    onNext: handleNext,
+  };
+
+  const mobileBottomNavProps = {
+    activeTab: sidebarTab,
+    isVisible: isMobileBottomBarsVisible,
+    onTabChange: selectTab,
+  };
 
   return (
     <div className="min-h-screen bg-app-radial md:flex">
-      <LeaveQuizModal
-        isOpen={isLeaveQuizModalOpen}
-        title={leaveQuizModalTitle}
-        message={leaveQuizConfirmMessage}
-        cancelLabel={leaveQuizCancelLabel}
-        confirmLabel={leaveQuizConfirmLabel}
-        onCancel={handleLeaveQuizCancel}
-        onConfirm={handleLeaveQuizConfirm}
+      <AppDialogs
+        leaveQuizModalProps={leaveQuizModalProps}
+        leaveCompletedUnitModalProps={leaveCompletedUnitModalProps}
+        unitCompleteModalProps={unitCompleteModalProps}
+        isSidebarOpen={isSidebarOpen}
+        onDismissSidebarOverlay={() => setIsSidebarOpen(false)}
       />
-      <LeaveQuizModal
-        isOpen={isLeaveCompletedUnitModalOpen}
-        title={leaveCompletedUnitModalTitle}
-        message={leaveCompletedUnitConfirmMessage}
-        cancelLabel={leaveCompletedUnitCancelLabel}
-        confirmLabel={leaveCompletedUnitConfirmLabel}
-        onCancel={handleLeaveCompletedUnitCancel}
-        onConfirm={handleLeaveCompletedUnitConfirm}
-      />
-      <LeaveQuizModal
-        isOpen={isUnitCompleteModalOpen}
-        title={unitCompleteModalTitle}
-        message={unitCompleteModalMessage}
-        cancelLabel={unitCompleteModalCancelLabel}
-        confirmLabel={unitCompleteModalConfirmLabel}
-        onCancel={handleUnitCompleteStay}
-        onConfirm={handleUnitCompleteContinue}
-      />
-      {isSidebarOpen && (
-        <button
-          className="fixed inset-0 bg-black/30 z-30 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-          aria-label="Close sidebar"
-        />
-      )}
 
       <AppSidebar
         isSidebarOpen={isSidebarOpen}
@@ -1231,144 +860,24 @@ const App: React.FC = () => {
       />
 
       <div className="flex-1 flex flex-col min-h-screen pb-36 md:pb-32">
-        <main
-          className="flex-1 flex items-start justify-center p-4 pt-6 md:p-6 md:pt-8"
-        >
-          {isProfileView ? (
-            <ProfileView
-              profileName={profileName}
-              progressPercent={overallProgressPercent}
-              progressLabel={`${completedLessonsCount}/${totalLessonsCount} lessons completed`}
-              profileInput={profileInput}
-              profileError={profileError}
-              hasProfileWhitespace={hasProfileWhitespace}
-              isProfileInputValid={isProfileInputValid}
-              currentCourseCode={currentCourseCode}
-              unlockedUnits={Math.max(unlockedLevel, 1)}
-              totalUnits={Math.max(totalLevels, 1)}
-              streak={streak}
-              onProfileInputChange={setProfileInput}
-              onApplyProfileName={handleApplyProfileName}
-            />
-          ) : isLevelsView ? (
-            <LevelsView
-              lessons={lessons}
-              defaultLanguage={defaultLanguage}
-              learnLanguage={learnLanguage}
-              onSelectUnit={goToLevelUnit}
-              onReadAlbum={(units, albumKey) => { void handleReadRoadmapAlbum(units, albumKey); }}
-              selectedAlbumKey={roadmapSelectedAlbumKey}
-              onSelectedAlbumKeyChange={setRoadmapSelectedAlbumKey}
-              completedUnitKeys={completedRoadmapKeys}
-              activeUnitKey={activeUnitKey}
-              downloadedUnitKeys={downloadedUnitKeys}
-              onDownloadUnit={(level, unit) => { void downloadUnitPack(level, unit); }}
-              onRemoveUnitDownload={(level, unit) => { void removeUnitPack(level, unit); }}
-              isUnitDownloading={isUnitDownloading}
-            />
-          ) : isSettingsView ? (
-            <SettingsView
-              defaultLanguage={defaultLanguage}
-              learnLanguage={learnLanguage}
-              isPronunciationEnabled={isPronunciationEnabled}
-              isBoldTextEnabled={isBoldTextEnabled}
-              isAutoScrollEnabled={isAutoScrollEnabled}
-              textScalePercent={textScalePercent}
-              canDecreaseTextSize={textScalePercent > 90}
-              canIncreaseTextSize={textScalePercent < 120}
-              translationLabel={translationLabel}
-              appTheme={appTheme}
-              voiceProvider={voiceProvider}
-              onDefaultLanguageChange={setDefaultLanguage}
-              onLearnLanguageChange={setLearnLanguage}
-              onTogglePronunciation={() => setIsPronunciationEnabled((prev) => !prev)}
-              onToggleBoldText={() => setIsBoldTextEnabled((prev) => !prev)}
-              onToggleAutoScroll={() => setIsAutoScrollEnabled((prev) => !prev)}
-              onDecreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev - 5))}
-              onIncreaseTextSize={() => setTextScalePercent((prev) => clampTextScale(prev + 5))}
-              onAppThemeChange={setAppTheme}
-              onVoiceProviderChange={setVoiceProvider}
-            />
-          ) : mode === 'quiz' ? (
-            <MatchReviewView
-              currentCourseCode={currentCourseCode}
-              currentLevelTitle={currentLevelTitle}
-              unitXp={unitXp}
-              matchPairs={matchPairs}
-              matchAnswerOptions={matchAnswerOptions}
-              matchedPairIds={matchedPairIds}
-              selectedPromptId={selectedPromptId}
-              selectedAnswerId={selectedAnswerId}
-              answerChecked={answerChecked}
-              matchMistakes={matchMistakes}
-              matchPairsPerReview={MATCH_PAIRS_PER_REVIEW}
-              isMatchReviewComplete={isMatchReviewComplete}
-              onSelectPrompt={handleSelectPrompt}
-              onSelectAnswer={handleSelectAnswer}
-            />
-          ) : mode === 'result' && reviewResult ? (
-            <ResultView
-              reviewResult={reviewResult}
-              unitXp={unitXp}
-              totalXp={TOTAL_XP_PER_COURSE}
-              onContinue={handleResultContinue}
-            />
-          ) : mode === 'completed' ? (
-            <CompletedView onRestart={handleReview} />
-          ) : (
-            <LessonView
-              onBackToRoadmap={() => {
-                setSidebarTab('levels');
-                setIsSidebarOpen(false);
-              }}
-              progressLabel={`${Math.min(learnStepCount, learnStep + 1)}/${learnStepCount}`}
-              currentIndex={currentIndex}
-              currentBatchEntries={currentBatchEntries}
-              allBatchGroups={lessonBatchGroups}
-              currentStep={learnStep}
-              isReading={isReading}
-              onSelectStep={handleSelectLessonStep}
-              englishReferenceByKey={englishReferenceByKey}
-              defaultLanguage={defaultLanguage}
-              isPronunciationEnabled={isPronunciationEnabled}
-              isBoldTextEnabled={isBoldTextEnabled}
-              isAutoScrollEnabled={isAutoScrollEnabled}
-              textScalePercent={textScalePercent}
-              learnLanguage={learnLanguage}
-              activeSpeakingLessonIndex={activeSpeakingLessonIndex}
-              onPlayLesson={handlePlaySingleLesson}
-              savedHighlightPhrasesByLessonKey={highlightPhrasesByLessonKey}
-              onSaveLessonHighlight={saveHighlightSelection}
-              onClearLessonHighlight={clearHighlightSelection}
-            />
-          )}
-        </main>
+        <AppMainContent
+          isProfileView={isProfileView}
+          isLevelsView={isLevelsView}
+          isSettingsView={isSettingsView}
+          mode={mode}
+          profileViewProps={profileViewProps}
+          levelsViewProps={levelsViewProps}
+          settingsViewProps={settingsViewProps}
+          matchReviewViewProps={matchReviewViewProps}
+          resultViewProps={resultViewProps}
+          lessonViewProps={lessonViewProps}
+          onCompletedRestart={handleReview}
+        />
 
-        {(isLessonView || isLevelsView) && (
-          <LessonActionFooter
-            mode={mode}
-            isNextDisabled={isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end)}
-            isPreviousDisabled={
-              mode !== 'learn'
-              || isNextDisabled
-            }
-            isReadDisabled={mode !== 'learn' || orderedUnitIndexes.length === 0}
-            isReading={isReading}
-            isShuffleEnabled={isRandomLessonOrderEnabled}
-            repeatMode={repeatMode}
-            isVisible={isMobileBottomBarsVisible}
-            onToggleShuffle={handleToggleShuffle}
-            onToggleRepeat={handleToggleRepeat}
-            onPrevious={handlePrevious}
-            onRead={() => { void handleReadCurrentBatch(); }}
-            onNext={handleNext}
-          />
-        )}
-
-        <MobileBottomNav
-          activeTab={sidebarTab}
-          isVisible={isMobileBottomBarsVisible}
-          onTabChange={selectTab}
+        <AppBottomBars
+          showLessonActions={showLessonActions}
+          lessonActionFooterProps={lessonActionFooterProps}
+          mobileBottomNavProps={mobileBottomNavProps}
         />
       </div>
     </div>

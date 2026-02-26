@@ -1,0 +1,107 @@
+import { Dispatch, SetStateAction, useState } from 'react';
+import { AppMode, SidebarTab } from '../config/appConfig';
+
+type PendingUnitTarget = { level: number; unit: number; albumKey?: string | null };
+
+type UseUnitLeaveGuardsParams = {
+  mode: AppMode;
+  currentLevel: number;
+  currentUnit: number;
+  learnStep: number;
+  learnStepCount: number;
+  completedUnitKeys: Set<string>;
+  navigateToLevelUnit: (level: number, unit: number, albumKey?: string | null) => Promise<void>;
+  setSidebarTab: Dispatch<SetStateAction<SidebarTab>>;
+  setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
+};
+
+type UseUnitLeaveGuardsResult = {
+  isLeaveQuizModalOpen: boolean;
+  isLeaveCompletedUnitModalOpen: boolean;
+  goToLevelUnit: (level: number, unit: number, albumKey?: string | null) => void;
+  handleLeaveQuizCancel: () => void;
+  handleLeaveQuizConfirm: () => void;
+  handleLeaveCompletedUnitCancel: () => void;
+  handleLeaveCompletedUnitConfirm: () => void;
+};
+
+export function useUnitLeaveGuards({
+  mode,
+  currentLevel,
+  currentUnit,
+  learnStep,
+  learnStepCount,
+  completedUnitKeys,
+  navigateToLevelUnit,
+  setSidebarTab,
+  setIsSidebarOpen,
+}: UseUnitLeaveGuardsParams): UseUnitLeaveGuardsResult {
+  const [pendingUnitTarget, setPendingUnitTarget] = useState<PendingUnitTarget | null>(null);
+  const [isLeaveQuizModalOpen, setIsLeaveQuizModalOpen] = useState(false);
+  const [isLeaveCompletedUnitModalOpen, setIsLeaveCompletedUnitModalOpen] = useState(false);
+
+  const goToLevelUnit = (level: number, unit: number, albumKey?: string | null) => {
+    const targetUnitKey = `${Math.max(1, level)}:${Math.max(1, unit)}`;
+    const isSwitchingUnit = targetUnitKey !== `${currentLevel}:${currentUnit}`;
+    const currentUnitKey = `${currentLevel}:${currentUnit}`;
+    const isCurrentUnitAlreadyCompleted = completedUnitKeys.has(currentUnitKey);
+    const isUnitLearnStepCompleted = mode === 'learn' && learnStep >= learnStepCount - 1;
+
+    if (mode === 'quiz') {
+      setPendingUnitTarget({ level, unit, albumKey });
+      setIsLeaveQuizModalOpen(true);
+      return;
+    }
+
+    if (
+      isSwitchingUnit
+      && isUnitLearnStepCompleted
+      && !isCurrentUnitAlreadyCompleted
+    ) {
+      setPendingUnitTarget({ level, unit, albumKey });
+      setIsLeaveCompletedUnitModalOpen(true);
+      return;
+    }
+
+    void navigateToLevelUnit(level, unit, albumKey);
+  };
+
+  const handleLeaveQuizCancel = () => {
+    setIsLeaveQuizModalOpen(false);
+    setPendingUnitTarget(null);
+  };
+
+  const handleLeaveQuizConfirm = () => {
+    if (pendingUnitTarget) {
+      void navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
+    }
+    setIsLeaveQuizModalOpen(false);
+    setPendingUnitTarget(null);
+  };
+
+  const handleLeaveCompletedUnitCancel = () => {
+    setIsLeaveCompletedUnitModalOpen(false);
+    setPendingUnitTarget(null);
+    setSidebarTab('lesson');
+    setIsSidebarOpen(false);
+  };
+
+  const handleLeaveCompletedUnitConfirm = () => {
+    if (pendingUnitTarget) {
+      void navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
+    }
+    setIsLeaveCompletedUnitModalOpen(false);
+    setPendingUnitTarget(null);
+  };
+
+  return {
+    isLeaveQuizModalOpen,
+    isLeaveCompletedUnitModalOpen,
+    goToLevelUnit,
+    handleLeaveQuizCancel,
+    handleLeaveQuizConfirm,
+    handleLeaveCompletedUnitCancel,
+    handleLeaveCompletedUnitConfirm,
+  };
+}
+
