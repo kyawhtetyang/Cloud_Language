@@ -854,7 +854,7 @@ const App: React.FC = () => {
     : null;
 
   const lessonViewProps = {
-    onBackToRoadmap: () => {
+    onBackToLibrary: () => {
       setSidebarTab('library');
       setIsSidebarOpen(false);
     },

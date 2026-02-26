@@ -1,14 +1,14 @@
 import { DefaultLanguage, StageCode } from './appConfig';
 
-export type RoadmapTextPack = {
-  roadmap: string;
+export type LibraryTextPack = {
+  library: string;
   unitPrefix: string;
   groupPrefix: string;
   stageLabels: Record<StageCode, string>;
 };
 
-const ROADMAP_TEXT_ENGLISH: RoadmapTextPack = {
-  roadmap: 'Library',
+const LIBRARY_TEXT_ENGLISH: LibraryTextPack = {
+  library: 'Library',
   unitPrefix: 'Unit',
   groupPrefix: 'Units',
   stageLabels: {
@@ -19,10 +19,10 @@ const ROADMAP_TEXT_ENGLISH: RoadmapTextPack = {
   },
 };
 
-const ROADMAP_TEXT_BY_LANGUAGE: Record<string, RoadmapTextPack> = {
-  english: ROADMAP_TEXT_ENGLISH,
+const LIBRARY_TEXT_BY_LANGUAGE: Record<string, LibraryTextPack> = {
+  english: LIBRARY_TEXT_ENGLISH,
   burmese: {
-    roadmap: 'စာကြည့်တိုက်',
+    library: 'စာကြည့်တိုက်',
     unitPrefix: 'ယူနစ်',
     groupPrefix: 'ယူနစ်များ',
     stageLabels: {
@@ -34,7 +34,7 @@ const ROADMAP_TEXT_BY_LANGUAGE: Record<string, RoadmapTextPack> = {
   },
 };
 
-const ROADMAP_TOPIC_REPLACEMENTS_BY_LANGUAGE: Record<string, Record<string, string>> = {
+const LIBRARY_TOPIC_REPLACEMENTS_BY_LANGUAGE: Record<string, Record<string, string>> = {
   burmese: {
     'common phrases for beginners': 'အခြေခံ အသုံးများသော စကားစုများ',
     'alphabet sounds & basic pronunciation': 'အက္ခရာအသံများနှင့် အခြေခံအသံထွက်',
@@ -108,7 +108,7 @@ const ROADMAP_TOPIC_REPLACEMENTS_BY_LANGUAGE: Record<string, Record<string, stri
   },
 };
 
-const ROADMAP_TOPIC_CONCISE_BY_LANGUAGE: Record<string, Record<string, string>> = {
+const LIBRARY_TOPIC_CONCISE_BY_LANGUAGE: Record<string, Record<string, string>> = {
   english: {
     'common phrases for beginners': 'Common Phrases',
     'alphabet sounds & basic pronunciation': 'Pronunciation',
@@ -247,12 +247,12 @@ const ROADMAP_TOPIC_CONCISE_BY_LANGUAGE: Record<string, Record<string, string>> 
   },
 };
 
-export function getRoadmapText(defaultLanguage: DefaultLanguage): RoadmapTextPack {
-  return ROADMAP_TEXT_BY_LANGUAGE[defaultLanguage] || ROADMAP_TEXT_ENGLISH;
+export function getLibraryText(defaultLanguage: DefaultLanguage): LibraryTextPack {
+  return LIBRARY_TEXT_BY_LANGUAGE[defaultLanguage] || LIBRARY_TEXT_ENGLISH;
 }
 
-export function localizeRoadmapTopic(topic: string, defaultLanguage: DefaultLanguage): string {
-  const replacements = ROADMAP_TOPIC_REPLACEMENTS_BY_LANGUAGE[defaultLanguage];
+export function localizeLibraryTopic(topic: string, defaultLanguage: DefaultLanguage): string {
+  const replacements = LIBRARY_TOPIC_REPLACEMENTS_BY_LANGUAGE[defaultLanguage];
   if (!replacements) return topic;
 
   let localized = topic;
@@ -263,11 +263,11 @@ export function localizeRoadmapTopic(topic: string, defaultLanguage: DefaultLang
   return localized;
 }
 
-export function localizeRoadmapTopicConcise(topic: string, defaultLanguage: DefaultLanguage): string {
+export function localizeLibraryTopicConcise(topic: string, defaultLanguage: DefaultLanguage): string {
   const normalized = topic.trim().toLowerCase();
-  const conciseMap = ROADMAP_TOPIC_CONCISE_BY_LANGUAGE[defaultLanguage];
+  const conciseMap = LIBRARY_TOPIC_CONCISE_BY_LANGUAGE[defaultLanguage];
   if (conciseMap?.[normalized]) return conciseMap[normalized];
-  return localizeRoadmapTopic(topic, defaultLanguage);
+  return localizeLibraryTopic(topic, defaultLanguage);
 }
 
 

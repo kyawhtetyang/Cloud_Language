@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DefaultLanguage } from '../../../config/appConfig';
-import { localizeRoadmapTopic } from '../../../config/roadmapI18n';
+import { localizeLibraryTopic } from '../../../config/libraryI18n';
 import type { AlbumUnitEntry } from './libraryTypes';
 import { LIBRARY_UI_TOKENS } from './libraryUiTokens';
 
@@ -80,7 +80,7 @@ export const UnitRow: React.FC<UnitRowProps> = ({
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-semibold leading-tight text-ink">
-            {localizeRoadmapTopic(entry.topic, defaultLanguage)}
+            {localizeLibraryTopic(entry.topic, defaultLanguage)}
           </p>
         </div>
         <button

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DefaultLanguage } from '../../../config/appConfig';
-import { localizeRoadmapTopic } from '../../../config/roadmapI18n';
+import { localizeLibraryTopic } from '../../../config/libraryI18n';
 import { LibraryGroupCard } from './LibraryGroupCard';
 import type { AlbumCollectionSection, AlbumGroup } from './libraryTypes';
 import { LIBRARY_UI_TOKENS } from './libraryUiTokens';
@@ -35,7 +35,7 @@ export const AlbumList: React.FC<AlbumListProps> = ({
               key={group.key}
               onOpen={() => onOpenAlbum(group.key)}
               ariaLabel={`Open group ${group.groupIndex + 1}`}
-              title={shortenLabel(localizeRoadmapTopic(group.firstTopicConcise, defaultLanguage), 48)}
+              title={shortenLabel(localizeLibraryTopic(group.firstTopicConcise, defaultLanguage), 48)}
               meta={formatAlbumMeta(group)}
               coverUrl={group.coverUrl}
               accentClass={LIBRARY_UI_TOKENS.sectionAccent}

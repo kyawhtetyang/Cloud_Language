@@ -7,7 +7,7 @@ import {
   LearnLanguage,
   StageCode,
 } from '../../config/appConfig';
-import { getRoadmapText, localizeRoadmapTopic, localizeRoadmapTopicConcise } from '../../config/roadmapI18n';
+import { getLibraryText, localizeLibraryTopic, localizeLibraryTopicConcise } from '../../config/libraryI18n';
 import { VIEW_PAGE_CLASS } from './viewShared';
 import { useSwipeBack } from '../../hooks/useSwipeBack';
 import { AlbumHeader } from './library/AlbumHeader';
@@ -134,11 +134,11 @@ function resolveHskLanguageCodeFromCollectionLabel(label: string): string {
 }
 
 function getConciseTopicTitle(rawTopic: string, defaultLanguage: DefaultLanguage): string {
-  return localizeRoadmapTopicConcise(rawTopic, defaultLanguage);
+  return localizeLibraryTopicConcise(rawTopic, defaultLanguage);
 }
 
 function getDisplayAlbumTitle(rawTitle: string, defaultLanguage: DefaultLanguage): string {
-  return localizeRoadmapTopic(rawTitle, defaultLanguage);
+  return localizeLibraryTopic(rawTitle, defaultLanguage);
 }
 
 async function handleAlbumDownloadAction(
@@ -192,7 +192,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     }
     setInternalSelectedAlbumKey(key);
   };
-  const text = getRoadmapText(defaultLanguage);
+  const text = getLibraryText(defaultLanguage);
   const playAllLabel = defaultLanguage === 'burmese' ? 'အားလုံးဖတ်' : 'Play all';
   const collectionSections = useMemo<AlbumCollectionSection[]>(() => {
     const byCollection = new Map<string, { sourceOrder: string[]; bySource: Map<string, AlbumGroup['units']> }>();
@@ -274,7 +274,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           if (localizedGroupTitle.includes(normalizedLibraryQuery)) return true;
           return group.units.some((unitEntry) => {
             const conciseTopic = getConciseTopicTitle(unitEntry.topic, defaultLanguage).toLowerCase();
-            const localizedTopic = localizeRoadmapTopic(unitEntry.topic, defaultLanguage).toLowerCase();
+            const localizedTopic = localizeLibraryTopic(unitEntry.topic, defaultLanguage).toLowerCase();
             return conciseTopic.includes(normalizedLibraryQuery) || localizedTopic.includes(normalizedLibraryQuery);
           });
         }),

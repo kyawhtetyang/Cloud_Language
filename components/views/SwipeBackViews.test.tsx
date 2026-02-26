@@ -18,7 +18,7 @@ function swipeFromLeftEdge(element: HTMLElement) {
 
 describe('Swipe-back behavior', () => {
   it('triggers lesson back handler on valid edge swipe', () => {
-    const onBackToRoadmap = vi.fn();
+    const onBackToLibrary = vi.fn();
     const lesson: LessonData = {
       level: 1,
       unit: 1,
@@ -31,7 +31,7 @@ describe('Swipe-back behavior', () => {
 
     const { container } = render(
       <LessonView
-        onBackToRoadmap={onBackToRoadmap}
+        onBackToLibrary={onBackToLibrary}
         currentIndex={0}
         currentBatchEntries={[{ lesson, lessonIndex: 0 }]}
         englishReferenceByKey={new Map()}
@@ -43,7 +43,7 @@ describe('Swipe-back behavior', () => {
     );
 
     swipeFromLeftEdge(container.firstElementChild as HTMLElement);
-    expect(onBackToRoadmap).toHaveBeenCalledTimes(1);
+    expect(onBackToLibrary).toHaveBeenCalledTimes(1);
   });
 
   it('returns from settings subpage to main page on edge swipe', () => {

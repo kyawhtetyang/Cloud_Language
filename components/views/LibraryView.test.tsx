@@ -30,7 +30,7 @@ function swipeFromLeftEdge(element: HTMLElement) {
 }
 
 describe('LibraryView topic localization', () => {
-  it('localizes known roadmap topic labels when default language is burmese', () => {
+  it('localizes known library topic labels when default language is burmese', () => {
     render(
       <LibraryView
         lessons={lessons}

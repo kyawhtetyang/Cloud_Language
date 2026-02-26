@@ -13,7 +13,7 @@ import {
 } from '../../config/interactionConfig';
 import { useSwipeBack } from '../../hooks/useSwipeBack';
 import { buildLessonReferenceKey } from '../../utils/lessonReference';
-import { localizeRoadmapTopic } from '../../config/roadmapI18n';
+import { localizeLibraryTopic } from '../../config/libraryI18n';
 
 type LessonEntry = {
   lesson: LessonData;
@@ -31,7 +31,7 @@ type TextMatchRange = {
 };
 
 type LessonViewProps = {
-  onBackToRoadmap?: () => void;
+  onBackToLibrary?: () => void;
   progressLabel?: string;
   currentIndex: number;
   currentBatchEntries: LessonEntry[];
@@ -156,7 +156,7 @@ function renderHighlightedText(text: string, phrases: string[]): React.ReactNode
 }
 
 export const LessonView: React.FC<LessonViewProps> = ({
-  onBackToRoadmap,
+  onBackToLibrary,
   progressLabel,
   currentIndex,
   currentBatchEntries,
@@ -181,7 +181,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [highlightModeRowKey, setHighlightModeRowKey] = useState<string | null>(null);
   const [dragStartTokenIndex, setDragStartTokenIndex] = useState<number | null>(null);
   const [dragEndTokenIndex, setDragEndTokenIndex] = useState<number | null>(null);
-  const swipeBackHandlers = useSwipeBack(onBackToRoadmap);
+  const swipeBackHandlers = useSwipeBack(onBackToLibrary);
   const batchRefs = useRef<Array<HTMLDivElement | null>>([]);
   const lessonRowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const longPressTimerRef = useRef<number | null>(null);
@@ -197,7 +197,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const unit = leadLesson?.unit || 1;
   const unitCode = `${Math.max(1, level)}.${Math.max(1, unit)}`;
   const topicTitle = leadLesson?.topic
-    ? localizeRoadmapTopic(leadLesson.topic, defaultLanguage)
+    ? localizeLibraryTopic(leadLesson.topic, defaultLanguage)
     : defaultLanguage === 'burmese'
       ? `ယူနစ် ${unit}`
       : `Unit ${unit}`;
@@ -638,10 +638,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
       <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
         <div className="top-toolbar-row flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2.5">
-            {onBackToRoadmap && (
+            {onBackToLibrary && (
               <button
                 type="button"
-                onClick={onBackToRoadmap}
+                onClick={onBackToLibrary}
                 aria-label="Back"
                 className="top-toolbar-icon inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
               >
