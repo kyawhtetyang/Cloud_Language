@@ -21,7 +21,7 @@ describe('settingsSync', () => {
       isAutoScrollEnabled: true,
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
-      appTheme: 'apple_notes',
+      appTheme: 'light',
       voiceProvider: 'default',
     });
   });
@@ -36,7 +36,7 @@ describe('settingsSync', () => {
       isAutoScrollEnabled: false,
       isRandomLessonOrderEnabled: true,
       isReviewQuestionsRemoved: true,
-      appTheme: 'duolingo' as const,
+      appTheme: 'dark' as const,
       voiceProvider: 'apple_siri' as const,
     };
 
@@ -55,7 +55,7 @@ describe('settingsSync', () => {
       isAutoScrollEnabled: true,
       isRandomLessonOrderEnabled: false,
       isReviewQuestionsRemoved: false,
-      appTheme: 'apple_notes' as const,
+      appTheme: 'light' as const,
       voiceProvider: 'default' as const,
     };
     const profileSettings = {
@@ -67,7 +67,7 @@ describe('settingsSync', () => {
       isAutoScrollEnabled: false,
       isRandomLessonOrderEnabled: true,
       isReviewQuestionsRemoved: true,
-      appTheme: 'duolingo' as const,
+      appTheme: 'dark' as const,
       voiceProvider: 'apple_siri' as const,
     };
 
@@ -117,8 +117,7 @@ describe('settingsSync', () => {
     expect(setters.setIsAutoScrollEnabled).toHaveBeenCalledWith(false);
     expect(setters.setIsRandomLessonOrderEnabled).toHaveBeenCalledWith(true);
     expect(setters.setIsReviewQuestionsRemoved).toHaveBeenCalledWith(true);
-    expect(setters.setAppTheme).toHaveBeenCalledWith('duolingo');
+    expect(setters.setAppTheme).toHaveBeenCalledWith('light');
     expect(setters.setVoiceProvider).toHaveBeenCalledWith('apple_siri');
   });
 });
-

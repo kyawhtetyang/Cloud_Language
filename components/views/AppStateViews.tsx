@@ -73,7 +73,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
         className={`w-full mt-4 py-3 rounded-xl border-2 text-sm font-extrabold uppercase tracking-wide transition-all ${
           isProfileInputValid
             ? 'btn-selected'
-            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-muted)] cursor-not-allowed'
         }`}
       >
         Continue
@@ -88,7 +88,7 @@ export const CompletedView: React.FC<{ onRestart: () => void }> = ({ onRestart }
     <p className={`${VIEW_BODY_TEXT_CLASS} mb-6`}>You completed all sections and passed the random checks.</p>
     <button
       onClick={onRestart}
-      className="w-full py-4 rounded-2xl bg-brand text-white font-extrabold text-lg uppercase tracking-wider duo-button-shadow hover:brightness-110 active:scale-95 transition-all"
+      className="w-full py-4 rounded-2xl border-2 btn-selected font-extrabold text-lg uppercase tracking-wider active:scale-95 transition-all"
     >
       Restart Unit 1
     </button>

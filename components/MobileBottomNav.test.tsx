@@ -11,7 +11,7 @@ describe('MobileBottomNav', () => {
     const settingsIconWrap = settingsButton.querySelector('span');
 
     expect(settingsButton.className).toContain('text-brand');
-    expect(lessonButton.className).toContain('text-gray-500');
+    expect(lessonButton.className).toContain('text-[var(--text-secondary)]');
     expect(settingsIconWrap?.className).toContain('bg-transparent');
     expect(settingsIconWrap?.className).toContain('text-brand');
   });
@@ -27,5 +27,4 @@ describe('MobileBottomNav', () => {
     expect(onTabChange).toHaveBeenNthCalledWith(2, 'profile');
   });
 });
-
 

@@ -33,12 +33,12 @@ export const LeaveQuizModal: React.FC<LeaveQuizModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="leave-quiz-title"
-        className="relative w-full max-w-sm rounded-2xl border-2 border-gray-100 bg-white p-5 shadow-xl"
+        className="relative w-full max-w-sm rounded-2xl border-2 border-[var(--border-subtle)] bg-[var(--surface-default)] p-5 shadow-xl"
       >
         <h3 id="leave-quiz-title" className="text-lg font-extrabold text-ink">
           {title}
         </h3>
-        <p className="mt-2 text-sm text-gray-600">{message}</p>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">{message}</p>
         <div className="mt-4 flex gap-2">
           <button
             type="button"
@@ -59,7 +59,6 @@ export const LeaveQuizModal: React.FC<LeaveQuizModalProps> = ({
     </div>
   );
 };
-
 
 
 

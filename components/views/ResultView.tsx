@@ -37,12 +37,11 @@ export const ResultView: React.FC<ResultViewProps> = ({
       </p>
       <button
         onClick={onContinue}
-        className="w-full py-4 rounded-2xl bg-brand text-white font-extrabold text-lg uppercase tracking-wider duo-button-shadow hover:brightness-110 active:scale-95 transition-all"
+        className="w-full py-4 rounded-2xl border-2 btn-selected font-extrabold text-lg uppercase tracking-wider active:scale-95 transition-all"
       >
         {reviewResult.passed ? 'Continue' : 'Retry Unit'}
       </button>
     </div>
   );
 };
-
 

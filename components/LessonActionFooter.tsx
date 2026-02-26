@@ -89,7 +89,7 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
     >
       <div className="mx-auto flex max-w-md flex-col gap-2.5 md:gap-3">
         {mode === 'learn' && (
-          <div className="mx-auto flex w-full max-w-[340px] items-center justify-between gap-1.5 rounded-[22px] bg-white/96 px-2 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.16)] backdrop-blur-md">
+          <div className="mx-auto flex w-full max-w-[min(640px,calc(100vw-1rem))] items-center justify-between gap-1.5 rounded-[22px] border border-[var(--border-strong)] bg-[var(--surface-default)] px-2 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.16)] backdrop-blur-md">
             <button
               onClick={onToggleShuffle}
               aria-label={isShuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'}
@@ -185,5 +185,3 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
     </footer>
   );
 };
-
-

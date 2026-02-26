@@ -76,7 +76,7 @@ export const MatchReviewView: React.FC<MatchReviewViewProps> = ({
                     ? 'border-brand bg-brand-pale-alt text-brand-ink'
                     : isSelected
                       ? 'border-brand bg-brand-paler'
-                      : 'border-gray-200 hover:bg-gray-50'
+                      : 'border-[var(--border-subtle)] selection-hover'
                 }`}
               >
                 {pair.prompt}
@@ -98,7 +98,7 @@ export const MatchReviewView: React.FC<MatchReviewViewProps> = ({
                     ? 'border-brand bg-brand-pale-alt text-brand-ink'
                     : isSelected
                       ? 'border-brand bg-brand-paler'
-                      : 'border-gray-200 hover:bg-gray-50'
+                      : 'border-[var(--border-subtle)] selection-hover'
                 }`}
               >
                 {pair.answer}
@@ -114,4 +114,3 @@ export const MatchReviewView: React.FC<MatchReviewViewProps> = ({
     </div>
   );
 };
-

@@ -11,6 +11,7 @@ import {
   LESSON_AUTO_SCROLL_SAFE_ZONE_RATIO,
   LESSON_LONG_PRESS_MS,
 } from '../../config/interactionConfig';
+import { useSwipeBack } from '../../hooks/useSwipeBack';
 import { buildLessonReferenceKey } from '../../utils/lessonReference';
 import { localizeRoadmapTopic } from '../../config/roadmapI18n';
 
@@ -64,7 +65,7 @@ const LESSON_ROW_NO_SELECT_STYLE: React.CSSProperties = {
   WebkitTouchCallout: 'none',
 };
 const ACTIVE_SPEAKING_TEXT_STYLE: React.CSSProperties = {
-  color: 'var(--color-danger)',
+  color: 'var(--color-brand)',
 };
 
 function tokenizeLessonTextForHighlight(rawText: string): TokenizedHighlightText {
@@ -180,6 +181,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [highlightModeRowKey, setHighlightModeRowKey] = useState<string | null>(null);
   const [dragStartTokenIndex, setDragStartTokenIndex] = useState<number | null>(null);
   const [dragEndTokenIndex, setDragEndTokenIndex] = useState<number | null>(null);
+  const swipeBackHandlers = useSwipeBack(onBackToRoadmap);
   const batchRefs = useRef<Array<HTMLDivElement | null>>([]);
   const lessonRowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const longPressTimerRef = useRef<number | null>(null);
@@ -632,7 +634,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   useEffect(() => () => clearLongPressTimer(), []);
 
   return (
-    <div className="w-full max-w-3xl">
+    <div className="w-full max-w-3xl" {...swipeBackHandlers}>
       <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
         <div className="top-toolbar-row flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2.5">

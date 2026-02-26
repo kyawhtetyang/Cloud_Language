@@ -149,10 +149,8 @@ const LESSON_TRANSLATION_POLICY: Record<LearnLanguage, { englishUiUsesLessonTran
 };
 
 export const APP_THEME_OPTIONS = [
-  { code: 'apple_notes', label: 'Orange' },
+  { code: 'light', label: 'Light Mode' },
   { code: 'dark', label: 'Dark Mode' },
-  { code: 'system', label: 'Light mode' },
-  { code: 'duolingo', label: 'Duolingo' },
 ] as const;
 export type AppTheme = (typeof APP_THEME_OPTIONS)[number]['code'];
 
@@ -179,7 +177,7 @@ export const APP_DEFAULTS = {
   isAutoScrollEnabled: true,
   isRandomLessonOrderEnabled: false,
   isReviewQuestionsRemoved: false,
-  appTheme: 'apple_notes' as AppTheme,
+  appTheme: 'light' as AppTheme,
   voiceProvider: 'default' as VoiceProvider,
 };
 

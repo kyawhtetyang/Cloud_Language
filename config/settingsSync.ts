@@ -4,7 +4,6 @@ import {
   AUTO_SCROLL_ENABLED_KEY,
   APP_THEME_KEY,
   AppTheme,
-  isAppTheme,
   BOLD_TEXT_ENABLED_KEY,
   clampTextScale,
   DEFAULT_LANGUAGE_KEY,
@@ -93,8 +92,16 @@ function parseTextScale(value: string | null): number {
   return clampTextScale(Number(value || DEFAULT_SYNCED_SETTINGS.textScalePercent));
 }
 
+function coerceAppTheme(value: unknown): AppTheme | null {
+  if (value === 'dark') return 'dark';
+  if (value === 'light' || value === 'apple_notes' || value === 'duolingo' || value === 'system') {
+    return 'light';
+  }
+  return null;
+}
+
 function parseAppTheme(value: string | null): AppTheme {
-  return isAppTheme(value) ? value : APP_DEFAULTS.appTheme;
+  return coerceAppTheme(value) ?? APP_DEFAULTS.appTheme;
 }
 
 
@@ -191,8 +198,9 @@ export function applyRemoteSyncedSettings(
   if (typeof remote.isReviewQuestionsRemoved === 'boolean') {
     setters.setIsReviewQuestionsRemoved(remote.isReviewQuestionsRemoved);
   }
-  if (isAppTheme(remote.appTheme)) {
-    setters.setAppTheme(remote.appTheme);
+  const remoteTheme = coerceAppTheme(remote.appTheme);
+  if (remoteTheme) {
+    setters.setAppTheme(remoteTheme);
   }
   if (remote.voiceProvider === 'google') {
     setters.setVoiceProvider('apple_siri');

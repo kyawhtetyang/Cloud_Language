@@ -3,9 +3,8 @@ import {
   VIEW_BODY_TEXT_CLASS,
   VIEW_DIVIDER_CLASS,
   VIEW_PAGE_CLASS,
-  VIEW_PANEL_CLASS,
-  VIEW_PANEL_PAD_CLASS,
   VIEW_SECTION_LABEL_CLASS,
+  VIEW_SECTION_TITLE_CLASS,
 } from './viewShared';
 
 type ProfileViewProps = {
@@ -45,104 +44,120 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     ? Math.min(100, Math.max(0, progressPercent))
     : 0;
   const visualProgress = normalizedProgress > 0 ? normalizedProgress : 2;
-  const splitFirstColumnClass = `sm:border-r sm:pr-3 ${VIEW_DIVIDER_CLASS}`;
-  const splitMiddleColumnClass = `border-t pt-3 sm:border-t-0 sm:border-r sm:pt-0 sm:px-3 ${VIEW_DIVIDER_CLASS}`;
-  const splitLastColumnClass = `border-t pt-3 sm:border-t-0 sm:pt-0 sm:pl-3 ${VIEW_DIVIDER_CLASS}`;
+
+  const listCardClass = 'overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)]';
+  const listDividerClass = 'border-t border-[var(--border-subtle)]';
+  const listRowClass =
+    'w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-hover)]';
+  const sectionTitleClass = VIEW_SECTION_TITLE_CLASS;
 
   return (
-    <div className={`${VIEW_PAGE_CLASS} space-y-4`}>
-      <section className={`${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS} md:p-6`}>
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-2xl border-2 btn-selected flex items-center justify-center text-2xl font-extrabold">
-            U
+    <div className={`${VIEW_PAGE_CLASS} space-y-4 px-1 md:px-0`}>
+      <section>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Account</h3>
+        <div className={listCardClass}>
+          <div className="flex items-center gap-3 px-4 py-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 btn-selected text-2xl font-extrabold">
+              U
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold text-ink md:text-2xl">Welcome back</h2>
+              <p className={`${VIEW_BODY_TEXT_CLASS} font-semibold`}>{profileName}</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl md:text-2xl font-extrabold text-ink">Welcome back</h2>
-            <p className={`${VIEW_BODY_TEXT_CLASS} font-semibold`}>{profileName}</p>
-          </div>
-        </div>
-
-        <div className={`mt-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
-          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
-            <span>Overall Progress</span>
-            <span>{progressPercent}%</span>
-          </div>
-          <div className="mt-2 h-3 rounded-full overflow-hidden border border-brand-border bg-brand-track">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${visualProgress}%`,
-                minWidth: '10px',
-                opacity: 1,
-                background: 'linear-gradient(90deg, var(--dark-accent-primary, var(--color-brand)), var(--dark-accent-primary, var(--color-brand-dark)))',
-              }}
-            />
-          </div>
-          <p className="mt-2 text-xs text-ink-subtle font-bold uppercase tracking-wide">
-            {progressLabel}
-          </p>
-        </div>
-
-        <div className="mt-4">
-          <p className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Switch Profile</p>
-          <div className="flex gap-2">
-            <input
-              value={profileInput}
-              onChange={(event) => onProfileInputChange(event.target.value)}
-              onKeyDown={(event) => event.key === 'Enter' && onApplyProfileName()}
-              placeholder="Username (no spaces)"
-              className="flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-3 py-2 text-base md:text-sm font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)]"
-            />
-            <button
-              onClick={onApplyProfileName}
-              disabled={!isProfileInputValid}
-              className={`px-4 rounded-xl text-xs font-extrabold uppercase tracking-wide border-2 transition-all ${
-                isProfileInputValid
-                  ? 'btn-selected'
-                  : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              Save
-            </button>
-          </div>
-          {(profileError || hasProfileWhitespace) && (
-            <p className="mt-2 text-xs font-bold text-danger">Username cannot contain spaces.</p>
-          )}
-        </div>
-      </section>
-
-      <section className={`${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS} md:p-6`}>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className={splitFirstColumnClass}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Current Course</p>
-            <p className="mt-1 text-lg md:text-xl font-extrabold text-ink">{currentCourseCode}</p>
-          </div>
-          <div className={splitMiddleColumnClass}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Unlocked Groups</p>
-            <p className="mt-1 text-lg md:text-xl font-extrabold text-ink">{unlockedUnits}/{totalUnits}</p>
-          </div>
-          <div className={splitLastColumnClass}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Streak</p>
-            <p className="mt-1 text-lg md:text-xl font-extrabold text-ink">{streak}</p>
+          <div className={listDividerClass} />
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+              <span>Overall Progress</span>
+              <span>{normalizedProgress}%</span>
+            </div>
+            <div className="mt-2 h-3 overflow-hidden rounded-full border border-brand-border bg-brand-track">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${visualProgress}%`,
+                  minWidth: '10px',
+                  opacity: 1,
+                  background:
+                    'linear-gradient(90deg, var(--dark-accent-primary, var(--color-brand)), var(--dark-accent-primary, var(--color-brand-dark)))',
+                }}
+              />
+            </div>
+            <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-subtle">{progressLabel}</p>
           </div>
         </div>
       </section>
 
-      <section className={`${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS} md:p-6`}>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className={splitFirstColumnClass}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Signed in as</p>
-            <p className="mt-1 text-sm font-bold text-ink">{profileName}</p>
+      <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Progress Stats</h3>
+        <div className={listCardClass}>
+          <div className={listRowClass}>
+            <span className={sectionTitleClass}>Current Course</span>
+            <span className="text-base font-extrabold text-ink">{currentCourseCode}</span>
           </div>
+          <div className={listDividerClass} />
+          <div className={listRowClass}>
+            <span className={sectionTitleClass}>Unlocked Groups</span>
+            <span className="text-base font-extrabold text-ink">
+              {unlockedUnits}/{totalUnits}
+            </span>
+          </div>
+          <div className={listDividerClass} />
+          <div className={listRowClass}>
+            <span className={sectionTitleClass}>Streak</span>
+            <span className="text-base font-extrabold text-ink">{streak}</span>
+          </div>
+        </div>
+      </section>
+
+      <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Change Display Name</h3>
+        <div className={listCardClass}>
+          <div className="px-4 py-3">
+            <div className="flex gap-2">
+              <input
+                value={profileInput}
+                onChange={(event) => onProfileInputChange(event.target.value)}
+                onKeyDown={(event) => event.key === 'Enter' && onApplyProfileName()}
+                placeholder="Display name (no spaces)"
+                className="flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-3 py-2 text-base font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)] md:text-sm"
+              />
+              <button
+                onClick={onApplyProfileName}
+                disabled={!isProfileInputValid}
+                className={`rounded-xl border-2 px-4 text-xs font-extrabold uppercase tracking-wide transition-all ${
+                  isProfileInputValid
+                    ? 'btn-selected'
+                    : 'cursor-not-allowed border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-muted)]'
+                }`}
+              >
+                Save
+              </button>
+            </div>
+            {(profileError || hasProfileWhitespace) && (
+              <p className="mt-2 text-xs font-bold text-danger">Username cannot contain spaces.</p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Session</h3>
+        <div className={listCardClass}>
+          <div className={listRowClass}>
+            <div>
+              <p className={sectionTitleClass}>Signed in as</p>
+              <p className="mt-0.5 text-sm font-bold text-ink">{profileName}</p>
+            </div>
+          </div>
+          <div className={listDividerClass} />
           <button
             type="button"
             onClick={onRequestLogout}
-            className={`${splitLastColumnClass} text-left text-sm font-semibold text-danger transition-colors hover:opacity-80`}
+            className={`${listRowClass} text-danger`}
           >
-            <span className="flex items-center justify-between gap-3">
-              <span>Log out</span>
-              <span aria-hidden="true">›</span>
-            </span>
+            <span className="text-sm font-semibold">Log out</span>
+            <span aria-hidden="true">&gt;</span>
           </button>
         </div>
       </section>

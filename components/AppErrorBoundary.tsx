@@ -25,9 +25,9 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, A
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-app">
-          <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 w-full max-w-md text-center">
+          <div className="w-full max-w-md rounded-2xl border-2 border-[var(--border-subtle)] bg-[var(--surface-default)] p-6 text-center">
             <h1 className="text-xl font-extrabold text-ink mb-2">Something went wrong</h1>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
               The app hit an unexpected error. Reload to recover.
             </p>
             <button
@@ -45,5 +45,4 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, A
     return this.props.children;
   }
 }
-
 

@@ -20,8 +20,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   const navClass = (active: boolean) =>
     `w-full px-3 py-2.5 rounded-xl text-sm font-extrabold uppercase tracking-wide border-2 transition-all ${
       active
-        ? 'btn-selected'
-        : 'btn-unselected'
+        ? 'btn-nav-selected'
+        : 'btn-unselected text-[var(--text-secondary)]'
     }`;
 
   const renderNavButton = (tab: SidebarTab) => {
@@ -46,7 +46,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-full w-72 bg-white border-r-2 border-brand-border p-5 z-40 transform transition-transform md:translate-x-0 ${
+      className={`fixed top-0 left-0 h-full w-72 border-r-2 border-brand-border bg-[var(--surface-default)] p-5 z-40 transform transition-transform md:translate-x-0 ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
@@ -63,7 +63,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </span>
             Duolingo
           </button>
-          <button className="md:hidden text-gray-500 font-bold text-xl" onClick={onClose} aria-label="Close">
+          <button className="md:hidden text-[var(--text-secondary)] font-bold text-xl" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
@@ -79,8 +79,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             onClick={() => onSelectTab('profile')}
             className={`w-full px-3 py-3 rounded-xl text-sm font-extrabold uppercase tracking-wide border-2 transition-all ${
               isProfileActive
-                ? 'btn-selected'
-                : 'btn-unselected'
+                ? 'btn-nav-selected'
+                : 'btn-unselected text-[var(--text-secondary)]'
             }`}
           >
             <span className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   APP_THEME_OPTIONS,
   AppTheme,
@@ -13,11 +13,10 @@ import {
   VIEW_BODY_TEXT_CLASS,
   VIEW_DIVIDER_CLASS,
   VIEW_PAGE_CLASS,
-  VIEW_PANEL_CLASS,
-  VIEW_PANEL_PAD_CLASS,
   VIEW_SECTION_LABEL_CLASS,
   VIEW_SECTION_TITLE_CLASS,
 } from './viewShared';
+import { useSwipeBack } from '../../hooks/useSwipeBack';
 
 type SettingsViewProps = {
   defaultLanguage: DefaultLanguage;
@@ -42,37 +41,35 @@ type SettingsViewProps = {
   onVoiceProviderChange: (value: VoiceProvider) => void;
 };
 
-const sectionTitleClass = VIEW_SECTION_TITLE_CLASS;
-const sectionCardClass = 'rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-3';
-const optionButtonBaseClass = 'w-full min-h-10 px-3 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide text-center leading-tight transition-all';
+type SettingsRoute = 'main' | 'defaultLanguage' | 'learnLanguage' | 'appearance' | 'voiceProvider';
 
-type ToggleCardProps = {
-  title: string;
-  description: string;
+const sectionTitleClass = VIEW_SECTION_TITLE_CLASS;
+const listCardClass = 'overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)]';
+const listDividerClass = 'border-t border-[var(--border-subtle)]';
+const listRowClass =
+  'w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-hover)]';
+
+function findOptionLabel<T extends string>(
+  options: ReadonlyArray<{ code: T; label: string }>,
+  code: T,
+): string {
+  return options.find((option) => option.code === code)?.label ?? code;
+}
+
+type ToggleStateBadgeProps = {
   isOn: boolean;
-  onToggle: () => void;
 };
 
-const ToggleCard: React.FC<ToggleCardProps> = ({ title, description, isOn, onToggle }) => (
-  <div className={sectionCardClass}>
-    <div className="flex items-start justify-between gap-4">
-      <div>
-        <p className={sectionTitleClass}>{title}</p>
-        <p className={`${VIEW_BODY_TEXT_CLASS} mt-1`}>{description}</p>
-      </div>
-      <button
-        type="button"
-        onClick={onToggle}
-        className={`px-4 py-2 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wide transition-all ${
-          isOn
-            ? 'btn-selected'
-            : 'btn-unselected'
-        }`}
-      >
-        {isOn ? 'On' : 'Off'}
-      </button>
-    </div>
-  </div>
+const ToggleStateBadge: React.FC<ToggleStateBadgeProps> = ({ isOn }) => (
+  <span
+    className={`inline-flex min-w-16 items-center justify-center rounded-xl border-2 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wide transition-all ${
+      isOn
+        ? 'btn-selected'
+        : 'btn-unselected text-[var(--text-secondary)]'
+    }`}
+  >
+    {isOn ? 'On' : 'Off'}
+  </span>
 );
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -97,108 +94,154 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onAppThemeChange,
   onVoiceProviderChange,
 }) => {
-  return (
-    <div className={`${VIEW_PAGE_CLASS} ${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS}`}>
-      <section className="mb-4">
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Language</h3>
-        <div className="space-y-3">
-          <div className={sectionCardClass}>
-            <p className={sectionTitleClass}>Default Language</p>
-            <p className={`${VIEW_BODY_TEXT_CLASS} mt-1 mb-3`}>Choose the app interface language.</p>
-            <div className="grid grid-cols-2 gap-2">
-              {DEFAULT_LANGUAGE_OPTIONS.map((option) => (
-                <button
-                  key={option.code}
-                  type="button"
-                  onClick={() => onDefaultLanguageChange(option.code)}
-                  className={`${optionButtonBaseClass} ${
-                    defaultLanguage === option.code
-                      ? 'btn-selected'
-                      : 'btn-unselected'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className={sectionCardClass}>
-            <p className={sectionTitleClass}>Learn Language</p>
-            <p className={`${VIEW_BODY_TEXT_CLASS} mt-1 mb-3`}>Choose your target learning language.</p>
-            <div className="grid grid-cols-2 gap-2">
-              {LEARN_LANGUAGE_OPTIONS.map((option) => (
-                <button
-                  key={option.code}
-                  type="button"
-                  onClick={() => onLearnLanguageChange(option.code)}
-                  className={`${optionButtonBaseClass} ${
-                    learnLanguage === option.code
-                      ? 'btn-selected'
-                      : 'btn-unselected'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+  const [route, setRoute] = useState<SettingsRoute>('main');
+  const swipeBackHandlers = useSwipeBack(
+    route !== 'main' ? () => setRoute('main') : null,
+  );
 
-      <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Theme</h3>
-        <div className={sectionCardClass}>
-          <p className={sectionTitleClass}>Current Theme</p>
-          <p className={`${VIEW_BODY_TEXT_CLASS} mt-1 mb-3`}>Choose visual style for the app.</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {APP_THEME_OPTIONS.map((option) => (
-              <button
-                key={option.code}
-                type="button"
-                onClick={() => onAppThemeChange(option.code)}
-                className={`${optionButtonBaseClass} ${
-                  appTheme === option.code
-                    ? 'btn-selected'
-                    : 'btn-unselected'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+  const defaultLanguageLabel = useMemo(
+    () => findOptionLabel(DEFAULT_LANGUAGE_OPTIONS, defaultLanguage),
+    [defaultLanguage],
+  );
+  const learnLanguageLabel = useMemo(
+    () => findOptionLabel(LEARN_LANGUAGE_OPTIONS, learnLanguage),
+    [learnLanguage],
+  );
+  const appThemeLabel = useMemo(() => findOptionLabel(APP_THEME_OPTIONS, appTheme), [appTheme]);
+  const voiceProviderLabel = useMemo(
+    () => findOptionLabel(VOICE_PROVIDER_OPTIONS, voiceProvider),
+    [voiceProvider],
+  );
+
+  const subPageMeta: Record<Exclude<SettingsRoute, 'main'>, { title: string; description: string }> = {
+    defaultLanguage: {
+      title: 'Default Language',
+      description: 'Choose the app interface language.',
+    },
+    learnLanguage: {
+      title: 'Learn Language',
+      description: 'Choose your target learning language.',
+    },
+    appearance: {
+      title: 'Appearance',
+      description: 'Choose Light or Dark mode.',
+    },
+    voiceProvider: {
+      title: 'Voice Provider',
+      description: 'Choose Default voice or Apple Siri-style voice when available.',
+    },
+  };
+
+  const renderOptionPage = <T extends string>(
+    options: ReadonlyArray<{ code: T; label: string }>,
+    selectedCode: T,
+    onSelect: (value: T) => void,
+  ) => (
+    <div className={listCardClass}>
+      {options.map((option, index) => {
+        const isSelected = selectedCode === option.code;
+        return (
+          <React.Fragment key={option.code}>
+            <button
+              type="button"
+              onClick={() => onSelect(option.code)}
+              className={listRowClass}
+            >
+              <span className="text-sm font-semibold text-[var(--text-primary)]">{option.label}</span>
+              <ToggleStateBadge isOn={isSelected} />
+            </button>
+            {index < options.length - 1 && <div className={listDividerClass} />}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+
+  const renderMainPage = () => (
+    <>
+      <section className="mb-4">
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Preferences</h3>
+        <div className={listCardClass}>
+          <button type="button" onClick={() => setRoute('defaultLanguage')} className={listRowClass}>
+            <div>
+              <p className={sectionTitleClass}>Default Language</p>
+              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>App interface language</p>
+            </div>
+            <span className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+              {defaultLanguageLabel}
+              <span aria-hidden="true">›</span>
+            </span>
+          </button>
+          <div className={listDividerClass} />
+          <button type="button" onClick={() => setRoute('learnLanguage')} className={listRowClass}>
+            <div>
+              <p className={sectionTitleClass}>Learn Language</p>
+              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Target language</p>
+            </div>
+            <span className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+              {learnLanguageLabel}
+              <span aria-hidden="true">›</span>
+            </span>
+          </button>
+          <div className={listDividerClass} />
+          <button type="button" onClick={() => setRoute('appearance')} className={listRowClass}>
+            <div>
+              <p className={sectionTitleClass}>Appearance</p>
+              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Light / Dark mode</p>
+            </div>
+            <span className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+              {appThemeLabel}
+              <span aria-hidden="true">›</span>
+            </span>
+          </button>
+          <div className={listDividerClass} />
+          <button type="button" onClick={() => setRoute('voiceProvider')} className={listRowClass}>
+            <div>
+              <p className={sectionTitleClass}>Voice Provider</p>
+              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Speech voice preference</p>
+            </div>
+            <span className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+              {voiceProviderLabel}
+              <span aria-hidden="true">›</span>
+            </span>
+          </button>
         </div>
       </section>
 
       <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
         <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Display</h3>
-        <div className="space-y-3">
-          <ToggleCard
-            title="Bold Text"
-            description="Increase overall text thickness."
-            isOn={isBoldTextEnabled}
-            onToggle={onToggleBoldText}
-          />
-          <ToggleCard
-            title="Auto Scroll"
-            description="Keep speaking sentence near the center while audio plays."
-            isOn={isAutoScrollEnabled}
-            onToggle={onToggleAutoScroll}
-          />
-          <div className={sectionCardClass}>
-            <div className="flex items-start justify-between gap-4">
+        <div className={listCardClass}>
+          <button type="button" onClick={onToggleBoldText} className={listRowClass}>
+            <div>
+              <p className={sectionTitleClass}>Bold Text</p>
+              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Increase overall text thickness.</p>
+            </div>
+            <ToggleStateBadge isOn={isBoldTextEnabled} />
+          </button>
+          <div className={listDividerClass} />
+          <button type="button" onClick={onToggleAutoScroll} className={listRowClass}>
+            <div>
+              <p className={sectionTitleClass}>Auto Scroll</p>
+              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Keep speaking sentence near center.</p>
+            </div>
+            <ToggleStateBadge isOn={isAutoScrollEnabled} />
+          </button>
+          <div className={listDividerClass} />
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
               <div>
                 <p className={sectionTitleClass}>Text Size</p>
-                <p className={`${VIEW_BODY_TEXT_CLASS} mt-1`}>Global text scale for the whole app.</p>
+                <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Global text scale for the app.</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={onDecreaseTextSize}
                   disabled={!canDecreaseTextSize}
-                  className={`w-9 h-9 rounded-xl border-2 text-lg font-extrabold transition-all ${
+                  className={`h-8 w-8 rounded-lg border-2 text-base font-extrabold transition-all ${
                     canDecreaseTextSize
-                      ? 'btn-selected'
-                      : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                      ? 'btn-unselected'
+                      : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-muted)] cursor-not-allowed'
                   }`}
                   aria-label="Decrease text size"
                 >
@@ -211,10 +254,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   type="button"
                   onClick={onIncreaseTextSize}
                   disabled={!canIncreaseTextSize}
-                  className={`w-9 h-9 rounded-xl border-2 text-lg font-extrabold transition-all ${
+                  className={`h-8 w-8 rounded-lg border-2 text-base font-extrabold transition-all ${
                     canIncreaseTextSize
-                      ? 'btn-selected'
-                      : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                      ? 'btn-unselected'
+                      : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-muted)] cursor-not-allowed'
                   }`}
                   aria-label="Increase text size"
                 >
@@ -228,46 +271,65 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
         <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Audio</h3>
-        <div className="space-y-3">
-          <ToggleCard
-            title="Pronunciation"
-            description="Show pronunciation row in lessons."
-            isOn={isPronunciationEnabled}
-            onToggle={onTogglePronunciation}
-          />
-          <div className={sectionCardClass}>
-            <p className={sectionTitleClass}>Voice Provider</p>
-            <p className={`${VIEW_BODY_TEXT_CLASS} mt-1 mb-3`}>Choose Default voice or prefer Apple Siri-style female voice when available.</p>
-            <div className="grid grid-cols-2 gap-2">
-              {VOICE_PROVIDER_OPTIONS.map((option) => (
-                <button
-                  key={option.code}
-                  type="button"
-                  onClick={() => onVoiceProviderChange(option.code)}
-                  className={`${optionButtonBaseClass} ${
-                    voiceProvider === option.code
-                      ? 'btn-selected'
-                      : 'btn-unselected'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
+        <div className={listCardClass}>
+          <button type="button" onClick={onTogglePronunciation} className={listRowClass}>
+            <div>
+              <p className={sectionTitleClass}>Pronunciation</p>
+              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Show pronunciation row in lessons.</p>
             </div>
-          </div>
+            <ToggleStateBadge isOn={isPronunciationEnabled} />
+          </button>
         </div>
       </section>
 
       <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
-        <div className={sectionCardClass}>
+        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-3">
           <p className={sectionTitleClass}>Current Mapping</p>
-          <div className="mt-3 space-y-1.5 text-xs">
+          <div className="mt-2 space-y-1 text-xs">
             <p className="font-semibold text-[var(--text-secondary)]">
               <span className="uppercase tracking-wide text-[var(--text-primary)]">Translation:</span> {translationLabel}
             </p>
           </div>
         </div>
       </section>
+    </>
+  );
+
+  const renderSubPage = () => {
+    if (route === 'main') return null;
+    const { title, description } = subPageMeta[route];
+    return (
+      <>
+        <div className="mb-4 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setRoute('main')}
+            className="h-9 w-9 rounded-full border-2 btn-unselected text-lg font-black leading-none"
+            aria-label="Back to settings"
+          >
+            ‹
+          </button>
+          <div>
+            <p className={VIEW_SECTION_LABEL_CLASS}>Settings</p>
+            <h3 className="text-lg font-extrabold text-ink">{title}</h3>
+          </div>
+        </div>
+        <p className={`${VIEW_BODY_TEXT_CLASS} mb-3`}>{description}</p>
+        {route === 'defaultLanguage' &&
+          renderOptionPage(DEFAULT_LANGUAGE_OPTIONS, defaultLanguage, onDefaultLanguageChange)}
+        {route === 'learnLanguage' &&
+          renderOptionPage(LEARN_LANGUAGE_OPTIONS, learnLanguage, onLearnLanguageChange)}
+        {route === 'appearance' &&
+          renderOptionPage(APP_THEME_OPTIONS, appTheme, onAppThemeChange)}
+        {route === 'voiceProvider' &&
+          renderOptionPage(VOICE_PROVIDER_OPTIONS, voiceProvider, onVoiceProviderChange)}
+      </>
+    );
+  };
+
+  return (
+    <div className={`${VIEW_PAGE_CLASS} px-1 md:px-0`} {...swipeBackHandlers}>
+      {route === 'main' ? renderMainPage() : renderSubPage()}
     </div>
   );
 };
