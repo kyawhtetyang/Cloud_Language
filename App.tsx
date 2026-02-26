@@ -65,6 +65,7 @@ const App: React.FC = () => {
     profileError,
     hasProfileWhitespace,
     isProfileInputValid,
+    setProfileName,
     setProfileInput,
     applyProfileName,
   } = useProfileProgress(PROFILE_NAME_KEY);
@@ -111,6 +112,7 @@ const App: React.FC = () => {
   const [quizSectionStart, setQuizSectionStart] = useState(0);
   const [quizSectionEnd, setQuizSectionEnd] = useState(0);
   const [isUnitCompleteModalOpen, setIsUnitCompleteModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isMobileBottomBarsVisible, setIsMobileBottomBarsVisible] = useState(true);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   const [pendingAutoPlayUnitKey, setPendingAutoPlayUnitKey] = useState<string | null>(null);
@@ -321,6 +323,16 @@ const App: React.FC = () => {
   }, [lessons]);
 
   const handleApplyProfileName = () => {
+    if (typeof document !== 'undefined') {
+      const activeElement = document.activeElement;
+      if (
+        activeElement instanceof HTMLElement
+        && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName)
+      ) {
+        activeElement.blur();
+      }
+    }
+
     applyProfileName(() => {
       markHydrationStale();
       setMode('learn');
@@ -620,6 +632,41 @@ const App: React.FC = () => {
     setIsSidebarOpen,
   });
 
+  const handleLogoutConfirm = async () => {
+    setIsLogoutModalOpen(false);
+    if (isReading || activeSpeakingLessonIndex !== null) {
+      await stopActivePlayback();
+    } else {
+      interruptPlaybackImmediately();
+    }
+    setTrackPlaybackEnabled(false);
+    resetUnitPlaybackAnchor();
+
+    try {
+      localStorage.removeItem(PROFILE_NAME_KEY);
+    } catch {
+      // Keep logout resilient if storage is unavailable.
+    }
+
+    setProfileName('');
+    setProfileInput('');
+    setMode('learn');
+    setCurrentIndex(DEFAULT_PROGRESS_INDEX);
+    setLearnStep(0);
+    setUnitXp(0);
+    setReviewResult(null);
+    setCompletedUnitKeys(new Set());
+    setQuizSectionStart(0);
+    setQuizSectionEnd(0);
+    setIsUnitCompleteModalOpen(false);
+    setRoadmapSelectedAlbumKey(null);
+    setPendingAutoPlayUnitKey(null);
+    setRepeatMode('off');
+    setSidebarTab('profile');
+    setIsSidebarOpen(false);
+    setRandomOrderVersion((prev) => prev + 1);
+  };
+
   const handleToggleShuffle = () => {
     const wasPlaying = isReading || activeSpeakingLessonIndex !== null;
     if (wasPlaying) {
@@ -709,6 +756,18 @@ const App: React.FC = () => {
     onCancel: handleUnitCompleteStay,
     onConfirm: handleUnitCompleteContinue,
   };
+  const logoutModalProps = {
+    isOpen: isLogoutModalOpen,
+    title: defaultLanguage === 'burmese' ? 'Log out လုပ်မလား?' : 'Log out?',
+    message:
+      defaultLanguage === 'burmese'
+        ? 'အကောင့်ကနေထွက်မယ်ဆိုတာ အတည်ပြုပါ။'
+        : 'Are you sure you want to log out from this profile?',
+    cancelLabel: defaultLanguage === 'burmese' ? 'မထွက်တော့ဘူး' : 'Cancel',
+    confirmLabel: defaultLanguage === 'burmese' ? 'Log out' : 'Log out',
+    onCancel: () => setIsLogoutModalOpen(false),
+    onConfirm: () => { void handleLogoutConfirm(); },
+  };
 
   const profileViewProps = {
     profileName,
@@ -724,6 +783,7 @@ const App: React.FC = () => {
     streak,
     onProfileInputChange: setProfileInput,
     onApplyProfileName: handleApplyProfileName,
+    onRequestLogout: () => setIsLogoutModalOpen(true),
   };
 
   const levelsViewProps = {
@@ -847,6 +907,7 @@ const App: React.FC = () => {
         leaveQuizModalProps={leaveQuizModalProps}
         leaveCompletedUnitModalProps={leaveCompletedUnitModalProps}
         unitCompleteModalProps={unitCompleteModalProps}
+        logoutModalProps={logoutModalProps}
         isSidebarOpen={isSidebarOpen}
         onDismissSidebarOverlay={() => setIsSidebarOpen(false)}
       />
@@ -859,7 +920,7 @@ const App: React.FC = () => {
         onReload={reloadApp}
       />
 
-      <div className="flex-1 flex flex-col min-h-screen pb-36 md:pb-32">
+      <div className="flex-1 flex flex-col min-h-screen pb-36 md:ml-72 md:pb-32">
         <AppMainContent
           isProfileView={isProfileView}
           isLevelsView={isLevelsView}

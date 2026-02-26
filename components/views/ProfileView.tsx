@@ -22,6 +22,7 @@ type ProfileViewProps = {
   streak: number;
   onProfileInputChange: (value: string) => void;
   onApplyProfileName: () => void;
+  onRequestLogout: () => void;
 };
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
@@ -38,11 +39,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   streak,
   onProfileInputChange,
   onApplyProfileName,
+  onRequestLogout,
 }) => {
   const normalizedProgress = Number.isFinite(progressPercent)
     ? Math.min(100, Math.max(0, progressPercent))
     : 0;
   const visualProgress = normalizedProgress > 0 ? normalizedProgress : 2;
+  const splitFirstColumnClass = `sm:border-r sm:pr-3 ${VIEW_DIVIDER_CLASS}`;
+  const splitMiddleColumnClass = `border-t pt-3 sm:border-t-0 sm:border-r sm:pt-0 sm:px-3 ${VIEW_DIVIDER_CLASS}`;
+  const splitLastColumnClass = `border-t pt-3 sm:border-t-0 sm:pt-0 sm:pl-3 ${VIEW_DIVIDER_CLASS}`;
 
   return (
     <div className={`${VIEW_PAGE_CLASS} space-y-4`}>
@@ -86,7 +91,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               onChange={(event) => onProfileInputChange(event.target.value)}
               onKeyDown={(event) => event.key === 'Enter' && onApplyProfileName()}
               placeholder="Username (no spaces)"
-              className="flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)]"
+              className="flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-3 py-2 text-base md:text-sm font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)]"
             />
             <button
               onClick={onApplyProfileName}
@@ -108,18 +113,37 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
       <section className={`${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS} md:p-6`}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className={`sm:border-r sm:pr-3 ${VIEW_DIVIDER_CLASS}`}>
+          <div className={splitFirstColumnClass}>
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Current Course</p>
-            <p className="mt-1 text-xl md:text-2xl font-extrabold text-ink">{currentCourseCode}</p>
+            <p className="mt-1 text-lg md:text-xl font-extrabold text-ink">{currentCourseCode}</p>
           </div>
-          <div className={`border-t pt-3 sm:border-t-0 sm:border-r sm:pt-0 sm:px-3 ${VIEW_DIVIDER_CLASS}`}>
+          <div className={splitMiddleColumnClass}>
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Unlocked Groups</p>
-            <p className="mt-1 text-xl md:text-2xl font-extrabold text-ink">{unlockedUnits}/{totalUnits}</p>
+            <p className="mt-1 text-lg md:text-xl font-extrabold text-ink">{unlockedUnits}/{totalUnits}</p>
           </div>
-          <div className={`border-t pt-3 sm:border-t-0 sm:pl-3 ${VIEW_DIVIDER_CLASS}`}>
+          <div className={splitLastColumnClass}>
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Streak</p>
-            <p className="mt-1 text-xl md:text-2xl font-extrabold text-ink">{streak}</p>
+            <p className="mt-1 text-lg md:text-xl font-extrabold text-ink">{streak}</p>
           </div>
+        </div>
+      </section>
+
+      <section className={`${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS} md:p-6`}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className={splitFirstColumnClass}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Signed in as</p>
+            <p className="mt-1 text-sm font-bold text-ink">{profileName}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onRequestLogout}
+            className={`${splitLastColumnClass} text-left text-sm font-semibold text-danger transition-colors hover:opacity-80`}
+          >
+            <span className="flex items-center justify-between gap-3">
+              <span>Log out</span>
+              <span aria-hidden="true">›</span>
+            </span>
+          </button>
         </div>
       </section>
     </div>

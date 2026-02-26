@@ -62,7 +62,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
         onChange={(event) => onProfileInputChange(event.target.value)}
         onKeyDown={(event) => event.key === 'Enter' && onApplyProfileName()}
         placeholder="Username (no spaces)"
-        className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-4 py-3 text-sm font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)]"
+        className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-4 py-3 text-base md:text-sm font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)]"
       />
       {(profileError || hasProfileWhitespace) && (
         <p className="mt-2 text-xs font-bold text-danger">Username cannot contain spaces.</p>
@@ -70,9 +70,9 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
       <button
         onClick={onApplyProfileName}
         disabled={!isProfileInputValid}
-        className={`w-full mt-4 py-3 rounded-xl font-extrabold uppercase tracking-wide transition-all ${
+        className={`w-full mt-4 py-3 rounded-xl border-2 text-sm font-extrabold uppercase tracking-wide transition-all ${
           isProfileInputValid
-            ? 'bg-brand text-white duo-button-shadow hover:brightness-110'
+            ? 'btn-selected'
             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
         }`}
       >
@@ -94,4 +94,3 @@ export const CompletedView: React.FC<{ onRestart: () => void }> = ({ onRestart }
     </button>
   </div>
 );
-

@@ -630,7 +630,7 @@ export const LevelsView: React.FC<LevelsViewProps> = ({
             value={libraryQuery}
             onChange={(event) => setLibraryQuery(event.target.value)}
             placeholder={defaultLanguage === 'burmese' ? 'Library ကို ရှာမယ်' : 'Search library'}
-            className="top-toolbar-control w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)]"
+            className="top-toolbar-control w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] pl-9 pr-3 text-base md:text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)]"
           />
         </div>
       </div>

@@ -46,7 +46,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-full w-72 bg-white border-r-2 border-brand-border p-5 z-40 transform transition-transform md:sticky md:top-0 md:h-screen md:translate-x-0 ${
+      className={`fixed top-0 left-0 h-full w-72 bg-white border-r-2 border-brand-border p-5 z-40 transform transition-transform md:translate-x-0 ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >

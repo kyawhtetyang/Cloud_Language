@@ -17,5 +17,8 @@ This is the frontend client for LingoBurmese.
 
 Default local frontend URL: `http://localhost:3000`
 
+## QA
+
+- Mobile pre-push check: `MOBILE_SMOKE_TEST.md`
 
 

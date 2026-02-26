@@ -5,6 +5,7 @@ type AppDialogsProps = {
   leaveQuizModalProps: React.ComponentProps<typeof LeaveQuizModal>;
   leaveCompletedUnitModalProps: React.ComponentProps<typeof LeaveQuizModal>;
   unitCompleteModalProps: React.ComponentProps<typeof LeaveQuizModal>;
+  logoutModalProps: React.ComponentProps<typeof LeaveQuizModal>;
   isSidebarOpen: boolean;
   onDismissSidebarOverlay: () => void;
 };
@@ -13,6 +14,7 @@ export const AppDialogs: React.FC<AppDialogsProps> = ({
   leaveQuizModalProps,
   leaveCompletedUnitModalProps,
   unitCompleteModalProps,
+  logoutModalProps,
   isSidebarOpen,
   onDismissSidebarOverlay,
 }) => (
@@ -20,6 +22,7 @@ export const AppDialogs: React.FC<AppDialogsProps> = ({
     <LeaveQuizModal {...leaveQuizModalProps} />
     <LeaveQuizModal {...leaveCompletedUnitModalProps} />
     <LeaveQuizModal {...unitCompleteModalProps} />
+    <LeaveQuizModal {...logoutModalProps} />
     {isSidebarOpen && (
       <button
         className="fixed inset-0 bg-black/30 z-30 md:hidden"
@@ -29,4 +32,3 @@ export const AppDialogs: React.FC<AppDialogsProps> = ({
     )}
   </>
 );
-
