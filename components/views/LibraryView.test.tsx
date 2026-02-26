@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { LevelsView } from './LevelsView';
+import { LibraryView } from './LibraryView';
 import { LessonData } from '../../types';
 
 const lessons: LessonData[] = [
@@ -29,10 +29,10 @@ function swipeFromLeftEdge(element: HTMLElement) {
   });
 }
 
-describe('LevelsView topic localization', () => {
+describe('LibraryView topic localization', () => {
   it('localizes known roadmap topic labels when default language is burmese', () => {
     render(
-      <LevelsView
+      <LibraryView
         lessons={lessons}
         defaultLanguage="burmese"
         learnLanguage="burmese"
@@ -46,7 +46,7 @@ describe('LevelsView topic localization', () => {
 
   it('keeps original topic labels when default language is english', () => {
     render(
-      <LevelsView
+      <LibraryView
         lessons={lessons}
         defaultLanguage="english"
         learnLanguage="burmese"
@@ -60,7 +60,7 @@ describe('LevelsView topic localization', () => {
 
   it('renders completed units with gray style', () => {
     render(
-      <LevelsView
+      <LibraryView
         lessons={lessons}
         defaultLanguage="english"
         learnLanguage="burmese"
@@ -77,7 +77,7 @@ describe('LevelsView topic localization', () => {
     const onReadAlbum = vi.fn();
     const onSelectUnit = vi.fn();
     render(
-      <LevelsView
+      <LibraryView
         lessons={lessons}
         defaultLanguage="english"
         learnLanguage="burmese"
@@ -98,7 +98,7 @@ describe('LevelsView topic localization', () => {
 
   it('supports swipe-back from album detail to album list', () => {
     const { getByTestId } = render(
-      <LevelsView
+      <LibraryView
         lessons={lessons}
         defaultLanguage="english"
         learnLanguage="burmese"

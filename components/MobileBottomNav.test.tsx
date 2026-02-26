@@ -23,7 +23,7 @@ describe('MobileBottomNav', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Library' }));
     fireEvent.click(screen.getByRole('button', { name: 'Profile' }));
 
-    expect(onTabChange).toHaveBeenNthCalledWith(1, 'levels');
+    expect(onTabChange).toHaveBeenNthCalledWith(1, 'library');
     expect(onTabChange).toHaveBeenNthCalledWith(2, 'profile');
   });
 });

@@ -16,7 +16,7 @@ import { AlbumDetail } from './library/AlbumDetail';
 import { LIBRARY_STATE_STYLE } from './library/libraryUiTokens';
 import type { AlbumCollectionSection, AlbumGroup } from './library/libraryTypes';
 
-type LevelsViewProps = {
+type LibraryViewProps = {
   lessons: LessonData[];
   defaultLanguage: DefaultLanguage;
   learnLanguage: LearnLanguage;
@@ -167,7 +167,7 @@ async function handleAlbumDownloadAction(
   );
 }
 
-export const LevelsView: React.FC<LevelsViewProps> = ({
+export const LibraryView: React.FC<LibraryViewProps> = ({
   lessons,
   defaultLanguage,
   learnLanguage,

@@ -40,7 +40,7 @@ type UseUnitNavigationParams = {
   setUnitXp: Dispatch<SetStateAction<number>>;
   setReviewResult: Dispatch<SetStateAction<ReviewResult | null>>;
   resetQuizState: () => void;
-  setRoadmapSelectedAlbumKey: Dispatch<SetStateAction<string | null>>;
+  setLibrarySelectedAlbumKey: Dispatch<SetStateAction<string | null>>;
   setSidebarTab: Dispatch<SetStateAction<SidebarTab>>;
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
 };
@@ -50,7 +50,7 @@ type UseUnitNavigationResult = {
   continueTrackPlaybackIfNeeded: () => void;
   handleNext: () => Promise<void>;
   handlePrevious: () => Promise<void>;
-  navigateToLevelUnit: (level: number, unit: number, albumKey?: string | null) => Promise<void>;
+  navigateToLibraryUnit: (level: number, unit: number, albumKey?: string | null) => Promise<void>;
 };
 
 export function useUnitNavigation({
@@ -81,7 +81,7 @@ export function useUnitNavigation({
   setUnitXp,
   setReviewResult,
   resetQuizState,
-  setRoadmapSelectedAlbumKey,
+  setLibrarySelectedAlbumKey,
   setSidebarTab,
   setIsSidebarOpen,
 }: UseUnitNavigationParams): UseUnitNavigationResult {
@@ -278,7 +278,7 @@ export function useUnitNavigation({
     });
   };
 
-  const navigateToLevelUnit = async (level: number, unit: number, albumKey?: string | null) => {
+  const navigateToLibraryUnit = async (level: number, unit: number, albumKey?: string | null) => {
     await runWithUnitNavigationLock(async () => {
       const safeLevel = Math.min(Math.max(level, 1), totalLevels);
       const safeUnit = Math.max(1, unit);
@@ -291,7 +291,7 @@ export function useUnitNavigation({
       resetUnitPlaybackAnchor();
 
       if (albumKey !== undefined) {
-        setRoadmapSelectedAlbumKey(albumKey);
+        setLibrarySelectedAlbumKey(albumKey);
       }
       setMode('learn');
       setCurrentIndex(target);
@@ -312,6 +312,6 @@ export function useUnitNavigation({
     continueTrackPlaybackIfNeeded,
     handleNext,
     handlePrevious,
-    navigateToLevelUnit,
+    navigateToLibraryUnit,
   };
 }

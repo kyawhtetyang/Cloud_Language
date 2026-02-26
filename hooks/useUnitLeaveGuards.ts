@@ -10,7 +10,7 @@ type UseUnitLeaveGuardsParams = {
   learnStep: number;
   learnStepCount: number;
   completedUnitKeys: Set<string>;
-  navigateToLevelUnit: (level: number, unit: number, albumKey?: string | null) => Promise<void>;
+  navigateToLibraryUnit: (level: number, unit: number, albumKey?: string | null) => Promise<void>;
   setSidebarTab: Dispatch<SetStateAction<SidebarTab>>;
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
 };
@@ -18,7 +18,7 @@ type UseUnitLeaveGuardsParams = {
 type UseUnitLeaveGuardsResult = {
   isLeaveQuizModalOpen: boolean;
   isLeaveCompletedUnitModalOpen: boolean;
-  goToLevelUnit: (level: number, unit: number, albumKey?: string | null) => void;
+  goToLibraryUnit: (level: number, unit: number, albumKey?: string | null) => void;
   handleLeaveQuizCancel: () => void;
   handleLeaveQuizConfirm: () => void;
   handleLeaveCompletedUnitCancel: () => void;
@@ -32,7 +32,7 @@ export function useUnitLeaveGuards({
   learnStep,
   learnStepCount,
   completedUnitKeys,
-  navigateToLevelUnit,
+  navigateToLibraryUnit,
   setSidebarTab,
   setIsSidebarOpen,
 }: UseUnitLeaveGuardsParams): UseUnitLeaveGuardsResult {
@@ -40,7 +40,7 @@ export function useUnitLeaveGuards({
   const [isLeaveQuizModalOpen, setIsLeaveQuizModalOpen] = useState(false);
   const [isLeaveCompletedUnitModalOpen, setIsLeaveCompletedUnitModalOpen] = useState(false);
 
-  const goToLevelUnit = (level: number, unit: number, albumKey?: string | null) => {
+  const goToLibraryUnit = (level: number, unit: number, albumKey?: string | null) => {
     const targetUnitKey = `${Math.max(1, level)}:${Math.max(1, unit)}`;
     const isSwitchingUnit = targetUnitKey !== `${currentLevel}:${currentUnit}`;
     const currentUnitKey = `${currentLevel}:${currentUnit}`;
@@ -63,7 +63,7 @@ export function useUnitLeaveGuards({
       return;
     }
 
-    void navigateToLevelUnit(level, unit, albumKey);
+    void navigateToLibraryUnit(level, unit, albumKey);
   };
 
   const handleLeaveQuizCancel = () => {
@@ -73,7 +73,7 @@ export function useUnitLeaveGuards({
 
   const handleLeaveQuizConfirm = () => {
     if (pendingUnitTarget) {
-      void navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
+      void navigateToLibraryUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
     }
     setIsLeaveQuizModalOpen(false);
     setPendingUnitTarget(null);
@@ -88,7 +88,7 @@ export function useUnitLeaveGuards({
 
   const handleLeaveCompletedUnitConfirm = () => {
     if (pendingUnitTarget) {
-      void navigateToLevelUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
+      void navigateToLibraryUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
     }
     setIsLeaveCompletedUnitModalOpen(false);
     setPendingUnitTarget(null);
@@ -97,7 +97,7 @@ export function useUnitLeaveGuards({
   return {
     isLeaveQuizModalOpen,
     isLeaveCompletedUnitModalOpen,
-    goToLevelUnit,
+    goToLibraryUnit,
     handleLeaveQuizCancel,
     handleLeaveQuizConfirm,
     handleLeaveCompletedUnitCancel,

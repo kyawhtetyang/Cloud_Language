@@ -69,7 +69,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         </div>
 
         <div className="mb-4 flex flex-col gap-2">
-          {renderNavButton('levels')}
+          {renderNavButton('library')}
           {renderNavButton('lesson')}
           {renderNavButton('settings')}
         </div>

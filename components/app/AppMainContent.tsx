@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppMode } from '../../config/appConfig';
-import { LevelsView } from '../views/LevelsView';
+import { LibraryView } from '../views/LibraryView';
 import { LessonView } from '../views/LessonView';
 import { MatchReviewView } from '../views/MatchReviewView';
 import { ProfileView } from '../views/ProfileView';
@@ -10,11 +10,11 @@ import { CompletedView } from '../views/AppStateViews';
 
 type AppMainContentProps = {
   isProfileView: boolean;
-  isLevelsView: boolean;
+  isLibraryView: boolean;
   isSettingsView: boolean;
   mode: AppMode;
   profileViewProps: React.ComponentProps<typeof ProfileView>;
-  levelsViewProps: React.ComponentProps<typeof LevelsView>;
+  libraryViewProps: React.ComponentProps<typeof LibraryView>;
   settingsViewProps: React.ComponentProps<typeof SettingsView>;
   matchReviewViewProps: React.ComponentProps<typeof MatchReviewView>;
   resultViewProps: React.ComponentProps<typeof ResultView> | null;
@@ -24,11 +24,11 @@ type AppMainContentProps = {
 
 export const AppMainContent: React.FC<AppMainContentProps> = ({
   isProfileView,
-  isLevelsView,
+  isLibraryView,
   isSettingsView,
   mode,
   profileViewProps,
-  levelsViewProps,
+  libraryViewProps,
   settingsViewProps,
   matchReviewViewProps,
   resultViewProps,
@@ -38,8 +38,8 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
   <main className="flex-1 flex items-start justify-center p-4 pt-6 md:p-6 md:pt-8">
     {isProfileView ? (
       <ProfileView {...profileViewProps} />
-    ) : isLevelsView ? (
-      <LevelsView {...levelsViewProps} />
+    ) : isLibraryView ? (
+      <LibraryView {...libraryViewProps} />
     ) : isSettingsView ? (
       <SettingsView {...settingsViewProps} />
     ) : mode === 'quiz' ? (

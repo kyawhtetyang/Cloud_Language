@@ -117,7 +117,7 @@ const App: React.FC = () => {
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   const [pendingAutoPlayUnitKey, setPendingAutoPlayUnitKey] = useState<string | null>(null);
 
-  const [roadmapSelectedAlbumKey, setRoadmapSelectedAlbumKey] = useState<string | null>(null);
+  const [librarySelectedAlbumKey, setLibrarySelectedAlbumKey] = useState<string | null>(null);
   const lastUnitKeyRef = useRef<string>('');
   const lastScrollYRef = useRef(0);
   const scrollTickingRef = useRef(false);
@@ -431,7 +431,7 @@ const App: React.FC = () => {
     continueTrackPlaybackIfNeeded,
     handleNext,
     handlePrevious,
-    navigateToLevelUnit,
+    navigateToLibraryUnit,
   } = useUnitNavigation({
     mode,
     repeatMode,
@@ -460,7 +460,7 @@ const App: React.FC = () => {
     setUnitXp,
     setReviewResult,
     resetQuizState,
-    setRoadmapSelectedAlbumKey,
+    setLibrarySelectedAlbumKey,
     setSidebarTab,
     setIsSidebarOpen,
   });
@@ -499,7 +499,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!pendingAutoPlayUnitKey) return;
     if (mode !== 'learn') return;
-    if (sidebarTab !== 'lesson' && sidebarTab !== 'levels') return;
+    if (sidebarTab !== 'lesson' && sidebarTab !== 'library') return;
     if (orderedUnitIndexes.length === 0) return;
 
     const activeUnitKeyNow = `${currentLevel}:${currentUnit}`;
@@ -539,7 +539,7 @@ const App: React.FC = () => {
     setCurrentIndex(orderedUnitIndexes[nextOffset] ?? sectionStart);
   };
 
-  const handleReadRoadmapAlbum = async (
+  const handleReadLibraryAlbum = async (
     units: Array<{ level: number; unit: number }>,
     albumKey?: string | null,
   ) => {
@@ -556,7 +556,7 @@ const App: React.FC = () => {
     if (target < 0) return;
 
     if (albumKey !== undefined) {
-      setRoadmapSelectedAlbumKey(albumKey);
+      setLibrarySelectedAlbumKey(albumKey);
     }
     setCurrentIndex(target);
     setLearnStep(0);
@@ -615,7 +615,7 @@ const App: React.FC = () => {
   const {
     isLeaveQuizModalOpen,
     isLeaveCompletedUnitModalOpen,
-    goToLevelUnit,
+    goToLibraryUnit,
     handleLeaveQuizCancel,
     handleLeaveQuizConfirm,
     handleLeaveCompletedUnitCancel,
@@ -627,7 +627,7 @@ const App: React.FC = () => {
     learnStep,
     learnStepCount,
     completedUnitKeys,
-    navigateToLevelUnit,
+    navigateToLibraryUnit,
     setSidebarTab,
     setIsSidebarOpen,
   });
@@ -659,7 +659,7 @@ const App: React.FC = () => {
     setQuizSectionStart(0);
     setQuizSectionEnd(0);
     setIsUnitCompleteModalOpen(false);
-    setRoadmapSelectedAlbumKey(null);
+    setLibrarySelectedAlbumKey(null);
     setPendingAutoPlayUnitKey(null);
     setRepeatMode('off');
     setSidebarTab('profile');
@@ -719,15 +719,15 @@ const App: React.FC = () => {
     : 0;
   const activeUnitKey = `${currentLevel}:${currentUnit}`;
   const stageUnits = buildStageUnitsFromLessons(lessons).sort((a, b) => a.level - b.level || a.unit - b.unit);
-  const completedRoadmapKeys =
+  const completedLibraryKeys =
     mode === 'completed'
       ? new Set(stageUnits.map((item) => `${item.level}:${item.unit}`))
       : completedUnitKeys;
-  const isLevelsView = sidebarTab === 'levels';
+  const isLibraryView = sidebarTab === 'library';
   const isProfileView = sidebarTab === 'profile';
   const isLessonView = sidebarTab === 'lesson';
   const isSettingsView = sidebarTab === 'settings';
-  const showLessonActions = isLessonView || isLevelsView;
+  const showLessonActions = isLessonView || isLibraryView;
 
   const leaveQuizModalProps = {
     isOpen: isLeaveQuizModalOpen,
@@ -786,17 +786,17 @@ const App: React.FC = () => {
     onRequestLogout: () => setIsLogoutModalOpen(true),
   };
 
-  const levelsViewProps = {
+  const libraryViewProps = {
     lessons,
     defaultLanguage,
     learnLanguage,
-    onSelectUnit: goToLevelUnit,
+    onSelectUnit: goToLibraryUnit,
     onReadAlbum: (units: Array<{ level: number; unit: number }>, albumKey?: string | null) => {
-      void handleReadRoadmapAlbum(units, albumKey);
+      void handleReadLibraryAlbum(units, albumKey);
     },
-    selectedAlbumKey: roadmapSelectedAlbumKey,
-    onSelectedAlbumKeyChange: setRoadmapSelectedAlbumKey,
-    completedUnitKeys: completedRoadmapKeys,
+    selectedAlbumKey: librarySelectedAlbumKey,
+    onSelectedAlbumKeyChange: setLibrarySelectedAlbumKey,
+    completedUnitKeys: completedLibraryKeys,
     activeUnitKey,
     downloadedUnitKeys,
     onDownloadUnit: (level: number, unit: number) => { void downloadUnitPack(level, unit); },
@@ -855,7 +855,7 @@ const App: React.FC = () => {
 
   const lessonViewProps = {
     onBackToRoadmap: () => {
-      setSidebarTab('levels');
+      setSidebarTab('library');
       setIsSidebarOpen(false);
     },
     progressLabel: `${Math.min(learnStepCount, learnStep + 1)}/${learnStepCount}`,
@@ -923,11 +923,11 @@ const App: React.FC = () => {
       <div className="flex-1 flex flex-col min-h-screen pb-36 md:ml-72 md:pb-32">
         <AppMainContent
           isProfileView={isProfileView}
-          isLevelsView={isLevelsView}
+          isLibraryView={isLibraryView}
           isSettingsView={isSettingsView}
           mode={mode}
           profileViewProps={profileViewProps}
-          levelsViewProps={levelsViewProps}
+          libraryViewProps={libraryViewProps}
           settingsViewProps={settingsViewProps}
           matchReviewViewProps={matchReviewViewProps}
           resultViewProps={resultViewProps}

@@ -122,7 +122,7 @@ export const STAGE_META = {
 } as const;
 
 export type AppMode = 'learn' | 'quiz' | 'result' | 'completed';
-export type SidebarTab = 'profile' | 'levels' | 'lesson' | 'settings';
+export type SidebarTab = 'profile' | 'library' | 'lesson' | 'settings';
 export const LEARN_LANGUAGE_OPTIONS = [
   { code: 'english', label: 'English' },
   { code: 'chinese', label: 'Chinese' },
