@@ -1,5 +1,9 @@
 import React from 'react';
 import { AppMode } from '../config/appConfig';
+import {
+  getFooterLargeButtonClass,
+  getFooterSmallButtonClass,
+} from '../config/buttonUi';
 
 type LessonActionFooterProps = {
   mode: AppMode;
@@ -94,11 +98,7 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
               onClick={onToggleShuffle}
               aria-label={isShuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'}
               title={isShuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'}
-              className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 ease-out ${
-                isShuffleEnabled
-                  ? 'btn-selected'
-                  : 'btn-unselected'
-              }`}
+              className={getFooterSmallButtonClass({ isSelected: isShuffleEnabled })}
             >
               <ShuffleIcon />
               <span className="sr-only">{isShuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'}</span>
@@ -108,11 +108,10 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
               disabled={isPreviousDisabled}
               aria-label="Previous"
               title="Previous"
-              className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 ease-out ${
-                isPreviousDisabled
-                  ? 'btn-unselected cursor-not-allowed opacity-50'
-                  : 'btn-unselected active:scale-[0.97]'
-              }`}
+              className={getFooterSmallButtonClass({
+                isDisabled: isPreviousDisabled,
+                isInteractive: true,
+              })}
             >
               <PreviousIcon />
               <span className="sr-only">Previous</span>
@@ -122,11 +121,7 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
               disabled={isReadDisabled}
               aria-label={isReading ? 'Stop' : 'Read'}
               title={isReading ? 'Stop' : 'Read'}
-              className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all duration-300 ease-out ${
-                isReadDisabled
-                  ? 'btn-unselected cursor-not-allowed'
-                  : 'btn-unselected hover:scale-[1.02] active:scale-[0.98]'
-              }`}
+              className={getFooterLargeButtonClass(isReadDisabled)}
             >
               {isReading ? <PauseIcon /> : <PlayIcon />}
               <span className="sr-only">{isReading ? 'Stop' : 'Read'}</span>
@@ -136,11 +131,10 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
               disabled={isNextDisabled}
               aria-label="Next"
               title="Next"
-              className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 ease-out ${
-                isNextDisabled
-                  ? 'btn-unselected cursor-not-allowed opacity-50'
-                  : 'btn-unselected active:scale-[0.97]'
-              }`}
+              className={getFooterSmallButtonClass({
+                isDisabled: isNextDisabled,
+                isInteractive: true,
+              })}
             >
               <NextIcon />
               <span className="sr-only">Next</span>
@@ -161,11 +155,7 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
                     ? 'Enable repeat one'
                     : 'Disable repeat'
               }
-              className={`relative flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 ease-out ${
-                repeatMode === 'off'
-                  ? 'btn-unselected'
-                  : 'btn-selected'
-              }`}
+              className={`relative ${getFooterSmallButtonClass({ isSelected: repeatMode !== 'off' })}`}
             >
               <RepeatIcon />
               {repeatMode === 'one' && (

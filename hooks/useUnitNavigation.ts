@@ -4,7 +4,6 @@ import {
   getLessonOrderIndex,
   getLessonUnitId,
   resolveStageCode,
-  ReviewResult,
   SidebarTab,
 } from '../config/appConfig';
 import { PREVIOUS_TRACK_SEEK_THRESHOLD_MS } from '../config/interactionConfig';
@@ -37,9 +36,6 @@ type UseUnitNavigationParams = {
   setUnlockedLevel: Dispatch<SetStateAction<number>>;
   setPendingAutoPlayUnitKey: Dispatch<SetStateAction<string | null>>;
   setRandomOrderVersion: Dispatch<SetStateAction<number>>;
-  setUnitXp: Dispatch<SetStateAction<number>>;
-  setReviewResult: Dispatch<SetStateAction<ReviewResult | null>>;
-  resetQuizState: () => void;
   setLibrarySelectedAlbumKey: Dispatch<SetStateAction<string | null>>;
   setSidebarTab: Dispatch<SetStateAction<SidebarTab>>;
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
@@ -78,9 +74,6 @@ export function useUnitNavigation({
   setUnlockedLevel,
   setPendingAutoPlayUnitKey,
   setRandomOrderVersion,
-  setUnitXp,
-  setReviewResult,
-  resetQuizState,
   setLibrarySelectedAlbumKey,
   setSidebarTab,
   setIsSidebarOpen,
@@ -166,9 +159,6 @@ export function useUnitNavigation({
     setUnlockedLevel((prev) => Math.max(prev, targetLevel));
     setPendingAutoPlayUnitKey(`${targetLevel}:${targetUnit}`);
     setRandomOrderVersion((prev) => prev + 1);
-    setUnitXp(0);
-    setReviewResult(null);
-    resetQuizState();
   };
 
   const resolveNextUnitStartForTrackPlayback = (): number | null => {
@@ -300,9 +290,6 @@ export function useUnitNavigation({
       setLearnStep(0);
       setPendingAutoPlayUnitKey(`${safeLevel}:${safeUnit}`);
       setRandomOrderVersion((prev) => prev + 1);
-      setUnitXp(0);
-      setReviewResult(null);
-      resetQuizState();
       setIsSidebarOpen(false);
     });
   };

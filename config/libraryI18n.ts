@@ -7,6 +7,8 @@ export type LibraryTextPack = {
   stageLabels: Record<StageCode, string>;
 };
 
+type KnownLevelScheme = 'cefr' | 'hsk' | 'jlpt' | 'custom';
+
 const LIBRARY_TEXT_ENGLISH: LibraryTextPack = {
   library: 'Library',
   unitPrefix: 'Unit',
@@ -30,6 +32,17 @@ const LIBRARY_TEXT_BY_LANGUAGE: Record<string, LibraryTextPack> = {
       A2: 'အခြေခံအလယ်တန်း (A2)',
       B1: 'အလယ်တန်း (B1)',
       B2: 'အလယ်တန်းမြင့် (B2)',
+    },
+  },
+  vietnamese: {
+    library: 'Thư viện',
+    unitPrefix: 'Bài',
+    groupPrefix: 'Các bài',
+    stageLabels: {
+      A1: 'Sơ cấp (A1)',
+      A2: 'Tiền trung cấp (A2)',
+      B1: 'Trung cấp (B1)',
+      B2: 'Trung cấp cao (B2)',
     },
   },
 };
@@ -251,6 +264,46 @@ export function getLibraryText(defaultLanguage: DefaultLanguage): LibraryTextPac
   return LIBRARY_TEXT_BY_LANGUAGE[defaultLanguage] || LIBRARY_TEXT_ENGLISH;
 }
 
+function normalizeLevelScheme(value: string | undefined): KnownLevelScheme {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'cefr' || normalized === 'hsk' || normalized === 'jlpt') return normalized;
+  return 'custom';
+}
+
+function normalizeLevelCode(value: string | undefined): string {
+  return String(value || '').trim().toUpperCase();
+}
+
+export function localizeCollectionLabel(
+  label: string,
+  defaultLanguage: DefaultLanguage,
+  levelScheme?: string,
+  levelCode?: string,
+): string {
+  const scheme = normalizeLevelScheme(levelScheme);
+  const code = normalizeLevelCode(levelCode);
+  if (scheme === 'cefr') {
+    if (code === 'A1' || code === 'A2' || code === 'B1' || code === 'B2') {
+      return getLibraryText(defaultLanguage).stageLabels[code];
+    }
+    return label;
+  }
+
+  if (scheme === 'hsk') {
+    const match = code.match(/^HSK\s*([1-9]\d*)$/i) || label.match(/^HSK\s*([1-9]\d*)$/i);
+    if (!match) return label;
+    return `HSK ${match[1]}`;
+  }
+
+  if (scheme === 'jlpt') {
+    const match = code.match(/^N([1-5])$/i) || label.match(/^N([1-5])$/i);
+    if (!match) return label;
+    return `JLPT N${match[1]}`;
+  }
+
+  return label;
+}
+
 export function localizeLibraryTopic(topic: string, defaultLanguage: DefaultLanguage): string {
   const replacements = LIBRARY_TOPIC_REPLACEMENTS_BY_LANGUAGE[defaultLanguage];
   if (!replacements) return topic;
@@ -269,5 +322,3 @@ export function localizeLibraryTopicConcise(topic: string, defaultLanguage: Defa
   if (conciseMap?.[normalized]) return conciseMap[normalized];
   return localizeLibraryTopic(topic, defaultLanguage);
 }
-
-

@@ -16,11 +16,8 @@ type UseUnitLeaveGuardsParams = {
 };
 
 type UseUnitLeaveGuardsResult = {
-  isLeaveQuizModalOpen: boolean;
   isLeaveCompletedUnitModalOpen: boolean;
   goToLibraryUnit: (level: number, unit: number, albumKey?: string | null) => void;
-  handleLeaveQuizCancel: () => void;
-  handleLeaveQuizConfirm: () => void;
   handleLeaveCompletedUnitCancel: () => void;
   handleLeaveCompletedUnitConfirm: () => void;
 };
@@ -37,7 +34,6 @@ export function useUnitLeaveGuards({
   setIsSidebarOpen,
 }: UseUnitLeaveGuardsParams): UseUnitLeaveGuardsResult {
   const [pendingUnitTarget, setPendingUnitTarget] = useState<PendingUnitTarget | null>(null);
-  const [isLeaveQuizModalOpen, setIsLeaveQuizModalOpen] = useState(false);
   const [isLeaveCompletedUnitModalOpen, setIsLeaveCompletedUnitModalOpen] = useState(false);
 
   const goToLibraryUnit = (level: number, unit: number, albumKey?: string | null) => {
@@ -46,12 +42,6 @@ export function useUnitLeaveGuards({
     const currentUnitKey = `${currentLevel}:${currentUnit}`;
     const isCurrentUnitAlreadyCompleted = completedUnitKeys.has(currentUnitKey);
     const isUnitLearnStepCompleted = mode === 'learn' && learnStep >= learnStepCount - 1;
-
-    if (mode === 'quiz') {
-      setPendingUnitTarget({ level, unit, albumKey });
-      setIsLeaveQuizModalOpen(true);
-      return;
-    }
 
     if (
       isSwitchingUnit
@@ -64,19 +54,6 @@ export function useUnitLeaveGuards({
     }
 
     void navigateToLibraryUnit(level, unit, albumKey);
-  };
-
-  const handleLeaveQuizCancel = () => {
-    setIsLeaveQuizModalOpen(false);
-    setPendingUnitTarget(null);
-  };
-
-  const handleLeaveQuizConfirm = () => {
-    if (pendingUnitTarget) {
-      void navigateToLibraryUnit(pendingUnitTarget.level, pendingUnitTarget.unit, pendingUnitTarget.albumKey);
-    }
-    setIsLeaveQuizModalOpen(false);
-    setPendingUnitTarget(null);
   };
 
   const handleLeaveCompletedUnitCancel = () => {
@@ -95,13 +72,9 @@ export function useUnitLeaveGuards({
   };
 
   return {
-    isLeaveQuizModalOpen,
     isLeaveCompletedUnitModalOpen,
     goToLibraryUnit,
-    handleLeaveQuizCancel,
-    handleLeaveQuizConfirm,
     handleLeaveCompletedUnitCancel,
     handleLeaveCompletedUnitConfirm,
   };
 }
-

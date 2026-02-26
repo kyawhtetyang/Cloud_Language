@@ -57,7 +57,6 @@ describe('Swipe-back behavior', () => {
         textScalePercent={100}
         canDecreaseTextSize
         canIncreaseTextSize
-        translationLabel="English -> Burmese"
         appTheme="dark"
         voiceProvider="default"
         onDefaultLanguageChange={vi.fn()}
@@ -69,6 +68,7 @@ describe('Swipe-back behavior', () => {
         onIncreaseTextSize={vi.fn()}
         onAppThemeChange={vi.fn()}
         onVoiceProviderChange={vi.fn()}
+        onBackToProfile={vi.fn()}
       />,
     );
 

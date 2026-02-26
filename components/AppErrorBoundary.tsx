@@ -1,4 +1,5 @@
 import React from 'react';
+import { getActionButtonClass } from '../config/buttonUi';
 
 type AppErrorBoundaryState = {
   hasError: boolean;
@@ -33,7 +34,7 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, A
             <button
               type="button"
               onClick={this.handleReload}
-              className="w-full py-3 rounded-xl border-2 font-extrabold uppercase tracking-wide btn-selected"
+              className={getActionButtonClass({ variant: 'primary', size: 'md', fullWidth: true })}
             >
               Reload
             </button>
@@ -45,4 +46,3 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, A
     return this.props.children;
   }
 }
-

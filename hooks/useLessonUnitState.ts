@@ -14,7 +14,6 @@ type UseLessonUnitStateParams = {
   lessons: LessonData[];
   mode: AppMode;
   currentIndex: number;
-  quizSectionStart: number;
   learnStep: number;
   isRandomLessonOrderEnabled: boolean;
   randomOrderVersion: number;
@@ -42,15 +41,11 @@ export function useLessonUnitState({
   lessons,
   mode,
   currentIndex,
-  quizSectionStart,
   learnStep,
   isRandomLessonOrderEnabled,
   randomOrderVersion,
 }: UseLessonUnitStateParams): UseLessonUnitStateResult {
-  const activeLevelIndex =
-    mode === 'quiz' || mode === 'result'
-      ? quizSectionStart
-      : Math.min(currentIndex, Math.max(lessons.length - 1, 0));
+  const activeLevelIndex = Math.min(currentIndex, Math.max(lessons.length - 1, 0));
   const fallbackLevel = lessons[0] ? getLessonOrderIndex(lessons[0]) : 1;
   const currentLevel = lessons[activeLevelIndex] ? getLessonOrderIndex(lessons[activeLevelIndex]) : fallbackLevel;
   const currentUnit = lessons[activeLevelIndex] ? getLessonUnitId(lessons[activeLevelIndex]) : 1;
@@ -109,4 +104,3 @@ export function useLessonUnitState({
     currentBatchEntries,
   };
 }
-

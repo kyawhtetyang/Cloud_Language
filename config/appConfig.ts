@@ -121,7 +121,7 @@ export const STAGE_META = {
   },
 } as const;
 
-export type AppMode = 'learn' | 'quiz' | 'result' | 'completed';
+export type AppMode = 'learn' | 'completed';
 export type SidebarTab = 'profile' | 'library' | 'lesson' | 'settings';
 export const LEARN_LANGUAGE_OPTIONS = [
   { code: 'english', label: 'English' },
@@ -133,6 +133,7 @@ export type LearnLanguage = (typeof LEARN_LANGUAGE_OPTIONS)[number]['code'];
 export const DEFAULT_LANGUAGE_OPTIONS = [
   { code: 'burmese', label: 'Burmese' },
   { code: 'english', label: 'English' },
+  { code: 'vietnamese', label: 'Tiếng Việt' },
 ] as const;
 export type DefaultLanguage = (typeof DEFAULT_LANGUAGE_OPTIONS)[number]['code'];
 

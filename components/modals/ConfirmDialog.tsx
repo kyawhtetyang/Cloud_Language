@@ -1,6 +1,7 @@
 import React from 'react';
+import { BUTTON_UI, getActionButtonClass } from '../../config/buttonUi';
 
-type LeaveQuizModalProps = {
+type ConfirmDialogProps = {
   isOpen: boolean;
   title: string;
   message: string;
@@ -10,7 +11,7 @@ type LeaveQuizModalProps = {
   onConfirm: () => void;
 };
 
-export const LeaveQuizModal: React.FC<LeaveQuizModalProps> = ({
+export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,
   title,
   message,
@@ -25,17 +26,17 @@ export const LeaveQuizModal: React.FC<LeaveQuizModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/40"
+        className={BUTTON_UI.dialogDismissOverlay}
         onClick={onCancel}
-        aria-label="Close leave quick review dialog"
+        aria-label="Close dialog"
       />
       <div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="leave-quiz-title"
+        aria-labelledby="dialog-title"
         className="relative w-full max-w-sm rounded-2xl border-2 border-[var(--border-subtle)] bg-[var(--surface-default)] p-5 shadow-xl"
       >
-        <h3 id="leave-quiz-title" className="text-lg font-extrabold text-ink">
+        <h3 id="dialog-title" className="text-lg font-extrabold text-ink">
           {title}
         </h3>
         <p className="mt-2 text-sm text-[var(--text-secondary)]">{message}</p>
@@ -43,14 +44,14 @@ export const LeaveQuizModal: React.FC<LeaveQuizModalProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-xl border-2 px-3 py-2 text-xs font-extrabold uppercase tracking-wide btn-unselected"
+            className={`flex-1 ${getActionButtonClass({ variant: 'secondary', size: 'sm' })}`}
           >
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 rounded-xl border-2 px-3 py-2 text-xs font-extrabold uppercase tracking-wide btn-selected"
+            className={`flex-1 ${getActionButtonClass({ variant: 'primary', size: 'sm' })}`}
           >
             {confirmLabel}
           </button>
@@ -59,6 +60,3 @@ export const LeaveQuizModal: React.FC<LeaveQuizModalProps> = ({
     </div>
   );
 };
-
-
-

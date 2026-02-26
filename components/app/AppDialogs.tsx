@@ -1,31 +1,26 @@
 import React from 'react';
-import { LeaveQuizModal } from '../modals/LeaveQuizModal';
+import { ConfirmDialog } from '../modals/ConfirmDialog';
+import { BUTTON_UI } from '../../config/buttonUi';
 
 type AppDialogsProps = {
-  leaveQuizModalProps: React.ComponentProps<typeof LeaveQuizModal>;
-  leaveCompletedUnitModalProps: React.ComponentProps<typeof LeaveQuizModal>;
-  unitCompleteModalProps: React.ComponentProps<typeof LeaveQuizModal>;
-  logoutModalProps: React.ComponentProps<typeof LeaveQuizModal>;
+  leaveCompletedUnitModalProps: React.ComponentProps<typeof ConfirmDialog>;
+  logoutModalProps: React.ComponentProps<typeof ConfirmDialog>;
   isSidebarOpen: boolean;
   onDismissSidebarOverlay: () => void;
 };
 
 export const AppDialogs: React.FC<AppDialogsProps> = ({
-  leaveQuizModalProps,
   leaveCompletedUnitModalProps,
-  unitCompleteModalProps,
   logoutModalProps,
   isSidebarOpen,
   onDismissSidebarOverlay,
 }) => (
   <>
-    <LeaveQuizModal {...leaveQuizModalProps} />
-    <LeaveQuizModal {...leaveCompletedUnitModalProps} />
-    <LeaveQuizModal {...unitCompleteModalProps} />
-    <LeaveQuizModal {...logoutModalProps} />
+    <ConfirmDialog {...leaveCompletedUnitModalProps} />
+    <ConfirmDialog {...logoutModalProps} />
     {isSidebarOpen && (
       <button
-        className="fixed inset-0 bg-black/30 z-30 md:hidden"
+        className={BUTTON_UI.sidebarDismissOverlay}
         onClick={onDismissSidebarOverlay}
         aria-label="Close sidebar"
       />

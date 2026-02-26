@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DefaultLanguage } from '../../../config/appConfig';
-import { localizeLibraryTopic } from '../../../config/libraryI18n';
+import { localizeCollectionLabel, localizeLibraryTopic } from '../../../config/libraryI18n';
 import { LibraryGroupCard } from './LibraryGroupCard';
 import type { AlbumCollectionSection, AlbumGroup } from './libraryTypes';
 import { LIBRARY_UI_TOKENS } from './libraryUiTokens';
@@ -27,7 +27,14 @@ export const AlbumList: React.FC<AlbumListProps> = ({
     {sections.map((section) => (
       <div key={section.key} className={LIBRARY_UI_TOKENS.sectionWrap}>
         <div className={LIBRARY_UI_TOKENS.sectionHeaderBar}>
-          <p className={LIBRARY_UI_TOKENS.sectionHeaderText}>{section.label}</p>
+          <p className={LIBRARY_UI_TOKENS.sectionHeaderText}>
+            {localizeCollectionLabel(
+              section.label,
+              defaultLanguage,
+              section.levelScheme,
+              section.levelCode,
+            )}
+          </p>
         </div>
         <div className="divide-y divide-[var(--border-subtle)]">
           {section.groups.map((group) => (

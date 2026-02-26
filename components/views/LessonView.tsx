@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { LessonData } from '../../types';
 import {
+  DefaultLanguage,
   getPlayableLessonText,
   LearnLanguage,
   resolveLessonTranslationText,
@@ -14,6 +15,8 @@ import {
 import { useSwipeBack } from '../../hooks/useSwipeBack';
 import { buildLessonReferenceKey } from '../../utils/lessonReference';
 import { localizeLibraryTopic } from '../../config/libraryI18n';
+import { getAppText } from '../../config/appI18n';
+import { BUTTON_UI, getPillButtonClass } from '../../config/buttonUi';
 
 type LessonEntry = {
   lesson: LessonData;
@@ -40,7 +43,7 @@ type LessonViewProps = {
   isReading?: boolean;
   onSelectStep?: (step: number) => void | Promise<void>;
   englishReferenceByKey: Map<string, string>;
-  defaultLanguage: 'burmese' | 'english';
+  defaultLanguage: DefaultLanguage;
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled?: boolean;
@@ -196,11 +199,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const level = leadLesson?.level || 1;
   const unit = leadLesson?.unit || 1;
   const unitCode = `${Math.max(1, level)}.${Math.max(1, unit)}`;
+  const appText = getAppText(defaultLanguage);
   const topicTitle = leadLesson?.topic
     ? localizeLibraryTopic(leadLesson.topic, defaultLanguage)
-    : defaultLanguage === 'burmese'
-      ? `ယူနစ် ${unit}`
-      : `Unit ${unit}`;
+    : `${appText.lesson.unitPrefix} ${unit}`;
   const totalGroups = allBatchGroups?.length ?? 0;
   const selectedGroupIndex =
     typeof currentStep === 'number' && currentStep >= 0 ? currentStep : (localSelectedGroup ?? 0);
@@ -504,7 +506,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   event.stopPropagation();
                   closeHighlightMode();
                 }}
-                className="rounded-full border border-[var(--border-subtle)] bg-[var(--surface-default)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]"
+                className={getPillButtonClass('default')}
               >
                 Cancel
               </button>
@@ -515,11 +517,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   clearSavedSelection(lesson);
                 }}
                 disabled={!hasSavedPhrases}
-                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                  hasSavedPhrases
-                    ? 'selection-selected-badge'
-                    : 'border-[var(--border-subtle)] bg-[var(--surface-default)] text-[var(--text-muted)]'
-                }`}
+                className={getPillButtonClass(hasSavedPhrases ? 'selected' : 'muted')}
               >
                 Clear
               </button>
@@ -530,11 +528,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   selectWholeSentence(lesson.english);
                 }}
                 disabled={!canSelectWholeSentence}
-                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                  canSelectWholeSentence
-                    ? 'selection-selected-badge'
-                    : 'border-[var(--border-subtle)] bg-[var(--surface-default)] text-[var(--text-muted)]'
-                }`}
+                className={getPillButtonClass(canSelectWholeSentence ? 'selected' : 'muted')}
               >
                 All
               </button>
@@ -545,11 +539,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   saveDraftSelection(lesson);
                 }}
                 disabled={!selectedPhraseDraft}
-                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                  selectedPhraseDraft
-                    ? 'selection-selected-badge'
-                    : 'border-[var(--border-subtle)] bg-[var(--surface-default)] text-[var(--text-muted)]'
-                }`}
+                className={getPillButtonClass(selectedPhraseDraft ? 'selected' : 'muted')}
               >
                 Save
               </button>
@@ -643,9 +633,9 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 type="button"
                 onClick={onBackToLibrary}
                 aria-label="Back"
-                className="top-toolbar-icon inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+                className={`${BUTTON_UI.iconNavButton} ${BUTTON_UI.iconNavGlyph}`}
               >
-                <span aria-hidden="true">←</span>
+                <span aria-hidden="true">‹</span>
               </button>
             )}
             <div className="min-w-0">

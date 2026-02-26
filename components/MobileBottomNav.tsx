@@ -1,6 +1,11 @@
 import React from 'react';
 import { SidebarTab } from '../config/appConfig';
 import { NAV_TAB_META, NAV_TABS } from './nav/navConfig';
+import {
+  getMobileNavButtonClass,
+  getMobileNavIconWrapClass,
+  getMobileNavLabelClass,
+} from '../config/buttonUi';
 
 type MobileBottomNavProps = {
   activeTab: SidebarTab;
@@ -21,7 +26,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           : 'pointer-events-none translate-y-full opacity-0'
       }`}
     >
-      <div className="grid grid-cols-4 gap-1 px-2 pb-2 pt-1.5">
+      <div
+        className="grid gap-1 px-2 pb-2 pt-1.5"
+        style={{ gridTemplateColumns: `repeat(${NAV_TABS.length}, minmax(0, 1fr))` }}
+      >
         {NAV_TABS.map((tab) => {
           const { label, Icon } = NAV_TAB_META[tab];
           const isActive = activeTab === tab;
@@ -31,26 +39,12 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               onClick={() => onTabChange(tab)}
               aria-label={label}
               title={label}
-              className={`flex flex-col items-center justify-center gap-1 rounded-xl py-1.5 transition-all ${
-                isActive
-                  ? 'bg-transparent text-brand'
-                  : 'bg-transparent text-[var(--text-secondary)]'
-              }`}
+              className={getMobileNavButtonClass(isActive)}
             >
-              <span
-                className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
-                  isActive
-                    ? 'bg-transparent text-brand shadow-none'
-                    : 'bg-[var(--surface-subtle)] text-[var(--text-secondary)]'
-                }`}
-              >
+              <span className={getMobileNavIconWrapClass(isActive)}>
                 <Icon isActive={isActive} className="h-5 w-5" />
               </span>
-              <span
-                className={`text-xs font-bold leading-none ${
-                  isActive ? 'text-brand' : 'text-[var(--text-secondary)]'
-                }`}
-              >
+              <span className={getMobileNavLabelClass(isActive)}>
                 {label}
               </span>
             </button>

@@ -22,7 +22,7 @@ export const LibraryGroupCard: React.FC<LibraryGroupCardProps> = ({
     type="button"
     onClick={onOpen}
     aria-label={ariaLabel}
-    className="selection-hover w-full min-h-[84px] px-3 py-3 text-left transition-colors"
+    className={LIBRARY_UI_TOKENS.groupCardButton}
   >
     <div className="grid grid-cols-[48px,1fr,20px] items-center gap-3">
       <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg">

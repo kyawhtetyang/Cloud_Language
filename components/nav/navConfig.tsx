@@ -93,7 +93,7 @@ const ProfileIcon: React.FC<NavIconProps> = ({ className, isActive = false }) =>
   </svg>
 );
 
-export const NAV_TABS: readonly SidebarTab[] = ['library', 'lesson', 'settings', 'profile'] as const;
+export const NAV_TABS: readonly SidebarTab[] = ['library', 'lesson', 'profile'] as const;
 
 export const NAV_TAB_META: Record<SidebarTab, NavTabMeta> = {
   library: {
@@ -113,4 +113,3 @@ export const NAV_TAB_META: Record<SidebarTab, NavTabMeta> = {
     Icon: ProfileIcon,
   },
 };
-

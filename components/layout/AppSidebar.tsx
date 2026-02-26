@@ -1,6 +1,7 @@
 import React from 'react';
 import { SidebarTab } from '../../config/appConfig';
 import { NAV_TAB_META } from '../nav/navConfig';
+import { BUTTON_UI, getSidebarNavButtonClass } from '../../config/buttonUi';
 
 type AppSidebarProps = {
   isSidebarOpen: boolean;
@@ -17,20 +18,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onSelectTab,
   onReload,
 }) => {
-  const navClass = (active: boolean) =>
-    `w-full px-3 py-2.5 rounded-xl text-sm font-extrabold uppercase tracking-wide border-2 transition-all ${
-      active
-        ? 'btn-nav-selected'
-        : 'btn-unselected text-[var(--text-secondary)]'
-    }`;
-
   const renderNavButton = (tab: SidebarTab) => {
     const { label, Icon } = NAV_TAB_META[tab];
     const isActive = sidebarTab === tab;
     return (
       <button
         onClick={() => onSelectTab(tab)}
-        className={navClass(isActive)}
+        className={getSidebarNavButtonClass(isActive)}
       >
         <span className="flex items-center gap-2">
           <Icon isActive={isActive} className="h-4 w-4 shrink-0" />
@@ -41,7 +35,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   };
 
   const profileMeta = NAV_TAB_META.profile;
-  const isProfileActive = sidebarTab === 'profile';
+  const isProfileActive = sidebarTab === 'profile' || sidebarTab === 'settings';
   const ProfileIcon = profileMeta.Icon;
 
   return (
@@ -58,12 +52,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             className="flex items-center gap-2 text-lg font-extrabold text-ink uppercase tracking-wide hover:opacity-80 transition-opacity"
             aria-label="Reload page"
           >
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border-2 btn-selected">
+            <span className={BUTTON_UI.sidebarBrandIcon}>
               <span className="text-sm font-extrabold leading-none">U</span>
             </span>
             Duolingo
           </button>
-          <button className="md:hidden text-[var(--text-secondary)] font-bold text-xl" onClick={onClose} aria-label="Close">
+          <button className={BUTTON_UI.sidebarCloseButton} onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
@@ -71,17 +65,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         <div className="mb-4 flex flex-col gap-2">
           {renderNavButton('library')}
           {renderNavButton('lesson')}
-          {renderNavButton('settings')}
         </div>
 
         <div className="mt-auto">
           <button
             onClick={() => onSelectTab('profile')}
-            className={`w-full px-3 py-3 rounded-xl text-sm font-extrabold uppercase tracking-wide border-2 transition-all ${
-              isProfileActive
-                ? 'btn-nav-selected'
-                : 'btn-unselected text-[var(--text-secondary)]'
-            }`}
+            className={getSidebarNavButtonClass(isProfileActive, true)}
           >
             <span className="flex items-center gap-2">
               <ProfileIcon isActive={isProfileActive} className="h-4 w-4 shrink-0" />

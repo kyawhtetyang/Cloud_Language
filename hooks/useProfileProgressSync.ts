@@ -237,7 +237,7 @@ export function useProfileProgressSync({
   }, [flushSyncQueueSafely, profileName]);
 
   useEffect(() => {
-    if (lessons.length > 0 && mode !== 'quiz' && profileName) {
+    if (lessons.length > 0 && profileName) {
       const state: ProgressState = {
         currentIndex,
         completedCount: currentIndex,

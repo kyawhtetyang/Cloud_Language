@@ -10,13 +10,17 @@ import {
   VoiceProvider,
 } from '../../config/appConfig';
 import {
-  VIEW_BODY_TEXT_CLASS,
   VIEW_DIVIDER_CLASS,
   VIEW_PAGE_CLASS,
   VIEW_SECTION_LABEL_CLASS,
-  VIEW_SECTION_TITLE_CLASS,
 } from './viewShared';
 import { useSwipeBack } from '../../hooks/useSwipeBack';
+import {
+  getSettingsTextSizeButtonClass,
+  getSettingsToggleBadgeClass,
+  SETTINGS_UI,
+  SETTINGS_UI_TEXT,
+} from '../../config/settingsUi';
 
 type SettingsViewProps = {
   defaultLanguage: DefaultLanguage;
@@ -27,7 +31,6 @@ type SettingsViewProps = {
   textScalePercent: number;
   canDecreaseTextSize: boolean;
   canIncreaseTextSize: boolean;
-  translationLabel: string;
   appTheme: AppTheme;
   voiceProvider: VoiceProvider;
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
@@ -39,15 +42,10 @@ type SettingsViewProps = {
   onIncreaseTextSize: () => void;
   onAppThemeChange: (value: AppTheme) => void;
   onVoiceProviderChange: (value: VoiceProvider) => void;
+  onBackToProfile: () => void;
 };
 
 type SettingsRoute = 'main' | 'defaultLanguage' | 'learnLanguage' | 'appearance' | 'voiceProvider';
-
-const sectionTitleClass = VIEW_SECTION_TITLE_CLASS;
-const listCardClass = 'overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)]';
-const listDividerClass = 'border-t border-[var(--border-subtle)]';
-const listRowClass =
-  'w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-hover)]';
 
 function findOptionLabel<T extends string>(
   options: ReadonlyArray<{ code: T; label: string }>,
@@ -61,15 +59,7 @@ type ToggleStateBadgeProps = {
 };
 
 const ToggleStateBadge: React.FC<ToggleStateBadgeProps> = ({ isOn }) => (
-  <span
-    className={`inline-flex min-w-16 items-center justify-center rounded-xl border-2 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wide transition-all ${
-      isOn
-        ? 'btn-selected'
-        : 'btn-unselected text-[var(--text-secondary)]'
-    }`}
-  >
-    {isOn ? 'On' : 'Off'}
-  </span>
+  <span className={getSettingsToggleBadgeClass(isOn)}>{isOn ? SETTINGS_UI_TEXT.on : SETTINGS_UI_TEXT.off}</span>
 );
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -81,7 +71,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   textScalePercent,
   canDecreaseTextSize,
   canIncreaseTextSize,
-  translationLabel,
   appTheme,
   voiceProvider,
   onDefaultLanguageChange,
@@ -93,6 +82,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onIncreaseTextSize,
   onAppThemeChange,
   onVoiceProviderChange,
+  onBackToProfile,
 }) => {
   const [route, setRoute] = useState<SettingsRoute>('main');
   const swipeBackHandlers = useSwipeBack(
@@ -113,22 +103,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     [voiceProvider],
   );
 
-  const subPageMeta: Record<Exclude<SettingsRoute, 'main'>, { title: string; description: string }> = {
+  const subPageMeta: Record<Exclude<SettingsRoute, 'main'>, { title: string }> = {
     defaultLanguage: {
       title: 'Default Language',
-      description: 'Choose the app interface language.',
     },
     learnLanguage: {
       title: 'Learn Language',
-      description: 'Choose your target learning language.',
     },
     appearance: {
       title: 'Appearance',
-      description: 'Choose Light or Dark mode.',
     },
     voiceProvider: {
       title: 'Voice Provider',
-      description: 'Choose Default voice or Apple Siri-style voice when available.',
     },
   };
 
@@ -137,7 +123,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     selectedCode: T,
     onSelect: (value: T) => void,
   ) => (
-    <div className={listCardClass}>
+    <div className={SETTINGS_UI.listCard}>
       {options.map((option, index) => {
         const isSelected = selectedCode === option.code;
         return (
@@ -145,12 +131,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={() => onSelect(option.code)}
-              className={listRowClass}
+              className={SETTINGS_UI.listRow}
             >
-              <span className="text-sm font-semibold text-[var(--text-primary)]">{option.label}</span>
-              <ToggleStateBadge isOn={isSelected} />
+              <span className={SETTINGS_UI.optionLabel}>{option.label}</span>
+              <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
+                <ToggleStateBadge isOn={isSelected} />
+              </span>
             </button>
-            {index < options.length - 1 && <div className={listDividerClass} />}
+            {index < options.length - 1 && <div className={SETTINGS_UI.listDivider} />}
           </React.Fragment>
         );
       })}
@@ -159,48 +147,51 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const renderMainPage = () => (
     <>
+      <div className={SETTINGS_UI.subPageHeader}>
+        <button
+          type="button"
+          onClick={onBackToProfile}
+          className={SETTINGS_UI.subPageBackButton}
+          aria-label="Back to profile"
+        >
+          ‹
+        </button>
+        <div>
+          <p className={VIEW_SECTION_LABEL_CLASS}>Profile</p>
+          <h3 className={SETTINGS_UI.subPageTitle}>Settings</h3>
+        </div>
+      </div>
+
       <section className="mb-4">
         <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Preferences</h3>
-        <div className={listCardClass}>
-          <button type="button" onClick={() => setRoute('defaultLanguage')} className={listRowClass}>
-            <div>
-              <p className={sectionTitleClass}>Default Language</p>
-              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>App interface language</p>
-            </div>
-            <span className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+        <div className={SETTINGS_UI.listCard}>
+          <button type="button" onClick={() => setRoute('defaultLanguage')} className={SETTINGS_UI.listRow}>
+            <p className={SETTINGS_UI.sectionTitle}>Default Language</p>
+            <span className={SETTINGS_UI.rowValue}>
               {defaultLanguageLabel}
               <span aria-hidden="true">›</span>
             </span>
           </button>
-          <div className={listDividerClass} />
-          <button type="button" onClick={() => setRoute('learnLanguage')} className={listRowClass}>
-            <div>
-              <p className={sectionTitleClass}>Learn Language</p>
-              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Target language</p>
-            </div>
-            <span className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+          <div className={SETTINGS_UI.listDivider} />
+          <button type="button" onClick={() => setRoute('learnLanguage')} className={SETTINGS_UI.listRow}>
+            <p className={SETTINGS_UI.sectionTitle}>Learn Language</p>
+            <span className={SETTINGS_UI.rowValue}>
               {learnLanguageLabel}
               <span aria-hidden="true">›</span>
             </span>
           </button>
-          <div className={listDividerClass} />
-          <button type="button" onClick={() => setRoute('appearance')} className={listRowClass}>
-            <div>
-              <p className={sectionTitleClass}>Appearance</p>
-              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Light / Dark mode</p>
-            </div>
-            <span className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+          <div className={SETTINGS_UI.listDivider} />
+          <button type="button" onClick={() => setRoute('appearance')} className={SETTINGS_UI.listRow}>
+            <p className={SETTINGS_UI.sectionTitle}>Appearance</p>
+            <span className={SETTINGS_UI.rowValue}>
               {appThemeLabel}
               <span aria-hidden="true">›</span>
             </span>
           </button>
-          <div className={listDividerClass} />
-          <button type="button" onClick={() => setRoute('voiceProvider')} className={listRowClass}>
-            <div>
-              <p className={sectionTitleClass}>Voice Provider</p>
-              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Speech voice preference</p>
-            </div>
-            <span className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+          <div className={SETTINGS_UI.listDivider} />
+          <button type="button" onClick={() => setRoute('voiceProvider')} className={SETTINGS_UI.listRow}>
+            <p className={SETTINGS_UI.sectionTitle}>Voice Provider</p>
+            <span className={SETTINGS_UI.rowValue}>
               {voiceProviderLabel}
               <span aria-hidden="true">›</span>
             </span>
@@ -210,59 +201,48 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
         <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Display</h3>
-        <div className={listCardClass}>
-          <button type="button" onClick={onToggleBoldText} className={listRowClass}>
-            <div>
-              <p className={sectionTitleClass}>Bold Text</p>
-              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Increase overall text thickness.</p>
-            </div>
-            <ToggleStateBadge isOn={isBoldTextEnabled} />
+        <div className={SETTINGS_UI.listCard}>
+          <button type="button" onClick={onToggleBoldText} className={SETTINGS_UI.listRow}>
+            <p className={SETTINGS_UI.sectionTitle}>Bold Text</p>
+            <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
+              <ToggleStateBadge isOn={isBoldTextEnabled} />
+            </span>
           </button>
-          <div className={listDividerClass} />
-          <button type="button" onClick={onToggleAutoScroll} className={listRowClass}>
-            <div>
-              <p className={sectionTitleClass}>Auto Scroll</p>
-              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Keep speaking sentence near center.</p>
-            </div>
-            <ToggleStateBadge isOn={isAutoScrollEnabled} />
+          <div className={SETTINGS_UI.listDivider} />
+          <button type="button" onClick={onToggleAutoScroll} className={SETTINGS_UI.listRow}>
+            <p className={SETTINGS_UI.sectionTitle}>Auto Scroll</p>
+            <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
+              <ToggleStateBadge isOn={isAutoScrollEnabled} />
+            </span>
           </button>
-          <div className={listDividerClass} />
-          <div className="px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className={sectionTitleClass}>Text Size</p>
-                <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Global text scale for the app.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onDecreaseTextSize}
-                  disabled={!canDecreaseTextSize}
-                  className={`h-8 w-8 rounded-lg border-2 text-base font-extrabold transition-all ${
-                    canDecreaseTextSize
-                      ? 'btn-unselected'
-                      : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-muted)] cursor-not-allowed'
-                  }`}
-                  aria-label="Decrease text size"
-                >
-                  -
-                </button>
-                <span className="min-w-12 text-center text-xs font-extrabold uppercase tracking-wide text-brand-ink">
-                  {textScalePercent}%
-                </span>
-                <button
-                  type="button"
-                  onClick={onIncreaseTextSize}
-                  disabled={!canIncreaseTextSize}
-                  className={`h-8 w-8 rounded-lg border-2 text-base font-extrabold transition-all ${
-                    canIncreaseTextSize
-                      ? 'btn-unselected'
-                      : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-muted)] cursor-not-allowed'
-                  }`}
-                  aria-label="Increase text size"
-                >
-                  +
-                </button>
+          <div className={SETTINGS_UI.listDivider} />
+          <div className={SETTINGS_UI.staticRow}>
+            <div className={SETTINGS_UI.textSizeRow}>
+              <p className={SETTINGS_UI.sectionTitle}>Text Size</p>
+              <div className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.textSizeControlSlot}`}>
+                <div className={SETTINGS_UI.textSizeControlGroup}>
+                  <button
+                    type="button"
+                    onClick={onDecreaseTextSize}
+                    disabled={!canDecreaseTextSize}
+                    className={getSettingsTextSizeButtonClass(canDecreaseTextSize)}
+                    aria-label="Decrease text size"
+                  >
+                    -
+                  </button>
+                  <span className={SETTINGS_UI.textSizeValue}>
+                    {textScalePercent}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onIncreaseTextSize}
+                    disabled={!canIncreaseTextSize}
+                    className={getSettingsTextSizeButtonClass(canIncreaseTextSize)}
+                    aria-label="Increase text size"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -271,25 +251,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
         <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Audio</h3>
-        <div className={listCardClass}>
-          <button type="button" onClick={onTogglePronunciation} className={listRowClass}>
-            <div>
-              <p className={sectionTitleClass}>Pronunciation</p>
-              <p className={`${VIEW_BODY_TEXT_CLASS} mt-0.5`}>Show pronunciation row in lessons.</p>
-            </div>
-            <ToggleStateBadge isOn={isPronunciationEnabled} />
+        <div className={SETTINGS_UI.listCard}>
+          <button type="button" onClick={onTogglePronunciation} className={SETTINGS_UI.listRow}>
+            <p className={SETTINGS_UI.sectionTitle}>Pronunciation</p>
+            <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
+              <ToggleStateBadge isOn={isPronunciationEnabled} />
+            </span>
           </button>
-        </div>
-      </section>
-
-      <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
-        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-3">
-          <p className={sectionTitleClass}>Current Mapping</p>
-          <div className="mt-2 space-y-1 text-xs">
-            <p className="font-semibold text-[var(--text-secondary)]">
-              <span className="uppercase tracking-wide text-[var(--text-primary)]">Translation:</span> {translationLabel}
-            </p>
-          </div>
         </div>
       </section>
     </>
@@ -297,24 +265,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const renderSubPage = () => {
     if (route === 'main') return null;
-    const { title, description } = subPageMeta[route];
+    const { title } = subPageMeta[route];
     return (
       <>
-        <div className="mb-4 flex items-center gap-3">
+        <div className={SETTINGS_UI.subPageHeader}>
           <button
             type="button"
             onClick={() => setRoute('main')}
-            className="h-9 w-9 rounded-full border-2 btn-unselected text-lg font-black leading-none"
+            className={SETTINGS_UI.subPageBackButton}
             aria-label="Back to settings"
           >
             ‹
           </button>
           <div>
             <p className={VIEW_SECTION_LABEL_CLASS}>Settings</p>
-            <h3 className="text-lg font-extrabold text-ink">{title}</h3>
+            <h3 className={SETTINGS_UI.subPageTitle}>{title}</h3>
           </div>
         </div>
-        <p className={`${VIEW_BODY_TEXT_CLASS} mb-3`}>{description}</p>
         {route === 'defaultLanguage' &&
           renderOptionPage(DEFAULT_LANGUAGE_OPTIONS, defaultLanguage, onDefaultLanguageChange)}
         {route === 'learnLanguage' &&

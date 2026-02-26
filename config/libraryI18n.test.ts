@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { getLibraryText, localizeLibraryTopic } from './libraryI18n';
+import { getLibraryText, localizeCollectionLabel, localizeLibraryTopic } from './libraryI18n';
 
 describe('libraryI18n', () => {
   it('returns burmese library text for burmese default language', () => {
     expect(getLibraryText('burmese').library).toBe('စာကြည့်တိုက်');
+  });
+
+  it('returns vietnamese library text for vietnamese default language', () => {
+    expect(getLibraryText('vietnamese').library).toBe('Thư viện');
   });
 
   it('falls back to english library text when language pack is missing', () => {
@@ -21,6 +25,9 @@ describe('libraryI18n', () => {
       'Alphabet sounds & basic pronunciation',
     );
   });
+
+  it('localizes CEFR collection labels by metadata', () => {
+    expect(localizeCollectionLabel('beginner a1', 'vietnamese', 'cefr', 'A1')).toBe('Sơ cấp (A1)');
+    expect(localizeCollectionLabel('upper intermediate b2', 'burmese', 'cefr', 'B2')).toBe('အလယ်တန်းမြင့် (B2)');
+  });
 });
-
-

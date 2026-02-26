@@ -2,9 +2,7 @@ import React from 'react';
 import { AppMode } from '../../config/appConfig';
 import { LibraryView } from '../views/LibraryView';
 import { LessonView } from '../views/LessonView';
-import { MatchReviewView } from '../views/MatchReviewView';
 import { ProfileView } from '../views/ProfileView';
-import { ResultView } from '../views/ResultView';
 import { SettingsView } from '../views/SettingsView';
 import { CompletedView } from '../views/AppStateViews';
 
@@ -16,8 +14,6 @@ type AppMainContentProps = {
   profileViewProps: React.ComponentProps<typeof ProfileView>;
   libraryViewProps: React.ComponentProps<typeof LibraryView>;
   settingsViewProps: React.ComponentProps<typeof SettingsView>;
-  matchReviewViewProps: React.ComponentProps<typeof MatchReviewView>;
-  resultViewProps: React.ComponentProps<typeof ResultView> | null;
   lessonViewProps: React.ComponentProps<typeof LessonView>;
   onCompletedRestart: () => void;
 };
@@ -30,8 +26,6 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
   profileViewProps,
   libraryViewProps,
   settingsViewProps,
-  matchReviewViewProps,
-  resultViewProps,
   lessonViewProps,
   onCompletedRestart,
 }) => (
@@ -42,10 +36,6 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
       <LibraryView {...libraryViewProps} />
     ) : isSettingsView ? (
       <SettingsView {...settingsViewProps} />
-    ) : mode === 'quiz' ? (
-      <MatchReviewView {...matchReviewViewProps} />
-    ) : mode === 'result' && resultViewProps ? (
-      <ResultView {...resultViewProps} />
     ) : mode === 'completed' ? (
       <CompletedView onRestart={onCompletedRestart} />
     ) : (
@@ -53,4 +43,3 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
     )}
   </main>
 );
-

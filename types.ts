@@ -13,6 +13,10 @@ export interface LessonData {
   audioPath?: string;
   sourceLabel?: string;
   collectionLabel?: string;
+  trackId?: string;
+  levelScheme?: string;
+  levelCode?: string;
+  levelOrder?: number;
 }
 
 export interface ProgressState {

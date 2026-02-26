@@ -96,7 +96,7 @@ describe('settingsSync', () => {
     applyRemoteSyncedSettings(
       {
         learnLanguage: 'chinese',
-        defaultLanguage: 'english',
+        defaultLanguage: 'vietnamese',
         isPronunciationEnabled: true,
         textScalePercent: 999,
         isBoldTextEnabled: true,
@@ -110,7 +110,7 @@ describe('settingsSync', () => {
     );
 
     expect(setters.setLearnLanguage).toHaveBeenCalledWith('chinese');
-    expect(setters.setDefaultLanguage).toHaveBeenCalledWith('english');
+    expect(setters.setDefaultLanguage).toHaveBeenCalledWith('vietnamese');
     expect(setters.setIsPronunciationEnabled).toHaveBeenCalledWith(true);
     expect(setters.setTextScalePercent).toHaveBeenCalledWith(120);
     expect(setters.setIsBoldTextEnabled).toHaveBeenCalledWith(true);

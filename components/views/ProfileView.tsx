@@ -6,6 +6,7 @@ import {
   VIEW_SECTION_LABEL_CLASS,
   VIEW_SECTION_TITLE_CLASS,
 } from './viewShared';
+import { BUTTON_UI, getActionButtonClass } from '../../config/buttonUi';
 
 type ProfileViewProps = {
   profileName: string;
@@ -21,6 +22,7 @@ type ProfileViewProps = {
   streak: number;
   onProfileInputChange: (value: string) => void;
   onApplyProfileName: () => void;
+  onOpenSettings: () => void;
   onRequestLogout: () => void;
 };
 
@@ -38,6 +40,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   streak,
   onProfileInputChange,
   onApplyProfileName,
+  onOpenSettings,
   onRequestLogout,
 }) => {
   const normalizedProgress = Number.isFinite(progressPercent)
@@ -56,14 +59,36 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       <section>
         <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Account</h3>
         <div className={listCardClass}>
-          <div className="flex items-center gap-3 px-4 py-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 btn-selected text-2xl font-extrabold">
-              U
+          <div className="flex items-start justify-between gap-3 px-4 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 btn-selected text-2xl font-extrabold">
+                U
+              </div>
+              <div>
+                <h2 className="text-xl font-extrabold text-ink md:text-2xl">Welcome back</h2>
+                <p className={`${VIEW_BODY_TEXT_CLASS} font-semibold`}>{profileName}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-extrabold text-ink md:text-2xl">Welcome back</h2>
-              <p className={`${VIEW_BODY_TEXT_CLASS} font-semibold`}>{profileName}</p>
-            </div>
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className={BUTTON_UI.iconNavButton}
+              aria-label="Open settings"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                aria-hidden="true"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M10.4 2.8h3.2l.5 2.3c.4.1.8.3 1.2.5l2.2-1.1 2.2 2.2-1.1 2.2c.2.4.3.8.5 1.2l2.3.5v3.2l-2.3.5c-.1.4-.3.8-.5 1.2l1.1 2.2-2.2 2.2-2.2-1.1c-.4.2-.8.3-1.2.5l-.5 2.3h-3.2l-.5-2.3c-.4-.1-.8-.3-1.2-.5l-2.2 1.1-2.2-2.2 1.1-2.2c-.2-.4-.3-.8-.5-1.2l-2.3-.5v-3.2l2.3-.5c.1-.4.3-.8.5-1.2l-1.1-2.2 2.2-2.2 2.2 1.1c.4-.2.8-.3 1.2-.5z" />
+                <circle cx="12" cy="12" r="3.2" />
+              </svg>
+            </button>
           </div>
           <div className={listDividerClass} />
           <div className="px-4 py-3">
@@ -112,45 +137,36 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
       <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
         <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Change Display Name</h3>
-        <div className={listCardClass}>
-          <div className="px-4 py-3">
-            <div className="flex gap-2">
-              <input
-                value={profileInput}
-                onChange={(event) => onProfileInputChange(event.target.value)}
-                onKeyDown={(event) => event.key === 'Enter' && onApplyProfileName()}
-                placeholder="Display name (no spaces)"
-                className="flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-3 py-2 text-base font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)] md:text-sm"
-              />
-              <button
-                onClick={onApplyProfileName}
-                disabled={!isProfileInputValid}
-                className={`rounded-xl border-2 px-4 text-xs font-extrabold uppercase tracking-wide transition-all ${
-                  isProfileInputValid
-                    ? 'btn-selected'
-                    : 'cursor-not-allowed border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-muted)]'
-                }`}
-              >
-                Save
-              </button>
-            </div>
-            {(profileError || hasProfileWhitespace) && (
-              <p className="mt-2 text-xs font-bold text-danger">Username cannot contain spaces.</p>
-            )}
+        <div className="py-1">
+          <div className="flex gap-2">
+            <input
+              value={profileInput}
+              onChange={(event) => onProfileInputChange(event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && onApplyProfileName()}
+              placeholder="Display name (no spaces)"
+              className="flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-3 py-2 text-base font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)] md:text-sm"
+            />
+            <button
+              onClick={onApplyProfileName}
+              disabled={!isProfileInputValid}
+              className={getActionButtonClass({
+                variant: 'primary',
+                size: 'sm',
+                disabled: !isProfileInputValid,
+              })}
+            >
+              Save
+            </button>
           </div>
+          {(profileError || hasProfileWhitespace) && (
+            <p className="mt-2 text-xs font-bold text-danger">Username cannot contain spaces.</p>
+          )}
         </div>
       </section>
 
       <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
         <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Session</h3>
         <div className={listCardClass}>
-          <div className={listRowClass}>
-            <div>
-              <p className={sectionTitleClass}>Signed in as</p>
-              <p className="mt-0.5 text-sm font-bold text-ink">{profileName}</p>
-            </div>
-          </div>
-          <div className={listDividerClass} />
           <button
             type="button"
             onClick={onRequestLogout}

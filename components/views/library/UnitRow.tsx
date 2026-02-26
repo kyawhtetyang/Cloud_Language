@@ -89,7 +89,7 @@ export const UnitRow: React.FC<UnitRowProps> = ({
             event.stopPropagation();
             onOpenUnit(entry.level, entry.unit, albumKey);
           }}
-          className={`flex h-5 w-5 items-center justify-center rounded transition-colors ${accentClass} hover:bg-[var(--surface-hover)]`}
+          className={`${LIBRARY_UI_TOKENS.unitOpenButton} ${accentClass}`}
           aria-label={`Open lesson ${formatUnitCode(entry.level, entry.unit)}`}
           title="Open lesson"
         >

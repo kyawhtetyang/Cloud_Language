@@ -8,6 +8,7 @@ import {
   VIEW_PANEL_PAD_CLASS,
   VIEW_STATUS_TEXT_CLASS,
 } from './viewShared';
+import { getActionButtonClass } from '../../config/buttonUi';
 
 type LessonsUnavailableViewProps = {
   errorMessage: string | null;
@@ -70,11 +71,12 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
       <button
         onClick={onApplyProfileName}
         disabled={!isProfileInputValid}
-        className={`w-full mt-4 py-3 rounded-xl border-2 text-sm font-extrabold uppercase tracking-wide transition-all ${
-          isProfileInputValid
-            ? 'btn-selected'
-            : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-muted)] cursor-not-allowed'
-        }`}
+        className={`mt-4 ${getActionButtonClass({
+          variant: 'primary',
+          size: 'md',
+          fullWidth: true,
+          disabled: !isProfileInputValid,
+        })}`}
       >
         Continue
       </button>
@@ -88,7 +90,12 @@ export const CompletedView: React.FC<{ onRestart: () => void }> = ({ onRestart }
     <p className={`${VIEW_BODY_TEXT_CLASS} mb-6`}>You completed all sections and passed the random checks.</p>
     <button
       onClick={onRestart}
-      className="w-full py-4 rounded-2xl border-2 btn-selected font-extrabold text-lg uppercase tracking-wider active:scale-95 transition-all"
+      className={getActionButtonClass({
+        variant: 'primary',
+        size: 'lg',
+        shape: 'large',
+        fullWidth: true,
+      })}
     >
       Restart Unit 1
     </button>

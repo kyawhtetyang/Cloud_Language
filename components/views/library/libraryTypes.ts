@@ -19,5 +19,8 @@ export type AlbumGroup = {
 export type AlbumCollectionSection = {
   key: string;
   label: string;
+  levelScheme?: string;
+  levelCode?: string;
+  levelOrder?: number;
   groups: AlbumGroup[];
 };

@@ -8,6 +8,7 @@ import {
   StageCode,
 } from '../../config/appConfig';
 import { getLibraryText, localizeLibraryTopic, localizeLibraryTopicConcise } from '../../config/libraryI18n';
+import { getAppText } from '../../config/appI18n';
 import { VIEW_PAGE_CLASS } from './viewShared';
 import { useSwipeBack } from '../../hooks/useSwipeBack';
 import { AlbumHeader } from './library/AlbumHeader';
@@ -15,6 +16,7 @@ import { AlbumList } from './library/AlbumList';
 import { AlbumDetail } from './library/AlbumDetail';
 import { LIBRARY_STATE_STYLE } from './library/libraryUiTokens';
 import type { AlbumCollectionSection, AlbumGroup } from './library/libraryTypes';
+import { getIconCircleButtonClass } from '../../config/buttonUi';
 
 type LibraryViewProps = {
   lessons: LessonData[];
@@ -193,18 +195,42 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     setInternalSelectedAlbumKey(key);
   };
   const text = getLibraryText(defaultLanguage);
-  const playAllLabel = defaultLanguage === 'burmese' ? 'အားလုံးဖတ်' : 'Play all';
+  const appText = getAppText(defaultLanguage);
+  const playAllLabel = appText.library.playAllLabel;
   const collectionSections = useMemo<AlbumCollectionSection[]>(() => {
-    const byCollection = new Map<string, { sourceOrder: string[]; bySource: Map<string, AlbumGroup['units']> }>();
+    const byCollection = new Map<
+      string,
+      {
+        sourceOrder: string[];
+        bySource: Map<string, AlbumGroup['units']>;
+        levelScheme?: string;
+        levelCode?: string;
+        levelOrder?: number;
+      }
+    >();
     for (const lesson of lessons) {
       const level = getLessonOrderIndex(lesson);
       const unit = getLessonUnitId(lesson);
       const collectionLabel = (lesson.collectionLabel || '').trim() || `Collection ${level}`;
       const sourceLabel = (lesson.sourceLabel || '').trim() || 'Untitled';
+      const levelScheme = String(lesson.levelScheme || '').trim().toLowerCase() || undefined;
+      const levelCode = String(lesson.levelCode || '').trim().toUpperCase() || undefined;
+      const levelOrder = typeof lesson.levelOrder === 'number' ? lesson.levelOrder : undefined;
       if (!byCollection.has(collectionLabel)) {
-        byCollection.set(collectionLabel, { sourceOrder: [], bySource: new Map() });
+        byCollection.set(collectionLabel, {
+          sourceOrder: [],
+          bySource: new Map(),
+          levelScheme,
+          levelCode,
+          levelOrder,
+        });
       }
       const collection = byCollection.get(collectionLabel)!;
+      if (!collection.levelScheme && levelScheme) collection.levelScheme = levelScheme;
+      if (!collection.levelCode && levelCode) collection.levelCode = levelCode;
+      if (typeof collection.levelOrder !== 'number' && typeof levelOrder === 'number') {
+        collection.levelOrder = levelOrder;
+      }
       if (!collection.bySource.has(sourceLabel)) {
         collection.bySource.set(sourceLabel, []);
         collection.sourceOrder.push(sourceLabel);
@@ -219,16 +245,28 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         });
       }
     }
-    const collectionLabels = Array.from(byCollection.keys()).sort((a, b) => {
-      const aNum = Number((a.match(/^hsk\s*([1-6])$/i)?.[1]) || 0);
-      const bNum = Number((b.match(/^hsk\s*([1-6])$/i)?.[1]) || 0);
+    const schemePriority = (scheme: string | undefined): number => {
+      if (scheme === 'cefr') return 10;
+      if (scheme === 'hsk') return 20;
+      if (scheme === 'jlpt') return 30;
+      return 40;
+    };
+    const collectionEntries = Array.from(byCollection.entries()).sort(([labelA, metaA], [labelB, metaB]) => {
+      const priorityDiff = schemePriority(metaA.levelScheme) - schemePriority(metaB.levelScheme);
+      if (priorityDiff !== 0) return priorityDiff;
+
+      const orderA = typeof metaA.levelOrder === 'number' ? metaA.levelOrder : Number.POSITIVE_INFINITY;
+      const orderB = typeof metaB.levelOrder === 'number' ? metaB.levelOrder : Number.POSITIVE_INFINITY;
+      if (orderA !== orderB) return orderA - orderB;
+
+      const aNum = Number((labelA.match(/^hsk\s*([1-9]\d*)$/i)?.[1]) || 0);
+      const bNum = Number((labelB.match(/^hsk\s*([1-9]\d*)$/i)?.[1]) || 0);
       if (aNum > 0 && bNum > 0) return aNum - bNum;
       if (aNum > 0) return 1;
       if (bNum > 0) return -1;
-      return a.localeCompare(b, undefined, { sensitivity: 'base' });
+      return labelA.localeCompare(labelB, undefined, { sensitivity: 'base' });
     });
-    return collectionLabels.map((collectionLabel) => {
-      const collection = byCollection.get(collectionLabel)!;
+    return collectionEntries.map(([collectionLabel, collection]) => {
       const coverLanguage = /^hsk\s*[1-6]$/i.test(collectionLabel)
         ? resolveHskLanguageCodeFromCollectionLabel(collectionLabel)
         : learnLanguage;
@@ -245,8 +283,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         };
       });
       return {
-        key: collectionLabel.toLowerCase().replace(/\s+/g, '-'),
+        key: `${collection.levelScheme || 'custom'}-${(collection.levelCode || collectionLabel).toLowerCase().replace(/\s+/g, '-')}`,
         label: collectionLabel,
+        levelScheme: collection.levelScheme,
+        levelCode: collection.levelCode,
+        levelOrder: collection.levelOrder,
         groups,
       };
     });
@@ -328,13 +369,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         disabled={isGroupDownloading}
         aria-label={groupDownloadLabel}
         title={groupDownloadLabel}
-        className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+        className={getIconCircleButtonClass(
           isGroupDownloading
-            ? 'border-[var(--border-strong)] bg-[var(--surface-active)] text-[var(--text-muted)] cursor-wait'
+            ? 'loading'
             : (isGroupDownloaded || isGroupPartial)
-              ? 'border-[var(--border-strong)] bg-[var(--surface-active)] text-[var(--text-secondary)]'
-              : 'border-[var(--border-subtle)] bg-[var(--surface-default)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]'
-        }`}
+              ? 'active'
+              : 'default',
+        )}
       >
         {isGroupDownloading ? (
           <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 animate-spin">
@@ -401,7 +442,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
       {!hasFilteredResults && (
         <div className="mb-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-4 text-sm text-[var(--text-secondary)]">
-          {defaultLanguage === 'burmese' ? 'ရှာဖွေမှုနှင့် ကိုက်ညီသော album မရှိသေးပါ။' : 'No albums match your search.'}
+          {appText.library.noAlbumsMatch}
         </div>
       )}
 

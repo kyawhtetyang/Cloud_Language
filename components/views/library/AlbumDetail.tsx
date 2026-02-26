@@ -4,6 +4,7 @@ import { VIEW_PAGE_CLASS } from '../viewShared';
 import type { AlbumGroup } from './libraryTypes';
 import { LIBRARY_UI_TOKENS } from './libraryUiTokens';
 import { UnitRow } from './UnitRow';
+import { BUTTON_UI } from '../../../config/buttonUi';
 
 type AlbumDetailProps = {
   album: AlbumGroup;
@@ -69,9 +70,9 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
             type="button"
             onClick={onBack}
             aria-label="Back"
-            className="top-toolbar-icon inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+            className={`${BUTTON_UI.iconNavButton} ${BUTTON_UI.iconNavGlyph}`}
           >
-            <span aria-hidden="true">←</span>
+            <span aria-hidden="true">‹</span>
           </button>
           <p className="truncate text-sm font-semibold text-ink-strong md:text-base">{albumTitle}</p>
         </div>
