@@ -470,8 +470,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
           }}
           className="selection-hover w-full rounded-lg px-3 py-3 text-left transition-colors"
           style={LESSON_ROW_NO_SELECT_STYLE}
-          aria-label={`Play audio for ${lesson.english}`}
-          title="Tap to hear pronunciation. Tap and hold, then drag to highlight phrase."
+          aria-label={`${appText.lesson.playAudioAriaPrefix} ${lesson.english}`}
+          title={appText.lesson.highlightHintTitle}
         >
           <div className="text-left leading-tight" style={lessonTextScaleStyle}>
             {isPronunciationEnabled && (
@@ -508,7 +508,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 }}
                 className={getPillButtonClass('default')}
               >
-                Cancel
+                {appText.lesson.highlightCancelLabel}
               </button>
               <button
                 type="button"
@@ -519,7 +519,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 disabled={!hasSavedPhrases}
                 className={getPillButtonClass(hasSavedPhrases ? 'selected' : 'muted')}
               >
-                Clear
+                {appText.lesson.highlightClearLabel}
               </button>
               <button
                 type="button"
@@ -530,7 +530,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 disabled={!canSelectWholeSentence}
                 className={getPillButtonClass(canSelectWholeSentence ? 'selected' : 'muted')}
               >
-                All
+                {appText.lesson.highlightAllLabel}
               </button>
               <button
                 type="button"
@@ -541,7 +541,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 disabled={!selectedPhraseDraft}
                 className={getPillButtonClass(selectedPhraseDraft ? 'selected' : 'muted')}
               >
-                Save
+                {appText.lesson.highlightSaveLabel}
               </button>
             </div>
           </div>
@@ -632,7 +632,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               <button
                 type="button"
                 onClick={onBackToLibrary}
-                aria-label="Back"
+                aria-label={appText.lesson.backToLibraryAriaLabel}
                 className={`${BUTTON_UI.iconNavButton} ${BUTTON_UI.iconNavGlyph}`}
               >
                 <span aria-hidden="true">‹</span>

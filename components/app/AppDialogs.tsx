@@ -6,6 +6,7 @@ type AppDialogsProps = {
   leaveCompletedUnitModalProps: React.ComponentProps<typeof ConfirmDialog>;
   logoutModalProps: React.ComponentProps<typeof ConfirmDialog>;
   isSidebarOpen: boolean;
+  closeSidebarAriaLabel: string;
   onDismissSidebarOverlay: () => void;
 };
 
@@ -13,6 +14,7 @@ export const AppDialogs: React.FC<AppDialogsProps> = ({
   leaveCompletedUnitModalProps,
   logoutModalProps,
   isSidebarOpen,
+  closeSidebarAriaLabel,
   onDismissSidebarOverlay,
 }) => (
   <>
@@ -22,7 +24,7 @@ export const AppDialogs: React.FC<AppDialogsProps> = ({
       <button
         className={BUTTON_UI.sidebarDismissOverlay}
         onClick={onDismissSidebarOverlay}
-        aria-label="Close sidebar"
+        aria-label={closeSidebarAriaLabel}
       />
     )}
   </>

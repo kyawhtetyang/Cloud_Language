@@ -1,0 +1,176 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { getAppText } from '../../config/appI18n';
+import { AppSidebar } from '../layout/AppSidebar';
+import { ProfileView } from './ProfileView';
+import { SettingsView } from './SettingsView';
+import { WelcomeView } from './AppStateViews';
+
+describe('i18n coverage', () => {
+  it('renders vietnamese navigation labels in sidebar', () => {
+    const text = getAppText('vietnamese');
+    render(
+      <AppSidebar
+        navText={text.navigation}
+        isSidebarOpen
+        sidebarTab="profile"
+        onClose={vi.fn()}
+        onSelectTab={vi.fn()}
+        onReload={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Thư viện')).toBeInTheDocument();
+    expect(screen.getByText('Bài học')).toBeInTheDocument();
+    expect(screen.getByText('Hồ sơ')).toBeInTheDocument();
+  });
+
+  it('renders vietnamese profile labels', () => {
+    const text = getAppText('vietnamese');
+    render(
+      <ProfileView
+        profileName="tester"
+        progressPercent={10}
+        progressLabel="1/10"
+        profileText={text.profile}
+        profileInput="tester"
+        profileError={null}
+        hasProfileWhitespace={false}
+        isProfileInputValid
+        currentCourseCode="HSK 1 Unit 1"
+        onProfileInputChange={vi.fn()}
+        onApplyProfileName={vi.fn()}
+        onOpenCurrentCourse={vi.fn()}
+        onOpenSettings={vi.fn()}
+        onRequestLogout={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Tài khoản')).toBeInTheDocument();
+    expect(screen.getByText('Thống kê tiến độ')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Lưu' })).toBeInTheDocument();
+  });
+
+  it('renders vietnamese settings labels', () => {
+    const text = getAppText('vietnamese');
+    render(
+      <SettingsView
+        settingsText={text.settings}
+        defaultLanguage="vietnamese"
+        learnLanguage="english"
+        isPronunciationEnabled
+        isBoldTextEnabled={false}
+        isAutoScrollEnabled
+        textScalePercent={100}
+        canDecreaseTextSize
+        canIncreaseTextSize
+        appTheme="light"
+        voiceProvider="default"
+        onDefaultLanguageChange={vi.fn()}
+        onLearnLanguageChange={vi.fn()}
+        onTogglePronunciation={vi.fn()}
+        onToggleBoldText={vi.fn()}
+        onToggleAutoScroll={vi.fn()}
+        onDecreaseTextSize={vi.fn()}
+        onIncreaseTextSize={vi.fn()}
+        onAppThemeChange={vi.fn()}
+        onVoiceProviderChange={vi.fn()}
+        onBackToProfile={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Tùy chọn')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Ngôn ngữ mặc định/i })).toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      language: 'english' as const,
+      selectedDefaultLanguageLabel: 'Vietnamese',
+      selectedLearnLanguageLabel: 'HSK Chinese',
+      selectedAppearanceLabel: 'Light Mode',
+      selectedVoiceProviderLabel: 'Default',
+      englishOptionLabel: 'English',
+    },
+    {
+      language: 'burmese' as const,
+      selectedDefaultLanguageLabel: 'ဗီယက်နမ်',
+      selectedLearnLanguageLabel: 'HSK တရုတ်',
+      selectedAppearanceLabel: 'အလင်း',
+      selectedVoiceProviderLabel: 'မူလ',
+      englishOptionLabel: 'အင်္ဂလိပ်',
+    },
+    {
+      language: 'vietnamese' as const,
+      selectedDefaultLanguageLabel: 'Tiếng Việt',
+      selectedLearnLanguageLabel: 'Tiếng Trung HSK',
+      selectedAppearanceLabel: 'Sáng',
+      selectedVoiceProviderLabel: 'Mặc định',
+      englishOptionLabel: 'Tiếng Anh',
+    },
+  ])('renders localized settings option values for $language UI', ({
+    language,
+    selectedDefaultLanguageLabel,
+    selectedLearnLanguageLabel,
+    selectedAppearanceLabel,
+    selectedVoiceProviderLabel,
+    englishOptionLabel,
+  }) => {
+    const text = getAppText(language);
+    render(
+      <SettingsView
+        settingsText={text.settings}
+        defaultLanguage="vietnamese"
+        learnLanguage="hsk_chinese"
+        isPronunciationEnabled
+        isBoldTextEnabled={false}
+        isAutoScrollEnabled
+        textScalePercent={100}
+        canDecreaseTextSize
+        canIncreaseTextSize
+        appTheme="light"
+        voiceProvider="default"
+        onDefaultLanguageChange={vi.fn()}
+        onLearnLanguageChange={vi.fn()}
+        onTogglePronunciation={vi.fn()}
+        onToggleBoldText={vi.fn()}
+        onToggleAutoScroll={vi.fn()}
+        onDecreaseTextSize={vi.fn()}
+        onIncreaseTextSize={vi.fn()}
+        onAppThemeChange={vi.fn()}
+        onVoiceProviderChange={vi.fn()}
+        onBackToProfile={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: new RegExp(text.settings.defaultLanguageLabel, 'i') }))
+      .toHaveTextContent(selectedDefaultLanguageLabel);
+    expect(screen.getByRole('button', { name: new RegExp(text.settings.learnLanguageLabel, 'i') }))
+      .toHaveTextContent(selectedLearnLanguageLabel);
+    expect(screen.getByRole('button', { name: new RegExp(text.settings.appearanceLabel, 'i') }))
+      .toHaveTextContent(selectedAppearanceLabel);
+    expect(screen.getByRole('button', { name: new RegExp(text.settings.voiceProviderLabel, 'i') }))
+      .toHaveTextContent(selectedVoiceProviderLabel);
+
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(text.settings.defaultLanguageLabel, 'i') }));
+    expect(screen.getByRole('button', { name: new RegExp(englishOptionLabel, 'i') })).toBeInTheDocument();
+  });
+
+  it('renders burmese welcome labels', () => {
+    const text = getAppText('burmese');
+    render(
+      <WelcomeView
+        welcomeText={text.welcome}
+        profileInput=""
+        profileError={null}
+        hasProfileWhitespace={false}
+        isProfileInputValid={false}
+        onProfileInputChange={vi.fn()}
+        onApplyProfileName={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('ကြိုဆိုပါတယ်')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ဆက်သွားမယ်' })).toBeInTheDocument();
+  });
+});

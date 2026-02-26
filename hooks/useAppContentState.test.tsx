@@ -2,6 +2,7 @@ import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LessonData } from '../types';
 import { buildLessonReferenceKey } from '../utils/lessonReference';
+import { getAppText } from '../config/appI18n';
 
 const hookMocks = vi.hoisted(() => ({
   useLessonDataMock: vi.fn(),
@@ -115,6 +116,10 @@ describe('useAppContentState', () => {
       }),
     );
 
-    expect(hookMocks.useLessonDataMock).toHaveBeenCalledWith('', 'english');
+    expect(hookMocks.useLessonDataMock).toHaveBeenCalledWith(
+      '',
+      'english',
+      getAppText('english').appState.lessonsLoadFailedMessage,
+    );
   });
 });

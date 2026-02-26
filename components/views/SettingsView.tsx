@@ -19,10 +19,11 @@ import {
   getSettingsTextSizeButtonClass,
   getSettingsToggleBadgeClass,
   SETTINGS_UI,
-  SETTINGS_UI_TEXT,
 } from '../../config/settingsUi';
+import { AppTextPack } from '../../config/appI18n';
 
 type SettingsViewProps = {
+  settingsText: AppTextPack['settings'];
   defaultLanguage: DefaultLanguage;
   learnLanguage: LearnLanguage;
   isPronunciationEnabled: boolean;
@@ -56,13 +57,16 @@ function findOptionLabel<T extends string>(
 
 type ToggleStateBadgeProps = {
   isOn: boolean;
+  onLabel: string;
+  offLabel: string;
 };
 
-const ToggleStateBadge: React.FC<ToggleStateBadgeProps> = ({ isOn }) => (
-  <span className={getSettingsToggleBadgeClass(isOn)}>{isOn ? SETTINGS_UI_TEXT.on : SETTINGS_UI_TEXT.off}</span>
+const ToggleStateBadge: React.FC<ToggleStateBadgeProps> = ({ isOn, onLabel, offLabel }) => (
+  <span className={getSettingsToggleBadgeClass(isOn)}>{isOn ? onLabel : offLabel}</span>
 );
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
+  settingsText,
   defaultLanguage,
   learnLanguage,
   isPronunciationEnabled,
@@ -90,31 +94,62 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   );
 
   const defaultLanguageLabel = useMemo(
-    () => findOptionLabel(DEFAULT_LANGUAGE_OPTIONS, defaultLanguage),
-    [defaultLanguage],
+    () => settingsText.defaultLanguageOptions[defaultLanguage] || findOptionLabel(DEFAULT_LANGUAGE_OPTIONS, defaultLanguage),
+    [defaultLanguage, settingsText.defaultLanguageOptions],
   );
   const learnLanguageLabel = useMemo(
-    () => findOptionLabel(LEARN_LANGUAGE_OPTIONS, learnLanguage),
-    [learnLanguage],
+    () => settingsText.learnLanguageOptions[learnLanguage] || findOptionLabel(LEARN_LANGUAGE_OPTIONS, learnLanguage),
+    [learnLanguage, settingsText.learnLanguageOptions],
   );
-  const appThemeLabel = useMemo(() => findOptionLabel(APP_THEME_OPTIONS, appTheme), [appTheme]);
+  const appThemeLabel = useMemo(
+    () => settingsText.appearanceOptions[appTheme] || findOptionLabel(APP_THEME_OPTIONS, appTheme),
+    [appTheme, settingsText.appearanceOptions],
+  );
   const voiceProviderLabel = useMemo(
-    () => findOptionLabel(VOICE_PROVIDER_OPTIONS, voiceProvider),
-    [voiceProvider],
+    () => settingsText.voiceProviderOptions[voiceProvider] || findOptionLabel(VOICE_PROVIDER_OPTIONS, voiceProvider),
+    [voiceProvider, settingsText.voiceProviderOptions],
+  );
+  const defaultLanguageOptions = useMemo(
+    () => DEFAULT_LANGUAGE_OPTIONS.map((option) => ({
+      code: option.code,
+      label: settingsText.defaultLanguageOptions[option.code] || option.label,
+    })),
+    [settingsText.defaultLanguageOptions],
+  );
+  const learnLanguageOptions = useMemo(
+    () => LEARN_LANGUAGE_OPTIONS.map((option) => ({
+      code: option.code,
+      label: settingsText.learnLanguageOptions[option.code] || option.label,
+    })),
+    [settingsText.learnLanguageOptions],
+  );
+  const appearanceOptions = useMemo(
+    () => APP_THEME_OPTIONS.map((option) => ({
+      code: option.code,
+      label: settingsText.appearanceOptions[option.code] || option.label,
+    })),
+    [settingsText.appearanceOptions],
+  );
+  const voiceProviderOptions = useMemo(
+    () => VOICE_PROVIDER_OPTIONS.map((option) => ({
+      code: option.code,
+      label: settingsText.voiceProviderOptions[option.code] || option.label,
+    })),
+    [settingsText.voiceProviderOptions],
   );
 
   const subPageMeta: Record<Exclude<SettingsRoute, 'main'>, { title: string }> = {
     defaultLanguage: {
-      title: 'Default Language',
+      title: settingsText.defaultLanguageLabel,
     },
     learnLanguage: {
-      title: 'Learn Language',
+      title: settingsText.learnLanguageLabel,
     },
     appearance: {
-      title: 'Appearance',
+      title: settingsText.appearanceLabel,
     },
     voiceProvider: {
-      title: 'Voice Provider',
+      title: settingsText.voiceProviderLabel,
     },
   };
 
@@ -135,7 +170,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             >
               <span className={SETTINGS_UI.optionLabel}>{option.label}</span>
               <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
-                <ToggleStateBadge isOn={isSelected} />
+                <ToggleStateBadge
+                  isOn={isSelected}
+                  onLabel={settingsText.onLabel}
+                  offLabel={settingsText.offLabel}
+                />
               </span>
             </button>
             {index < options.length - 1 && <div className={SETTINGS_UI.listDivider} />}
@@ -152,21 +191,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           type="button"
           onClick={onBackToProfile}
           className={SETTINGS_UI.subPageBackButton}
-          aria-label="Back to profile"
+          aria-label={settingsText.backToProfileAriaLabel}
         >
           ‹
         </button>
         <div>
-          <p className={VIEW_SECTION_LABEL_CLASS}>Profile</p>
-          <h3 className={SETTINGS_UI.subPageTitle}>Settings</h3>
+          <p className={VIEW_SECTION_LABEL_CLASS}>{settingsText.profileContextLabel}</p>
+          <h3 className={SETTINGS_UI.subPageTitle}>{settingsText.settingsTitle}</h3>
         </div>
       </div>
 
       <section className="mb-4">
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Preferences</h3>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{settingsText.preferencesSectionLabel}</h3>
         <div className={SETTINGS_UI.listCard}>
           <button type="button" onClick={() => setRoute('defaultLanguage')} className={SETTINGS_UI.listRow}>
-            <p className={SETTINGS_UI.sectionTitle}>Default Language</p>
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.defaultLanguageLabel}</p>
             <span className={SETTINGS_UI.rowValue}>
               {defaultLanguageLabel}
               <span aria-hidden="true">›</span>
@@ -174,7 +213,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </button>
           <div className={SETTINGS_UI.listDivider} />
           <button type="button" onClick={() => setRoute('learnLanguage')} className={SETTINGS_UI.listRow}>
-            <p className={SETTINGS_UI.sectionTitle}>Learn Language</p>
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.learnLanguageLabel}</p>
             <span className={SETTINGS_UI.rowValue}>
               {learnLanguageLabel}
               <span aria-hidden="true">›</span>
@@ -182,7 +221,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </button>
           <div className={SETTINGS_UI.listDivider} />
           <button type="button" onClick={() => setRoute('appearance')} className={SETTINGS_UI.listRow}>
-            <p className={SETTINGS_UI.sectionTitle}>Appearance</p>
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.appearanceLabel}</p>
             <span className={SETTINGS_UI.rowValue}>
               {appThemeLabel}
               <span aria-hidden="true">›</span>
@@ -190,7 +229,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </button>
           <div className={SETTINGS_UI.listDivider} />
           <button type="button" onClick={() => setRoute('voiceProvider')} className={SETTINGS_UI.listRow}>
-            <p className={SETTINGS_UI.sectionTitle}>Voice Provider</p>
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.voiceProviderLabel}</p>
             <span className={SETTINGS_UI.rowValue}>
               {voiceProviderLabel}
               <span aria-hidden="true">›</span>
@@ -200,25 +239,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </section>
 
       <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Display</h3>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{settingsText.displaySectionLabel}</h3>
         <div className={SETTINGS_UI.listCard}>
           <button type="button" onClick={onToggleBoldText} className={SETTINGS_UI.listRow}>
-            <p className={SETTINGS_UI.sectionTitle}>Bold Text</p>
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.boldTextLabel}</p>
             <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
-              <ToggleStateBadge isOn={isBoldTextEnabled} />
+              <ToggleStateBadge
+                isOn={isBoldTextEnabled}
+                onLabel={settingsText.onLabel}
+                offLabel={settingsText.offLabel}
+              />
             </span>
           </button>
           <div className={SETTINGS_UI.listDivider} />
           <button type="button" onClick={onToggleAutoScroll} className={SETTINGS_UI.listRow}>
-            <p className={SETTINGS_UI.sectionTitle}>Auto Scroll</p>
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.autoScrollLabel}</p>
             <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
-              <ToggleStateBadge isOn={isAutoScrollEnabled} />
+              <ToggleStateBadge
+                isOn={isAutoScrollEnabled}
+                onLabel={settingsText.onLabel}
+                offLabel={settingsText.offLabel}
+              />
             </span>
           </button>
           <div className={SETTINGS_UI.listDivider} />
           <div className={SETTINGS_UI.staticRow}>
             <div className={SETTINGS_UI.textSizeRow}>
-              <p className={SETTINGS_UI.sectionTitle}>Text Size</p>
+              <p className={SETTINGS_UI.sectionTitle}>{settingsText.textSizeLabel}</p>
               <div className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.textSizeControlSlot}`}>
                 <div className={SETTINGS_UI.textSizeControlGroup}>
                   <button
@@ -226,7 +273,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     onClick={onDecreaseTextSize}
                     disabled={!canDecreaseTextSize}
                     className={getSettingsTextSizeButtonClass(canDecreaseTextSize)}
-                    aria-label="Decrease text size"
+                    aria-label={settingsText.decreaseTextSizeAriaLabel}
                   >
                     -
                   </button>
@@ -238,7 +285,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     onClick={onIncreaseTextSize}
                     disabled={!canIncreaseTextSize}
                     className={getSettingsTextSizeButtonClass(canIncreaseTextSize)}
-                    aria-label="Increase text size"
+                    aria-label={settingsText.increaseTextSizeAriaLabel}
                   >
                     +
                   </button>
@@ -250,12 +297,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </section>
 
       <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Audio</h3>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{settingsText.audioSectionLabel}</h3>
         <div className={SETTINGS_UI.listCard}>
           <button type="button" onClick={onTogglePronunciation} className={SETTINGS_UI.listRow}>
-            <p className={SETTINGS_UI.sectionTitle}>Pronunciation</p>
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.pronunciationLabel}</p>
             <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
-              <ToggleStateBadge isOn={isPronunciationEnabled} />
+              <ToggleStateBadge
+                isOn={isPronunciationEnabled}
+                onLabel={settingsText.onLabel}
+                offLabel={settingsText.offLabel}
+              />
             </span>
           </button>
         </div>
@@ -273,23 +324,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="button"
             onClick={() => setRoute('main')}
             className={SETTINGS_UI.subPageBackButton}
-            aria-label="Back to settings"
+            aria-label={settingsText.backToSettingsAriaLabel}
           >
             ‹
           </button>
           <div>
-            <p className={VIEW_SECTION_LABEL_CLASS}>Settings</p>
+            <p className={VIEW_SECTION_LABEL_CLASS}>{settingsText.settingsTitle}</p>
             <h3 className={SETTINGS_UI.subPageTitle}>{title}</h3>
           </div>
         </div>
         {route === 'defaultLanguage' &&
-          renderOptionPage(DEFAULT_LANGUAGE_OPTIONS, defaultLanguage, onDefaultLanguageChange)}
+          renderOptionPage(defaultLanguageOptions, defaultLanguage, onDefaultLanguageChange)}
         {route === 'learnLanguage' &&
-          renderOptionPage(LEARN_LANGUAGE_OPTIONS, learnLanguage, onLearnLanguageChange)}
+          renderOptionPage(learnLanguageOptions, learnLanguage, onLearnLanguageChange)}
         {route === 'appearance' &&
-          renderOptionPage(APP_THEME_OPTIONS, appTheme, onAppThemeChange)}
+          renderOptionPage(appearanceOptions, appTheme, onAppThemeChange)}
         {route === 'voiceProvider' &&
-          renderOptionPage(VOICE_PROVIDER_OPTIONS, voiceProvider, onVoiceProviderChange)}
+          renderOptionPage(voiceProviderOptions, voiceProvider, onVoiceProviderChange)}
       </>
     );
   };

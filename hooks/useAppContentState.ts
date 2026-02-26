@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { getLessonOrderIndex, DefaultLanguage, LearnLanguage } from '../config/appConfig';
+import { getAppText } from '../config/appI18n';
 import { getLessonModalText } from '../config/lessonModalText';
 import { useLessonData } from './useLessonData';
 import { useOfflineLessonPacks } from './useOfflineLessonPacks';
@@ -42,9 +43,11 @@ export function useAppContentState({
   defaultLanguage,
 }: UseAppContentStateParams): UseAppContentStateResult {
   const apiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
+  const appText = getAppText(defaultLanguage);
   const { lessons, englishReferenceLessons, loading, errorMessage } = useLessonData(
     apiBaseUrl,
     learnLanguage,
+    appText.appState.lessonsLoadFailedMessage,
   );
   const {
     downloadedUnitKeys,

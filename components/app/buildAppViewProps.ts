@@ -199,6 +199,7 @@ export function buildAppViewProps({
       message: leaveCompletedUnitConfirmMessage,
       cancelLabel: leaveCompletedUnitCancelLabel,
       confirmLabel: leaveCompletedUnitConfirmLabel,
+      closeAriaLabel: appText.navigation.closeAriaLabel,
       onCancel: onLeaveCompletedUnitCancel,
       onConfirm: onLeaveCompletedUnitConfirm,
     },
@@ -208,6 +209,7 @@ export function buildAppViewProps({
       message: appText.logoutModal.message,
       cancelLabel: appText.logoutModal.cancelLabel,
       confirmLabel: appText.logoutModal.confirmLabel,
+      closeAriaLabel: appText.navigation.closeAriaLabel,
       onCancel: onCloseLogoutModal,
       onConfirm: onConfirmLogoutModal,
     },
@@ -215,11 +217,12 @@ export function buildAppViewProps({
       profileName,
       progressPercent: overallProgressPercent,
       progressLabel: `${completedLessonsCount}/${totalLessonsCount}`,
+      profileText: appText.profile,
       profileInput,
       profileError,
       hasProfileWhitespace,
       isProfileInputValid,
-      currentCourseCode,
+      currentCourseCode: currentCourseCode || appText.profile.courseNotAvailableLabel,
       onProfileInputChange,
       onApplyProfileName,
       onOpenCurrentCourse,
@@ -242,6 +245,7 @@ export function buildAppViewProps({
       isUnitDownloading,
     },
     settingsViewProps: {
+      settingsText: appText.settings,
       defaultLanguage,
       learnLanguage,
       isPronunciationEnabled,
@@ -286,6 +290,7 @@ export function buildAppViewProps({
       onClearLessonHighlight,
     },
     lessonActionFooterProps: {
+      lessonText: appText.lesson,
       mode,
       isNextDisabled: isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end),
       isPreviousDisabled: mode !== 'learn' || isNextDisabled,
@@ -301,9 +306,11 @@ export function buildAppViewProps({
       onNext,
     },
     mobileBottomNavProps: {
+      navText: appText.navigation,
       activeTab: sidebarTab === 'settings' ? 'profile' : sidebarTab,
       isVisible: isMobileBottomBarsVisible,
       onTabChange: onMobileTabChange,
     },
+    appStateText: appText.appState,
   };
 }

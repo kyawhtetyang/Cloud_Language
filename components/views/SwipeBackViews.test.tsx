@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { LessonView } from './LessonView';
 import { SettingsView } from './SettingsView';
 import { LessonData } from '../../types';
+import { getAppText } from '../../config/appI18n';
 
 function swipeFromLeftEdge(element: HTMLElement) {
   fireEvent.touchStart(element, {
@@ -49,6 +50,7 @@ describe('Swipe-back behavior', () => {
   it('returns from settings subpage to main page on edge swipe', () => {
     const { container } = render(
       <SettingsView
+        settingsText={getAppText('english').settings}
         defaultLanguage="english"
         learnLanguage="burmese"
         isPronunciationEnabled

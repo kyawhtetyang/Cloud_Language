@@ -7,7 +7,6 @@ export type NavIconProps = {
 };
 
 type NavTabMeta = {
-  label: string;
   Icon: React.FC<NavIconProps>;
 };
 
@@ -97,19 +96,15 @@ export const NAV_TABS: readonly SidebarTab[] = ['library', 'lesson', 'profile'] 
 
 export const NAV_TAB_META: Record<SidebarTab, NavTabMeta> = {
   library: {
-    label: 'Library',
     Icon: LibraryIcon,
   },
   lesson: {
-    label: 'Lesson',
     Icon: LessonIcon,
   },
   settings: {
-    label: 'Settings',
     Icon: SettingsIcon,
   },
   profile: {
-    label: 'Profile',
     Icon: ProfileIcon,
   },
 };

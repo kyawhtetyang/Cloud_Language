@@ -2,8 +2,10 @@ import React from 'react';
 import { SidebarTab } from '../../config/appConfig';
 import { NAV_TAB_META } from '../nav/navConfig';
 import { BUTTON_UI, getSidebarNavButtonClass } from '../../config/buttonUi';
+import { AppTextPack } from '../../config/appI18n';
 
 type AppSidebarProps = {
+  navText: AppTextPack['navigation'];
   isSidebarOpen: boolean;
   sidebarTab: SidebarTab;
   onClose: () => void;
@@ -12,14 +14,22 @@ type AppSidebarProps = {
 };
 
 export const AppSidebar: React.FC<AppSidebarProps> = ({
+  navText,
   isSidebarOpen,
   sidebarTab,
   onClose,
   onSelectTab,
   onReload,
 }) => {
+  const labelByTab: Record<SidebarTab, string> = {
+    library: navText.libraryLabel,
+    lesson: navText.lessonLabel,
+    profile: navText.profileLabel,
+    settings: navText.settingsLabel,
+  };
+
   const renderNavButton = (tab: SidebarTab) => {
-    const { label, Icon } = NAV_TAB_META[tab];
+    const { Icon } = NAV_TAB_META[tab];
     const isActive = sidebarTab === tab;
     return (
       <button
@@ -28,7 +38,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       >
         <span className="flex items-center gap-2">
           <Icon isActive={isActive} className="h-4 w-4 shrink-0" />
-          <span>{label}</span>
+          <span>{labelByTab[tab]}</span>
         </span>
       </button>
     );
@@ -50,14 +60,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             type="button"
             onClick={onReload}
             className="flex items-center gap-2 text-lg font-extrabold text-ink uppercase tracking-wide hover:opacity-80 transition-opacity"
-            aria-label="Reload page"
+            aria-label={navText.reloadPageAriaLabel}
           >
             <span className={BUTTON_UI.sidebarBrandIcon}>
               <span className="text-sm font-extrabold leading-none">U</span>
             </span>
             Duolingo
           </button>
-          <button className={BUTTON_UI.sidebarCloseButton} onClick={onClose} aria-label="Close">
+          <button className={BUTTON_UI.sidebarCloseButton} onClick={onClose} aria-label={navText.closeAriaLabel}>
             ×
           </button>
         </div>
@@ -74,7 +84,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           >
             <span className="flex items-center gap-2">
               <ProfileIcon isActive={isProfileActive} className="h-4 w-4 shrink-0" />
-              <span>{profileMeta.label}</span>
+              <span>{labelByTab.profile}</span>
             </span>
           </button>
         </div>

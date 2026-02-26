@@ -6,18 +6,28 @@ import {
   getMobileNavIconWrapClass,
   getMobileNavLabelClass,
 } from '../config/buttonUi';
+import { AppTextPack } from '../config/appI18n';
 
 type MobileBottomNavProps = {
+  navText: AppTextPack['navigation'];
   activeTab: SidebarTab;
   onTabChange: (tab: SidebarTab) => void;
   isVisible?: boolean;
 };
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
+  navText,
   activeTab,
   onTabChange,
   isVisible = true,
 }) => {
+  const labelByTab: Record<SidebarTab, string> = {
+    library: navText.libraryLabel,
+    lesson: navText.lessonLabel,
+    profile: navText.profileLabel,
+    settings: navText.settingsLabel,
+  };
+
   return (
     <nav
       className={`fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border-subtle)] bg-[var(--surface-default)] backdrop-blur transition-all duration-200 ease-out md:hidden ${
@@ -31,7 +41,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         style={{ gridTemplateColumns: `repeat(${NAV_TABS.length}, minmax(0, 1fr))` }}
       >
         {NAV_TABS.map((tab) => {
-          const { label, Icon } = NAV_TAB_META[tab];
+          const { Icon } = NAV_TAB_META[tab];
+          const label = labelByTab[tab];
           const isActive = activeTab === tab;
           return (
             <button

@@ -22,7 +22,11 @@ type UseLessonDataResult = {
   errorMessage: string | null;
 };
 
-export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage): UseLessonDataResult {
+export function useLessonData(
+  apiBaseUrl: string,
+  learnLanguage: LearnLanguage,
+  lessonsLoadFailedMessage: string,
+): UseLessonDataResult {
   const [lessons, setLessons] = useState<LessonData[]>([]);
   const [englishReferenceLessons, setEnglishReferenceLessons] = useState<LessonData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,15 +81,14 @@ export function useLessonData(apiBaseUrl: string, learnLanguage: LearnLanguage):
           return;
         }
 
-        setErrorMessage('Could not load lessons from backend or offline storage.');
+        setErrorMessage(lessonsLoadFailedMessage);
       } finally {
         setLoading(false);
       }
     };
 
     void fetchData();
-  }, [apiBaseUrl, learnLanguage]);
+  }, [apiBaseUrl, learnLanguage, lessonsLoadFailedMessage]);
 
   return { lessons, englishReferenceLessons, loading, errorMessage };
 }
-

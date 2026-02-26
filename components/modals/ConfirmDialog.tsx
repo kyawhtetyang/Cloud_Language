@@ -7,6 +7,7 @@ type ConfirmDialogProps = {
   message: string;
   cancelLabel: string;
   confirmLabel: string;
+  closeAriaLabel: string;
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -17,6 +18,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   message,
   cancelLabel,
   confirmLabel,
+  closeAriaLabel,
   onCancel,
   onConfirm,
 }) => {
@@ -28,7 +30,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         type="button"
         className={BUTTON_UI.dialogDismissOverlay}
         onClick={onCancel}
-        aria-label="Close dialog"
+        aria-label={closeAriaLabel}
       />
       <div
         role="dialog"

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { DefaultLanguage } from '../../../config/appConfig';
+import { getAppText } from '../../../config/appI18n';
 import { localizeLibraryTopic } from '../../../config/libraryI18n';
 import type { AlbumUnitEntry } from './libraryTypes';
 import { LIBRARY_UI_TOKENS } from './libraryUiTokens';
@@ -37,6 +38,7 @@ export const UnitRow: React.FC<UnitRowProps> = ({
   onPlayUnit,
   onOpenUnit,
 }) => {
+  const libraryText = getAppText(defaultLanguage).library;
   const unitKey = `${entry.level}:${entry.unit}`;
   const isActive = activeUnitKey === unitKey;
   const badgeClass = isActive
@@ -61,7 +63,13 @@ export const UnitRow: React.FC<UnitRowProps> = ({
         <div
           className={`inline-flex h-7 min-w-[46px] items-center justify-center rounded-md px-1.5 text-[11px] font-bold ${badgeClass}`}
         >
-          <span aria-label={isCompleted ? 'Completed unit' : `${unitPrefixLabel} ${formatUnitCode(entry.level, entry.unit)}`}>
+          <span
+            aria-label={
+              isCompleted
+                ? libraryText.completedUnitAriaLabel
+                : `${unitPrefixLabel} ${formatUnitCode(entry.level, entry.unit)}`
+            }
+          >
             {isCompleted ? (
               <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
                 <path
@@ -90,8 +98,8 @@ export const UnitRow: React.FC<UnitRowProps> = ({
             onOpenUnit(entry.level, entry.unit, albumKey);
           }}
           className={`${LIBRARY_UI_TOKENS.unitOpenButton} ${accentClass}`}
-          aria-label={`Open lesson ${formatUnitCode(entry.level, entry.unit)}`}
-          title="Open lesson"
+          aria-label={`${libraryText.openLessonAriaPrefix} ${formatUnitCode(entry.level, entry.unit)}`}
+          title={libraryText.openLessonTitle}
         >
           <svg
             viewBox="0 0 24 24"

@@ -1,9 +1,19 @@
 import React from 'react';
 import { getActionButtonClass } from '../config/buttonUi';
+import { DefaultLanguage } from '../config/appConfig';
+import { getAppText } from '../config/appI18n';
 
 type AppErrorBoundaryState = {
   hasError: boolean;
 };
+
+function resolveBoundaryLanguage(): DefaultLanguage {
+  if (typeof document === 'undefined') return 'english';
+  const htmlLang = (document.documentElement.lang || '').toLowerCase();
+  if (htmlLang.startsWith('my')) return 'burmese';
+  if (htmlLang.startsWith('vi')) return 'vietnamese';
+  return 'english';
+}
 
 export class AppErrorBoundary extends React.Component<React.PropsWithChildren, AppErrorBoundaryState> {
   state: AppErrorBoundaryState = {
@@ -24,19 +34,20 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, A
 
   render() {
     if (this.state.hasError) {
+      const appStateText = getAppText(resolveBoundaryLanguage()).appState;
       return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-app">
           <div className="w-full max-w-md rounded-2xl border-2 border-[var(--border-subtle)] bg-[var(--surface-default)] p-6 text-center">
-            <h1 className="text-xl font-extrabold text-ink mb-2">Something went wrong</h1>
+            <h1 className="text-xl font-extrabold text-ink mb-2">{appStateText.unexpectedErrorTitle}</h1>
             <p className="mb-4 text-sm text-[var(--text-secondary)]">
-              The app hit an unexpected error. Reload to recover.
+              {appStateText.unexpectedErrorMessage}
             </p>
             <button
               type="button"
               onClick={this.handleReload}
               className={getActionButtonClass({ variant: 'primary', size: 'md', fullWidth: true })}
             >
-              Reload
+              {appStateText.reloadLabel}
             </button>
           </div>
         </div>

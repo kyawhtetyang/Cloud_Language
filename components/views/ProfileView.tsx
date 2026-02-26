@@ -4,14 +4,15 @@ import {
   VIEW_DIVIDER_CLASS,
   VIEW_PAGE_CLASS,
   VIEW_SECTION_LABEL_CLASS,
-  VIEW_SECTION_TITLE_CLASS,
 } from './viewShared';
 import { BUTTON_UI, getActionButtonClass } from '../../config/buttonUi';
+import { AppTextPack } from '../../config/appI18n';
 
 type ProfileViewProps = {
   profileName: string;
   progressPercent: number;
   progressLabel: string;
+  profileText: AppTextPack['profile'];
   profileInput: string;
   profileError: string | null;
   hasProfileWhitespace: boolean;
@@ -28,6 +29,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   profileName,
   progressPercent,
   progressLabel,
+  profileText,
   profileInput,
   profileError,
   hasProfileWhitespace,
@@ -48,12 +50,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const listDividerClass = 'border-t border-[var(--border-subtle)]';
   const listRowClass =
     'w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-hover)]';
-  const sectionTitleClass = VIEW_SECTION_TITLE_CLASS;
+  const sectionTitleClass = 'text-base font-medium text-[var(--text-primary)]';
+  const rowValueClass = 'flex items-center gap-2 text-sm font-normal text-[var(--text-secondary)]';
 
   return (
     <div className={`${VIEW_PAGE_CLASS} space-y-4 px-1 md:px-0`}>
       <section>
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Account</h3>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{profileText.accountSectionLabel}</h3>
         <div className={listCardClass}>
           <div className="flex items-start justify-between gap-3 px-4 py-4">
             <div className="flex items-center gap-3">
@@ -61,7 +64,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 U
               </div>
               <div>
-                <h2 className="text-xl font-extrabold text-ink md:text-2xl">Welcome back</h2>
+                <h2 className="text-xl font-extrabold text-ink md:text-2xl">{profileText.welcomeBackTitle}</h2>
                 <p className={`${VIEW_BODY_TEXT_CLASS} font-semibold`}>{profileName}</p>
               </div>
             </div>
@@ -69,7 +72,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               type="button"
               onClick={onOpenSettings}
               className={BUTTON_UI.iconNavButton}
-              aria-label="Open settings"
+              aria-label={profileText.openSettingsAriaLabel}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -109,11 +112,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       </section>
 
       <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Progress Stats</h3>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{profileText.progressStatsSectionLabel}</h3>
         <div className={listCardClass}>
           <button type="button" onClick={onOpenCurrentCourse} className={listRowClass}>
-            <span className={sectionTitleClass}>Current Course</span>
-            <span className="text-base font-extrabold text-ink flex items-center gap-2">
+            <span className={sectionTitleClass}>{profileText.currentCourseLabel}</span>
+            <span className={rowValueClass}>
               {currentCourseCode}
               <span aria-hidden="true">&gt;</span>
             </span>
@@ -122,14 +125,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       </section>
 
       <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Change Display Name</h3>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{profileText.changeDisplayNameSectionLabel}</h3>
         <div className="py-1">
           <div className="flex gap-2">
             <input
               value={profileInput}
               onChange={(event) => onProfileInputChange(event.target.value)}
               onKeyDown={(event) => event.key === 'Enter' && onApplyProfileName()}
-              placeholder="Display name (no spaces)"
+              placeholder={profileText.displayNamePlaceholder}
               className="flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-3 py-2 text-base font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)] md:text-sm"
             />
             <button
@@ -141,24 +144,24 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 disabled: !isProfileInputValid,
               })}
             >
-              Save
+              {profileText.saveLabel}
             </button>
           </div>
           {(profileError || hasProfileWhitespace) && (
-            <p className="mt-2 text-xs font-bold text-danger">Username cannot contain spaces.</p>
+            <p className="mt-2 text-xs font-bold text-danger">{profileText.usernameWhitespaceError}</p>
           )}
         </div>
       </section>
 
       <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>Session</h3>
+        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{profileText.sessionSectionLabel}</h3>
         <div className={listCardClass}>
           <button
             type="button"
             onClick={onRequestLogout}
             className={`${listRowClass} text-danger`}
           >
-            <span className="text-sm font-semibold">Log out</span>
+            <span className="text-base font-medium">{profileText.logoutLabel}</span>
             <span aria-hidden="true">&gt;</span>
           </button>
         </div>

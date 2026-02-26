@@ -153,8 +153,6 @@ async function handleAlbumDownloadAction(
   if (!onDownloadUnit) return;
 
   if (isGroupDownloaded && onRemoveUnitDownload) {
-    const shouldRemove = window.confirm('Remove downloaded offline lessons for this group?');
-    if (!shouldRemove) return;
     await Promise.all(
       group.units.map((entry) => Promise.resolve(onRemoveUnitDownload(entry.level, entry.unit))),
     );
@@ -196,7 +194,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   };
   const text = getLibraryText(defaultLanguage);
   const appText = getAppText(defaultLanguage);
-  const playAllLabel = appText.library.playAllLabel;
+  const libraryText = appText.library;
+  const playAllLabel = libraryText.playAllLabel;
   const collectionSections = useMemo<AlbumCollectionSection[]>(() => {
     const byCollection = new Map<
       string,
@@ -211,8 +210,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     for (const lesson of lessons) {
       const level = getLessonOrderIndex(lesson);
       const unit = getLessonUnitId(lesson);
-      const collectionLabel = (lesson.collectionLabel || '').trim() || `Collection ${level}`;
-      const sourceLabel = (lesson.sourceLabel || '').trim() || 'Untitled';
+      const collectionLabel = (lesson.collectionLabel || '').trim() || `${libraryText.collectionFallbackPrefix} ${level}`;
+      const sourceLabel = (lesson.sourceLabel || '').trim() || libraryText.untitledSourceLabel;
       const levelScheme = String(lesson.levelScheme || '').trim().toLowerCase() || undefined;
       const levelCode = String(lesson.levelCode || '').trim().toUpperCase() || undefined;
       const levelOrder = typeof lesson.levelOrder === 'number' ? lesson.levelOrder : undefined;
@@ -291,7 +290,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         groups,
       };
     });
-  }, [learnLanguage, lessons]);
+  }, [learnLanguage, lessons, libraryText.collectionFallbackPrefix, libraryText.untitledSourceLabel]);
   const selectedAlbum = useMemo(() => {
     if (!activeSelectedAlbumKey) return null;
     for (const section of collectionSections) {
@@ -334,7 +333,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       const last = group.units[group.units.length - 1];
       return `${formatUnitCode(first.level, first.unit)}–${formatUnitCode(last.level, last.unit)}`;
     }
-    const unitWord = unitCount === 1 ? 'unit' : 'units';
+    const unitWord = unitCount === 1 ? libraryText.unitSingularLabel : libraryText.unitPluralLabel;
     return `${stage} · G${groupIndex + 1} (${unitCount} ${unitWord})`;
   };
 
@@ -347,24 +346,22 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     const isGroupPartial = downloadedCount > 0 && downloadedCount < group.units.length;
     const isGroupDownloading = group.units.some((entry) => Boolean(isUnitDownloading?.(entry.level, entry.unit)));
     const groupDownloadLabel = isGroupDownloading
-      ? 'Downloading'
+      ? libraryText.downloadingLabel
       : isGroupDownloaded
-        ? 'Offline ready'
+        ? libraryText.offlineReadyLabel
         : isGroupPartial
-          ? 'Downloaded'
-          : 'Download';
+          ? libraryText.downloadedLabel
+          : libraryText.downloadLabel;
 
     return (
       <button
         type="button"
         onClick={() => {
-          void handleAlbumDownloadAction(
-            group,
-            downloadedUnitKeys,
-            isGroupDownloaded,
-            onDownloadUnit,
-            onRemoveUnitDownload,
-          );
+          if (isGroupDownloaded && onRemoveUnitDownload) {
+            const shouldRemove = window.confirm(libraryText.removeDownloadedConfirmMessage);
+            if (!shouldRemove) return;
+          }
+          void handleAlbumDownloadAction(group, downloadedUnitKeys, isGroupDownloaded, onDownloadUnit, onRemoveUnitDownload);
         }}
         disabled={isGroupDownloading}
         aria-label={groupDownloadLabel}
@@ -442,7 +439,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
       {!hasFilteredResults && (
         <div className="mb-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-4 text-sm text-[var(--text-secondary)]">
-          {appText.library.noAlbumsMatch}
+          {libraryText.noAlbumsMatch}
         </div>
       )}
 

@@ -9,13 +9,16 @@ import {
   VIEW_STATUS_TEXT_CLASS,
 } from './viewShared';
 import { getActionButtonClass } from '../../config/buttonUi';
+import { AppTextPack } from '../../config/appI18n';
 
 type LessonsUnavailableViewProps = {
+  appStateText: AppTextPack['appState'];
   errorMessage: string | null;
   apiBaseUrl: string;
 };
 
 type WelcomeViewProps = {
+  welcomeText: AppTextPack['welcome'];
   profileInput: string;
   profileError: string | null;
   hasProfileWhitespace: boolean;
@@ -24,29 +27,33 @@ type WelcomeViewProps = {
   onApplyProfileName: () => void;
 };
 
-export const LoadingView: React.FC = () => (
+export const LoadingView: React.FC<{ label: string }> = ({ label }) => (
   <div className="flex items-center justify-center min-h-screen">
     <div className="flex flex-col items-center gap-3">
       <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
-      <p className={`${VIEW_STATUS_TEXT_CLASS} text-ink`}>Loading lessons...</p>
+      <p className={`${VIEW_STATUS_TEXT_CLASS} text-ink`}>{label}</p>
     </div>
   </div>
 );
 
 export const LessonsUnavailableView: React.FC<LessonsUnavailableViewProps> = ({
+  appStateText,
   errorMessage,
   apiBaseUrl,
 }) => (
   <div className="flex items-center justify-center min-h-screen p-6">
     <div className={`${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS} text-center max-w-md w-full`}>
-      <h2 className={`${VIEW_H3_CLASS} mb-2`}>Lessons unavailable</h2>
-      <p className={VIEW_BODY_TEXT_CLASS}>{errorMessage || 'No lessons available right now.'}</p>
-      <p className={`${VIEW_BODY_TEXT_CLASS} mt-3`}>Check backend API at {apiBaseUrl}/api/health</p>
+      <h2 className={`${VIEW_H3_CLASS} mb-2`}>{appStateText.lessonsUnavailableTitle}</h2>
+      <p className={VIEW_BODY_TEXT_CLASS}>{errorMessage || appStateText.lessonsUnavailableDefaultMessage}</p>
+      <p className={`${VIEW_BODY_TEXT_CLASS} mt-3`}>
+        {appStateText.lessonsUnavailableHealthPrefix} {apiBaseUrl}/api/health
+      </p>
     </div>
   </div>
 );
 
 export const WelcomeView: React.FC<WelcomeViewProps> = ({
+  welcomeText,
   profileInput,
   profileError,
   hasProfileWhitespace,
@@ -56,17 +63,17 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
 }) => (
   <div className="min-h-screen flex items-center justify-center p-6 bg-app-radial">
     <div className={`${VIEW_PANEL_CLASS} p-7 w-full max-w-md`}>
-      <h1 className={`${VIEW_H3_CLASS} mb-2`}>Welcome</h1>
-      <p className={`${VIEW_BODY_TEXT_CLASS} mb-5`}>Enter your name to create a local profile.</p>
+      <h1 className={`${VIEW_H3_CLASS} mb-2`}>{welcomeText.title}</h1>
+      <p className={`${VIEW_BODY_TEXT_CLASS} mb-5`}>{welcomeText.description}</p>
       <input
         value={profileInput}
         onChange={(event) => onProfileInputChange(event.target.value)}
         onKeyDown={(event) => event.key === 'Enter' && onApplyProfileName()}
-        placeholder="Username (no spaces)"
+        placeholder={welcomeText.usernamePlaceholder}
         className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-4 py-3 text-base md:text-sm font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)]"
       />
       {(profileError || hasProfileWhitespace) && (
-        <p className="mt-2 text-xs font-bold text-danger">Username cannot contain spaces.</p>
+        <p className="mt-2 text-xs font-bold text-danger">{welcomeText.usernameWhitespaceError}</p>
       )}
       <button
         onClick={onApplyProfileName}
@@ -78,16 +85,19 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
           disabled: !isProfileInputValid,
         })}`}
       >
-        Continue
+        {welcomeText.continueLabel}
       </button>
     </div>
   </div>
 );
 
-export const CompletedView: React.FC<{ onRestart: () => void }> = ({ onRestart }) => (
+export const CompletedView: React.FC<{ onRestart: () => void; appStateText: AppTextPack['appState'] }> = ({
+  onRestart,
+  appStateText,
+}) => (
   <div className={`${VIEW_PAGE_CLASS} ${VIEW_PANEL_CLASS} ${VIEW_PANEL_PAD_CLASS} text-center`}>
-    <h2 className={`${VIEW_H2_CLASS} mb-3`}>All Units Passed</h2>
-    <p className={`${VIEW_BODY_TEXT_CLASS} mb-6`}>You completed all sections and passed the random checks.</p>
+    <h2 className={`${VIEW_H2_CLASS} mb-3`}>{appStateText.completedTitle}</h2>
+    <p className={`${VIEW_BODY_TEXT_CLASS} mb-6`}>{appStateText.completedMessage}</p>
     <button
       onClick={onRestart}
       className={getActionButtonClass({
@@ -97,7 +107,7 @@ export const CompletedView: React.FC<{ onRestart: () => void }> = ({ onRestart }
         fullWidth: true,
       })}
     >
-      Restart Unit 1
+      {appStateText.completedRestartLabel}
     </button>
   </div>
 );

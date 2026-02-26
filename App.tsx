@@ -32,6 +32,7 @@ import {
   LoadingView,
   WelcomeView,
 } from './components/views/AppStateViews';
+import { getAppText } from './config/appI18n';
 
 const App: React.FC = () => {
   const {
@@ -331,18 +332,26 @@ const App: React.FC = () => {
     setSidebarTab,
     setIsSidebarOpen,
   });
+  const appText = getAppText(defaultLanguage);
 
   if (loading) {
-    return <LoadingView />;
+    return <LoadingView label={appText.appState.loadingLessonsLabel} />;
   }
 
   if (errorMessage || lessons.length === 0) {
-    return <LessonsUnavailableView errorMessage={errorMessage} apiBaseUrl={apiBaseUrl} />;
+    return (
+      <LessonsUnavailableView
+        appStateText={appText.appState}
+        errorMessage={errorMessage}
+        apiBaseUrl={apiBaseUrl}
+      />
+    );
   }
 
   if (!profileName) {
     return (
       <WelcomeView
+        welcomeText={appText.welcome}
         profileInput={profileInput}
         profileError={profileError}
         hasProfileWhitespace={hasProfileWhitespace}
@@ -366,6 +375,7 @@ const App: React.FC = () => {
     lessonViewProps,
     lessonActionFooterProps,
     mobileBottomNavProps,
+    appStateText,
   } = useAppViewProps({
     defaultLanguage,
     currentIndex,
@@ -451,10 +461,12 @@ const App: React.FC = () => {
         leaveCompletedUnitModalProps={leaveCompletedUnitModalProps}
         logoutModalProps={logoutModalProps}
         isSidebarOpen={isSidebarOpen}
+        closeSidebarAriaLabel={appText.navigation.closeAriaLabel}
         onDismissSidebarOverlay={() => setIsSidebarOpen(false)}
       />
 
       <AppSidebar
+        navText={appText.navigation}
         isSidebarOpen={isSidebarOpen}
         sidebarTab={sidebarTab}
         onClose={closeSidebar}
@@ -472,6 +484,7 @@ const App: React.FC = () => {
           libraryViewProps={libraryViewProps}
           settingsViewProps={settingsViewProps}
           lessonViewProps={lessonViewProps}
+          appStateText={appStateText}
           onCompletedRestart={handleRestartCourse}
         />
 

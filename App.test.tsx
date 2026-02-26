@@ -13,6 +13,15 @@ vi.mock('./components/AudioButton', () => ({
 
 import App from './App';
 
+const OPEN_SETTINGS_BUTTON_NAME = /Open settings|Mở cài đặt|Settings ဖွင့်မယ်/i;
+const DEFAULT_LANGUAGE_BUTTON_NAME = /Default Language|Ngôn ngữ mặc định|မူလဘာသာစကား/i;
+const PRONUNCIATION_BUTTON_NAME = /Pronunciation|Phát âm|အသံထွက်/i;
+const TOGGLE_ON_LABEL = /On|Bật|ဖွင့်/i;
+const ENGLISH_OPTION_NAME = /^(English|Tiếng Anh|အင်္ဂလိပ်)/i;
+const PROFILE_TAB_NAME = /Profile|Hồ sơ|ပရိုဖိုင်/i;
+const LIBRARY_TAB_NAME = /Library|Thư viện|စာကြည့်တိုက်/i;
+const LESSON_TAB_NAME = /Lesson|Bài học|သင်ခန်းစာ/i;
+
 function createLessons() {
   return Array.from({ length: 10 }, (_, index) => ({
     level: 1,
@@ -195,9 +204,9 @@ describe('App lesson navigation guard', () => {
     render(<App />);
 
     await screen.findByRole('button', { name: 'Next' });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Profile' })[0]);
-    fireEvent.click(await screen.findByRole('button', { name: 'Open settings' }));
-    await screen.findByText('Default Language');
+    fireEvent.click(screen.getAllByRole('button', { name: PROFILE_TAB_NAME })[0]);
+    fireEvent.click(await screen.findByRole('button', { name: OPEN_SETTINGS_BUTTON_NAME }));
+    await screen.findByRole('button', { name: DEFAULT_LANGUAGE_BUTTON_NAME });
     expect(screen.queryByText('Review Questions')).not.toBeInTheDocument();
   });
 
@@ -235,17 +244,17 @@ describe('App lesson navigation guard', () => {
     render(<App />);
 
     await screen.findByRole('button', { name: 'Next' });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Profile' })[0]);
-    fireEvent.click(await screen.findByRole('button', { name: 'Open settings' }));
+    fireEvent.click(screen.getAllByRole('button', { name: PROFILE_TAB_NAME })[0]);
+    fireEvent.click(await screen.findByRole('button', { name: OPEN_SETTINGS_BUTTON_NAME }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Default Language/i })).toHaveTextContent('Tiếng Việt');
-      expect(screen.getByRole('button', { name: /Pronunciation/i })).toHaveTextContent('On');
+      expect(screen.getByRole('button', { name: DEFAULT_LANGUAGE_BUTTON_NAME })).toHaveTextContent('Tiếng Việt');
+      expect(screen.getByRole('button', { name: PRONUNCIATION_BUTTON_NAME })).toHaveTextContent(TOGGLE_ON_LABEL);
       expect(screen.getByText('110%')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Default Language/i }));
-    fireEvent.click(await screen.findByRole('button', { name: /^English/i }));
+    fireEvent.click(screen.getByRole('button', { name: DEFAULT_LANGUAGE_BUTTON_NAME }));
+    fireEvent.click(await screen.findByRole('button', { name: ENGLISH_OPTION_NAME }));
 
     await waitFor(() => {
       expect(localStorage.getItem('lingo_burmese_default_language:tester')).toBe('english');
@@ -290,11 +299,11 @@ describe('App lesson navigation guard', () => {
     render(<App />);
     await screen.findByRole('button', { name: 'Next' });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Library' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: LIBRARY_TAB_NAME })[0]);
     await screen.findAllByRole('button', { name: /open group/i });
     fireEvent.click(screen.getAllByRole('button', { name: /open group/i })[0]);
     fireEvent.click(screen.getAllByRole('button', { name: /Unit 2 Topic/i })[0]);
-    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: LESSON_TAB_NAME })[0]);
 
     expect(await screen.findByText('Unit 2 Topic')).toBeInTheDocument();
     expect(screen.getByText('1.2')).toBeInTheDocument();
@@ -351,11 +360,11 @@ describe('App lesson navigation guard', () => {
     render(<App />);
     await screen.findByRole('button', { name: 'Next' });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Library' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: LIBRARY_TAB_NAME })[0]);
     await screen.findAllByRole('button', { name: /open group/i });
     fireEvent.click(screen.getAllByRole('button', { name: /open group/i })[1]);
     fireEvent.click(screen.getAllByRole('button', { name: /A2 Unit 1 Topic/i })[0]);
-    fireEvent.click(screen.getAllByRole('button', { name: 'Lesson' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: LESSON_TAB_NAME })[0]);
 
     expect(await screen.findByText('A2 Unit 1 Topic')).toBeInTheDocument();
     expect(screen.getByText('2.1')).toBeInTheDocument();

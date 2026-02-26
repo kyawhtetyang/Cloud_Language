@@ -4,8 +4,10 @@ import {
   getFooterLargeButtonClass,
   getFooterSmallButtonClass,
 } from '../config/buttonUi';
+import { AppTextPack } from '../config/appI18n';
 
 type LessonActionFooterProps = {
+  lessonText: AppTextPack['lesson'];
   mode: AppMode;
   isNextDisabled: boolean;
   isPreviousDisabled: boolean;
@@ -69,6 +71,7 @@ const RepeatIcon: React.FC = () => (
 );
 
 export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
+  lessonText,
   mode,
   isNextDisabled,
   isPreviousDisabled,
@@ -83,6 +86,15 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
   onRead,
   onNext,
 }) => {
+  const shuffleLabel = isShuffleEnabled ? lessonText.disableShuffleLabel : lessonText.enableShuffleLabel;
+  const readLabel = isReading ? lessonText.stopLabel : lessonText.readLabel;
+  const repeatLabel =
+    repeatMode === 'off'
+      ? lessonText.enableRepeatAllLabel
+      : repeatMode === 'all'
+        ? lessonText.enableRepeatOneLabel
+        : lessonText.disableRepeatLabel;
+
   return (
     <footer
       className={`fixed left-0 right-0 z-30 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] bottom-[calc(76px+env(safe-area-inset-bottom))] transition-all duration-200 ease-out md:bottom-4 md:left-1/2 md:right-auto md:w-full md:max-w-[720px] md:-translate-x-1/2 md:px-6 md:pb-0 ${
@@ -96,78 +108,60 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
           <div className="mx-auto flex w-full max-w-[min(640px,calc(100vw-1rem))] items-center justify-between gap-1.5 rounded-[22px] border border-[var(--border-strong)] bg-[var(--surface-default)] px-2 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.16)] backdrop-blur-md">
             <button
               onClick={onToggleShuffle}
-              aria-label={isShuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'}
-              title={isShuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'}
+              aria-label={shuffleLabel}
+              title={shuffleLabel}
               className={getFooterSmallButtonClass({ isSelected: isShuffleEnabled })}
             >
               <ShuffleIcon />
-              <span className="sr-only">{isShuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'}</span>
+              <span className="sr-only">{shuffleLabel}</span>
             </button>
             <button
               onClick={onPrevious}
               disabled={isPreviousDisabled}
-              aria-label="Previous"
-              title="Previous"
+              aria-label={lessonText.previousLabel}
+              title={lessonText.previousLabel}
               className={getFooterSmallButtonClass({
                 isDisabled: isPreviousDisabled,
                 isInteractive: true,
               })}
             >
               <PreviousIcon />
-              <span className="sr-only">Previous</span>
+              <span className="sr-only">{lessonText.previousLabel}</span>
             </button>
             <button
               onClick={onRead}
               disabled={isReadDisabled}
-              aria-label={isReading ? 'Stop' : 'Read'}
-              title={isReading ? 'Stop' : 'Read'}
+              aria-label={readLabel}
+              title={readLabel}
               className={getFooterLargeButtonClass(isReadDisabled)}
             >
               {isReading ? <PauseIcon /> : <PlayIcon />}
-              <span className="sr-only">{isReading ? 'Stop' : 'Read'}</span>
+              <span className="sr-only">{readLabel}</span>
             </button>
             <button
               onClick={onNext}
               disabled={isNextDisabled}
-              aria-label="Next"
-              title="Next"
+              aria-label={lessonText.nextLabel}
+              title={lessonText.nextLabel}
               className={getFooterSmallButtonClass({
                 isDisabled: isNextDisabled,
                 isInteractive: true,
               })}
             >
               <NextIcon />
-              <span className="sr-only">Next</span>
+              <span className="sr-only">{lessonText.nextLabel}</span>
             </button>
             <button
               onClick={onToggleRepeat}
-              aria-label={
-                repeatMode === 'off'
-                  ? 'Enable repeat all'
-                  : repeatMode === 'all'
-                    ? 'Enable repeat one'
-                    : 'Disable repeat'
-              }
-              title={
-                repeatMode === 'off'
-                  ? 'Enable repeat all'
-                  : repeatMode === 'all'
-                    ? 'Enable repeat one'
-                    : 'Disable repeat'
-              }
+              aria-label={repeatLabel}
+              title={repeatLabel}
               className={`relative ${getFooterSmallButtonClass({ isSelected: repeatMode !== 'off' })}`}
             >
               <RepeatIcon />
               {repeatMode === 'one' && (
                 <span className="absolute -bottom-0.5 right-1 text-xs font-black leading-none">1</span>
               )}
-              <span className="sr-only">
-                {repeatMode === 'off'
-                  ? 'Enable repeat all'
-                  : repeatMode === 'all'
-                    ? 'Enable repeat one'
-                    : 'Disable repeat'}
-              </span>
+              <span className="sr-only">{repeatLabel}</span>
             </button>
           </div>
         )}
