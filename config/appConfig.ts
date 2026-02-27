@@ -233,14 +233,49 @@ export function getPlayableLessonText(lesson: PlayableLessonTextRef): string {
 type TranslationTextInput = {
   lessonEnglish?: string | null;
   lessonBurmese?: string | null;
+  lessonTranslations?: Record<string, string> | null;
   defaultLanguage: DefaultLanguage;
   learnLanguage: LearnLanguage;
   englishReferenceText?: string | null;
 };
 
+function normalizeTranslationLocale(rawLocale: string): string {
+  const normalized = String(rawLocale || '').trim().toLowerCase().replace(/-/g, '_');
+  if (normalized === 'en' || normalized === 'eng' || normalized === 'english') return 'english';
+  if (normalized === 'vi' || normalized === 'vie' || normalized === 'vietnamese') return 'vietnamese';
+  if (
+    normalized === 'my'
+    || normalized === 'mm'
+    || normalized === 'bm'
+    || normalized === 'burmese'
+    || normalized === 'myanmar'
+  ) {
+    return 'burmese';
+  }
+  return normalized;
+}
+
+function resolveMappedTranslation(
+  translations: Record<string, string> | null | undefined,
+  locale: DefaultLanguage,
+): string {
+  if (!translations) return '';
+  const entries = Object.entries(translations);
+  if (entries.length === 0) return '';
+
+  for (const [rawKey, rawValue] of entries) {
+    if (normalizeTranslationLocale(rawKey) !== locale) continue;
+    if (typeof rawValue !== 'string') continue;
+    const trimmed = rawValue.trim();
+    if (trimmed) return trimmed;
+  }
+  return '';
+}
+
 export function resolveLessonTranslationText({
   lessonEnglish,
   lessonBurmese,
+  lessonTranslations,
   defaultLanguage,
   learnLanguage,
   englishReferenceText,
@@ -248,6 +283,10 @@ export function resolveLessonTranslationText({
   const sourceLine = typeof lessonEnglish === 'string' ? lessonEnglish.trim() : '';
   const translationLine = typeof lessonBurmese === 'string' ? lessonBurmese.trim() : '';
   const englishReference = typeof englishReferenceText === 'string' ? englishReferenceText.trim() : '';
+  const localeMappedTranslation = resolveMappedTranslation(lessonTranslations, defaultLanguage);
+  if (localeMappedTranslation) {
+    return localeMappedTranslation;
+  }
 
   if (defaultLanguage === 'burmese') {
     return translationLine || sourceLine;

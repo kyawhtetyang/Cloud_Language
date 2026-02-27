@@ -20,6 +20,7 @@ export interface LessonData {
   framework?: string;
   frameworkLevel?: string;
   frameworkUnit?: number;
+  translations?: Record<string, string>;
 }
 
 export interface ProgressState {

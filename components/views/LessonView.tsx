@@ -385,6 +385,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
     const translatedText = resolveLessonTranslationText({
       lessonEnglish: lesson.english,
       lessonBurmese: lesson.burmese,
+      lessonTranslations: lesson.translations,
       defaultLanguage,
       learnLanguage,
       englishReferenceText: englishReferenceByKey.get(lessonKey),
