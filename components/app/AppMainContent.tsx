@@ -59,7 +59,10 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
               <LibraryView {...libraryViewProps} />
             </div>
           </div>
-          <div className="absolute inset-0 z-20 overflow-y-auto px-4 pb-0 pt-3 md:px-6 md:pb-0 md:pt-6">
+          <div
+            data-lesson-scroll-root="true"
+            className="absolute inset-0 z-20 overflow-y-auto px-4 pb-0 pt-3 md:px-6 md:pb-0 md:pt-6"
+          >
             <div className="mx-auto w-full max-w-3xl">
               <LessonView {...lessonViewProps} sheetMode />
             </div>

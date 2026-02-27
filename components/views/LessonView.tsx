@@ -211,6 +211,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [sheetOffsetY, setSheetOffsetY] = useState(0);
   const [isSheetDragging, setIsSheetDragging] = useState(false);
   const [isSheetClosing, setIsSheetClosing] = useState(false);
+  const resolveLessonScrollRoot = (): HTMLElement | null => {
+    if (typeof document === 'undefined') return null;
+    return document.querySelector<HTMLElement>('[data-lesson-scroll-root="true"]');
+  };
 
   const leadLesson = currentBatchEntries[0]?.lesson;
   const level = leadLesson?.level || 1;
@@ -685,13 +689,20 @@ export const LessonView: React.FC<LessonViewProps> = ({
     const pauseAutoScroll = () => {
       autoScrollPausedUntilRef.current = Date.now() + LESSON_AUTO_SCROLL_RESUME_DELAY_MS;
     };
+    const lessonScrollRoot = resolveLessonScrollRoot();
     window.addEventListener('touchstart', pauseAutoScroll, { passive: true });
     window.addEventListener('touchmove', pauseAutoScroll, { passive: true });
     window.addEventListener('wheel', pauseAutoScroll, { passive: true });
+    lessonScrollRoot?.addEventListener('touchstart', pauseAutoScroll, { passive: true });
+    lessonScrollRoot?.addEventListener('touchmove', pauseAutoScroll, { passive: true });
+    lessonScrollRoot?.addEventListener('wheel', pauseAutoScroll, { passive: true });
     return () => {
       window.removeEventListener('touchstart', pauseAutoScroll);
       window.removeEventListener('touchmove', pauseAutoScroll);
       window.removeEventListener('wheel', pauseAutoScroll);
+      lessonScrollRoot?.removeEventListener('touchstart', pauseAutoScroll);
+      lessonScrollRoot?.removeEventListener('touchmove', pauseAutoScroll);
+      lessonScrollRoot?.removeEventListener('wheel', pauseAutoScroll);
     };
   }, [isAutoScrollEnabled]);
 
@@ -704,6 +715,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
     const rowNode = lessonRowRefs.current.get(activeSpeakingLessonIndex);
     if (!rowNode) return;
+    const lessonScrollRoot = rowNode.closest<HTMLElement>('[data-lesson-scroll-root="true"]');
 
     const now = Date.now();
     if (
@@ -714,18 +726,30 @@ export const LessonView: React.FC<LessonViewProps> = ({
     }
 
     const rect = rowNode.getBoundingClientRect();
-    const viewportHeight = Math.max(window.innerHeight, 1);
-    const viewportCenterY = viewportHeight / 2;
+    const viewportHeight = lessonScrollRoot
+      ? Math.max(lessonScrollRoot.clientHeight, 1)
+      : Math.max(window.innerHeight, 1);
+    const viewportCenterY = lessonScrollRoot
+      ? lessonScrollRoot.getBoundingClientRect().top + (viewportHeight / 2)
+      : viewportHeight / 2;
     const safeZoneDistance = viewportHeight * LESSON_AUTO_SCROLL_SAFE_ZONE_RATIO;
     const rowCenterY = (rect.top + rect.bottom) / 2;
 
     if (Math.abs(rowCenterY - viewportCenterY) <= safeZoneDistance) return;
 
-    const targetScrollTop = Math.max(
-      0,
-      window.scrollY + rowCenterY - viewportCenterY,
-    );
-    window.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+    if (lessonScrollRoot && typeof lessonScrollRoot.scrollTo === 'function') {
+      const targetScrollTop = Math.max(
+        0,
+        lessonScrollRoot.scrollTop + (rowCenterY - viewportCenterY),
+      );
+      lessonScrollRoot.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+    } else {
+      const targetScrollTop = Math.max(
+        0,
+        window.scrollY + rowCenterY - viewportCenterY,
+      );
+      window.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+    }
     lastAutoScrolledLessonIndexRef.current = activeSpeakingLessonIndex;
     lastAutoScrollAtRef.current = now;
   }, [activeSpeakingLessonIndex, isAutoScrollEnabled, isReading]);
