@@ -31,46 +31,18 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
   lessonViewProps,
   appStateText,
   onCompletedRestart,
-}) => {
-  const isMobileSheetViewport = typeof window !== 'undefined'
-    && typeof window.matchMedia === 'function'
-    && window.matchMedia('(max-width: 767px)').matches;
-  const isLessonSheetMode = !isProfileView
-    && !isLibraryView
-    && !isSettingsView
-    && mode !== 'completed'
-    && Boolean(libraryViewProps.selectedAlbumKey)
-    && isMobileSheetViewport;
-
-  return (
-    <main className="relative flex-1 flex items-start justify-center p-4 pt-6 md:p-6 md:pt-8">
-      {isProfileView ? (
-        <ProfileView {...profileViewProps} />
-      ) : isLibraryView ? (
-        <LibraryView {...libraryViewProps} />
-      ) : isSettingsView ? (
-        <SettingsView {...settingsViewProps} />
-      ) : mode === 'completed' ? (
-        <CompletedView onRestart={onCompletedRestart} appStateText={appStateText} />
-      ) : isLessonSheetMode ? (
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 overflow-y-auto px-4 pb-4 pt-6 md:px-6 md:pb-6 md:pt-8">
-            <div className="mx-auto w-full max-w-3xl">
-              <LibraryView {...libraryViewProps} />
-            </div>
-          </div>
-          <div
-            data-lesson-scroll-root="true"
-            className="absolute inset-0 z-20 overflow-y-auto px-4 pb-0 pt-3 md:px-6 md:pb-0 md:pt-6"
-          >
-            <div className="mx-auto w-full max-w-3xl">
-              <LessonView {...lessonViewProps} sheetMode />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <LessonView {...lessonViewProps} />
-      )}
-    </main>
-  );
-};
+}) => (
+  <main className="flex-1 flex items-start justify-center p-4 pt-6 md:p-6 md:pt-8">
+    {isProfileView ? (
+      <ProfileView {...profileViewProps} />
+    ) : isLibraryView ? (
+      <LibraryView {...libraryViewProps} />
+    ) : isSettingsView ? (
+      <SettingsView {...settingsViewProps} />
+    ) : mode === 'completed' ? (
+      <CompletedView onRestart={onCompletedRestart} appStateText={appStateText} />
+    ) : (
+      <LessonView {...lessonViewProps} />
+    )}
+  </main>
+);

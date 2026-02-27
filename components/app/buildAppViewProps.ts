@@ -1,16 +1,5 @@
-import {
-  AppMode,
-  AppTheme,
-  buildStageUnitsFromLessons,
-  DefaultLanguage,
-  getLessonOrderIndex,
-  getLessonUnitId,
-  LearnLanguage,
-  SidebarTab,
-  VoiceProvider,
-} from '../../config/appConfig';
+import { AppMode, AppTheme, buildStageUnitsFromLessons, DefaultLanguage, LearnLanguage, SidebarTab, VoiceProvider } from '../../config/appConfig';
 import { getAppText } from '../../config/appI18n';
-import { localizeLibraryTopic } from '../../config/libraryI18n';
 import { LessonData } from '../../types';
 
 type LessonEntry = {
@@ -197,30 +186,13 @@ export function buildAppViewProps({
   const isProfileView = sidebarTab === 'profile';
   const isLessonView = sidebarTab === 'lesson';
   const isSettingsView = sidebarTab === 'settings';
-  const showLessonActions = isLessonView;
-  const activeOrCurrentLesson = (
-    typeof activeSpeakingLessonIndex === 'number'
-      ? lessons[activeSpeakingLessonIndex]
-      : null
-  ) || currentBatchEntries[0]?.lesson || lessons[currentIndex] || null;
-  const showLibraryMiniPlayer = isLibraryView && Boolean(selectedAlbumKey) && Boolean(activeOrCurrentLesson);
-  const activeOrCurrentUnitCode = activeOrCurrentLesson
-    ? `${Math.max(1, getLessonOrderIndex(activeOrCurrentLesson))}.${Math.max(1, getLessonUnitId(activeOrCurrentLesson))}`
-    : '';
-  const miniPlayerTrackTitle = (activeOrCurrentLesson?.english || '').trim();
-  const miniPlayerTrackMeta = activeOrCurrentLesson
-    ? `${activeOrCurrentUnitCode} · ${localizeLibraryTopic(activeOrCurrentLesson.topic, defaultLanguage)}`
-    : '';
-  const isReadDisabled = mode !== 'learn' || orderedUnitIndexes.length === 0;
-  const isPreviousDisabled = mode !== 'learn' || isNextDisabled;
-  const computedIsNextDisabled = isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end);
+  const showLessonActions = isLessonView || isLibraryView;
 
   return {
     isLibraryView,
     isProfileView,
     isSettingsView,
     showLessonActions,
-    showLibraryMiniPlayer,
     leaveCompletedUnitModalProps: {
       isOpen: isLeaveCompletedUnitModalOpen,
       title: leaveCompletedUnitModalTitle,
@@ -320,9 +292,9 @@ export function buildAppViewProps({
     lessonActionFooterProps: {
       lessonText: appText.lesson,
       mode,
-      isNextDisabled: computedIsNextDisabled,
-      isPreviousDisabled,
-      isReadDisabled,
+      isNextDisabled: isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end),
+      isPreviousDisabled: mode !== 'learn' || isNextDisabled,
+      isReadDisabled: mode !== 'learn' || orderedUnitIndexes.length === 0,
       isReading,
       isShuffleEnabled: isRandomLessonOrderEnabled,
       repeatMode,
@@ -333,24 +305,10 @@ export function buildAppViewProps({
       onRead: onReadCurrentBatch,
       onNext,
     },
-    libraryMiniPlayerProps: {
-      lessonText: appText.lesson,
-      trackTitle: miniPlayerTrackTitle,
-      trackMeta: miniPlayerTrackMeta,
-      isPlaying: isReading,
-      isVisible: isMobileBottomBarsVisible,
-      isPreviousDisabled,
-      isPlayDisabled: isReadDisabled,
-      isNextDisabled: computedIsNextDisabled,
-      onPrevious,
-      onPlay: onReadCurrentBatch,
-      onNext,
-      onOpenPlayer: () => onMobileTabChange('lesson'),
-    },
     mobileBottomNavProps: {
       navText: appText.navigation,
       activeTab: sidebarTab === 'settings' ? 'profile' : sidebarTab,
-      isVisible: isMobileBottomBarsVisible && !isLessonView,
+      isVisible: isMobileBottomBarsVisible,
       onTabChange: onMobileTabChange,
     },
     appStateText: appText.appState,

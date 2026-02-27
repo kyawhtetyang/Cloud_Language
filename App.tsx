@@ -368,7 +368,6 @@ const App: React.FC = () => {
     isProfileView,
     isSettingsView,
     showLessonActions,
-    showLibraryMiniPlayer,
     leaveCompletedUnitModalProps,
     logoutModalProps,
     profileViewProps,
@@ -376,7 +375,6 @@ const App: React.FC = () => {
     settingsViewProps,
     lessonViewProps,
     lessonActionFooterProps,
-    libraryMiniPlayerProps,
     mobileBottomNavProps,
     appStateText,
   } = useAppViewProps({
@@ -457,7 +455,6 @@ const App: React.FC = () => {
     handleNext,
     selectTab,
   });
-  const hasMobileBottomBars = showLibraryMiniPlayer || mobileBottomNavProps.isVisible;
 
   return (
     <div className="min-h-screen bg-app-radial md:flex">
@@ -478,7 +475,7 @@ const App: React.FC = () => {
         onReload={reloadApp}
       />
 
-      <div className={`flex-1 flex flex-col min-h-screen ${hasMobileBottomBars ? 'pb-36' : 'pb-0'} md:ml-72 md:pb-32`}>
+      <div className="flex-1 flex flex-col min-h-screen pb-36 md:ml-72 md:pb-32">
         <AppMainContent
           isProfileView={isProfileView}
           isLibraryView={isLibraryView}
@@ -494,9 +491,7 @@ const App: React.FC = () => {
 
         <AppBottomBars
           showLessonActions={showLessonActions}
-          showLibraryMiniPlayer={showLibraryMiniPlayer}
           lessonActionFooterProps={lessonActionFooterProps}
-          libraryMiniPlayerProps={libraryMiniPlayerProps}
           mobileBottomNavProps={mobileBottomNavProps}
         />
       </div>
