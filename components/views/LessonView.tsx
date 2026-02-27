@@ -35,6 +35,7 @@ type TextMatchRange = {
 
 type LessonViewProps = {
   onBackToLibrary?: () => void;
+  sheetMode?: boolean;
   progressLabel?: string;
   currentIndex: number;
   currentBatchEntries: LessonEntry[];
@@ -160,6 +161,7 @@ function renderHighlightedText(text: string, phrases: string[]): React.ReactNode
 
 export const LessonView: React.FC<LessonViewProps> = ({
   onBackToLibrary,
+  sheetMode = false,
   progressLabel,
   currentIndex,
   currentBatchEntries,
@@ -194,6 +196,21 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const autoScrollPausedUntilRef = useRef(0);
   const lastAutoScrolledLessonIndexRef = useRef<number | null>(null);
   const lastAutoScrollAtRef = useRef(0);
+  const sheetGestureRef = useRef<{
+    startX: number;
+    startY: number;
+    eligible: boolean;
+    tracking: boolean;
+  }>({
+    startX: 0,
+    startY: 0,
+    eligible: false,
+    tracking: false,
+  });
+  const closeTimeoutRef = useRef<number | null>(null);
+  const [sheetOffsetY, setSheetOffsetY] = useState(0);
+  const [isSheetDragging, setIsSheetDragging] = useState(false);
+  const [isSheetClosing, setIsSheetClosing] = useState(false);
 
   const leadLesson = currentBatchEntries[0]?.lesson;
   const level = leadLesson?.level || 1;
@@ -314,6 +331,97 @@ export const LessonView: React.FC<LessonViewProps> = ({
     const speakValue = getPlayableLessonText(lesson);
     if (!speakValue) return;
     onPlayLesson?.(lesson, lessonIndex);
+  };
+
+  const closeToLibrary = () => {
+    if (!onBackToLibrary) return;
+    if (!sheetMode) {
+      onBackToLibrary();
+      return;
+    }
+    if (isSheetClosing) return;
+    setIsSheetClosing(true);
+    setIsSheetDragging(false);
+    const targetOffset = typeof window !== 'undefined'
+      ? Math.max(window.innerHeight * 0.92, 460)
+      : 640;
+    setSheetOffsetY(targetOffset);
+    if (closeTimeoutRef.current !== null && typeof window !== 'undefined') {
+      window.clearTimeout(closeTimeoutRef.current);
+    }
+    if (typeof window !== 'undefined') {
+      closeTimeoutRef.current = window.setTimeout(() => {
+        onBackToLibrary();
+      }, 220);
+    } else {
+      onBackToLibrary();
+    }
+  };
+
+  const startSheetGesture = (event: React.TouchEvent<HTMLElement>) => {
+    if (!sheetMode || !onBackToLibrary) return;
+    if (event.touches.length !== 1) return;
+    if (typeof window !== 'undefined' && window.scrollY > 6) return;
+    const touch = event.touches[0];
+    if (touch.clientY > 156) return;
+    sheetGestureRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      eligible: true,
+      tracking: false,
+    };
+  };
+
+  const moveSheetGesture = (event: React.TouchEvent<HTMLElement>): boolean => {
+    if (!sheetMode || !onBackToLibrary) return false;
+    const state = sheetGestureRef.current;
+    if (!state.eligible) return false;
+    if (event.touches.length !== 1) return false;
+
+    const touch = event.touches[0];
+    const deltaY = touch.clientY - state.startY;
+    const deltaX = touch.clientX - state.startX;
+
+    if (!state.tracking) {
+      if (deltaY < 6) return false;
+      if (deltaY <= Math.abs(deltaX) * 1.1) {
+        state.eligible = false;
+        return false;
+      }
+      state.tracking = true;
+      setIsSheetDragging(true);
+    }
+
+    const positiveOffset = Math.max(0, Math.min(560, deltaY * 0.94));
+    if (event.cancelable) event.preventDefault();
+    setSheetOffsetY(positiveOffset);
+    return true;
+  };
+
+  const endSheetGesture = (event?: React.TouchEvent<HTMLElement>) => {
+    const state = sheetGestureRef.current;
+    const wasTracking = state.tracking;
+    let deltaY = 0;
+    if (event && event.changedTouches.length === 1) {
+      deltaY = event.changedTouches[0].clientY - state.startY;
+    }
+
+    sheetGestureRef.current = {
+      startX: 0,
+      startY: 0,
+      eligible: false,
+      tracking: false,
+    };
+
+    if (!wasTracking) return;
+    setIsSheetDragging(false);
+
+    if (deltaY >= 146) {
+      closeToLibrary();
+      return;
+    }
+
+    setSheetOffsetY(0);
   };
 
   const handleRowClick = async (
@@ -624,15 +732,76 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
   useEffect(() => () => clearLongPressTimer(), []);
 
+  useEffect(
+    () => () => {
+      if (closeTimeoutRef.current !== null && typeof window !== 'undefined') {
+        window.clearTimeout(closeTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  const lessonSheetStyle: React.CSSProperties | undefined = sheetMode
+    ? {
+      transform: `translate3d(0, ${sheetOffsetY}px, 0)`,
+      transition: isSheetDragging
+        ? 'none'
+        : 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 240ms ease, box-shadow 240ms ease',
+      borderRadius: sheetOffsetY > 0 ? '24px 24px 0 0' : '0px',
+      boxShadow: sheetOffsetY > 0
+        ? '0 -14px 36px rgba(0, 0, 0, 0.24)'
+        : undefined,
+      background: 'var(--surface-default)',
+      minHeight: '100%',
+      willChange: 'transform',
+    }
+    : undefined;
+
   return (
-    <div className="w-full max-w-3xl" {...swipeBackHandlers}>
+    <div
+      className="w-full max-w-3xl pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0"
+      style={lessonSheetStyle}
+      onTouchStart={(event) => {
+        swipeBackHandlers.onTouchStart(event);
+        startSheetGesture(event);
+      }}
+      onTouchMove={(event) => {
+        const consumedBySheet = moveSheetGesture(event);
+        if (!consumedBySheet) {
+          swipeBackHandlers.onTouchMove(event);
+        }
+      }}
+      onTouchEnd={(event) => {
+        swipeBackHandlers.onTouchEnd(event);
+        endSheetGesture(event);
+      }}
+      onTouchCancel={() => {
+        swipeBackHandlers.onTouchCancel();
+        endSheetGesture();
+      }}
+    >
+      {onBackToLibrary && sheetMode && (
+        <div className="mb-1 flex justify-center">
+          <button
+            type="button"
+            onClick={closeToLibrary}
+            aria-label={appText.lesson.backToLibraryAriaLabel}
+            className="inline-flex h-6 w-20 items-center justify-center rounded-full border border-transparent transition-colors active:bg-[var(--surface-hover)]"
+          >
+            <span
+              aria-hidden="true"
+              className="block h-1 w-10 rounded-full bg-[var(--border-strong)]"
+            />
+          </button>
+        </div>
+      )}
       <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
         <div className="top-toolbar-row flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2.5">
             {onBackToLibrary && (
               <button
                 type="button"
-                onClick={onBackToLibrary}
+                onClick={closeToLibrary}
                 aria-label={appText.lesson.backToLibraryAriaLabel}
                 className={`${BUTTON_UI.iconNavButton} ${BUTTON_UI.iconNavGlyph}`}
               >
