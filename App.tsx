@@ -333,6 +333,7 @@ const App: React.FC = () => {
     setIsSidebarOpen,
   });
   const appText = getAppText(defaultLanguage);
+  const welcomeText = getAppText('english').welcome;
 
   if (loading) {
     return <LoadingView label={appText.appState.loadingLessonsLabel} />;
@@ -351,7 +352,7 @@ const App: React.FC = () => {
   if (!profileName) {
     return (
       <WelcomeView
-        welcomeText={appText.welcome}
+        welcomeText={welcomeText}
         profileInput={profileInput}
         profileError={profileError}
         hasProfileWhitespace={hasProfileWhitespace}
