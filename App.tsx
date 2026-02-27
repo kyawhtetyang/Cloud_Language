@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useProfileProgress } from './hooks/useProfileProgress';
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { useAppPreferences } from './hooks/useAppPreferences';
@@ -21,6 +21,7 @@ import { AppBottomBars } from './components/app/AppBottomBars';
 import {
   AppMode,
   DEFAULT_PROGRESS_INDEX,
+  SidebarTab,
   DEFAULT_STREAK,
   DEFAULT_UNLOCKED_LEVEL,
   PROFILE_NAME_KEY,
@@ -35,6 +36,7 @@ import {
 import { getAppText } from './config/appI18n';
 
 const App: React.FC = () => {
+  const lastLibraryTabTapAtRef = useRef(0);
   const {
     profileName,
     profileInput,
@@ -363,11 +365,29 @@ const App: React.FC = () => {
     );
   }
 
+  const handleMobileTabChange = (tab: SidebarTab) => {
+    if (tab === 'library' && sidebarTab === 'library') {
+      const now = Date.now();
+      const isDoubleTap = (now - lastLibraryTabTapAtRef.current) <= 450;
+      lastLibraryTabTapAtRef.current = now;
+      if (isDoubleTap) {
+        setLibrarySelectedAlbumKey(null);
+        if (typeof window !== 'undefined') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+      return;
+    }
+    lastLibraryTabTapAtRef.current = 0;
+    selectTab(tab);
+  };
+
   const {
     isLibraryView,
     isProfileView,
     isSettingsView,
     showLessonActions,
+    showLibraryMiniPlayer,
     leaveCompletedUnitModalProps,
     logoutModalProps,
     profileViewProps,
@@ -375,6 +395,7 @@ const App: React.FC = () => {
     settingsViewProps,
     lessonViewProps,
     lessonActionFooterProps,
+    libraryMiniPlayerProps,
     mobileBottomNavProps,
     appStateText,
   } = useAppViewProps({
@@ -453,8 +474,9 @@ const App: React.FC = () => {
     handlePrevious,
     handleReadCurrentBatch,
     handleNext,
-    selectTab,
+    selectTab: handleMobileTabChange,
   });
+  const mobileBottomPaddingClass = showLibraryMiniPlayer ? 'pb-56' : 'pb-36';
 
   return (
     <div className="min-h-screen bg-app-radial md:flex">
@@ -475,7 +497,7 @@ const App: React.FC = () => {
         onReload={reloadApp}
       />
 
-      <div className="flex-1 flex flex-col min-h-screen pb-36 md:ml-72 md:pb-32">
+      <div className={`flex-1 flex flex-col min-h-screen ${mobileBottomPaddingClass} md:ml-72 md:pb-32`}>
         <AppMainContent
           isProfileView={isProfileView}
           isLibraryView={isLibraryView}
@@ -491,7 +513,9 @@ const App: React.FC = () => {
 
         <AppBottomBars
           showLessonActions={showLessonActions}
+          showLibraryMiniPlayer={showLibraryMiniPlayer}
           lessonActionFooterProps={lessonActionFooterProps}
+          libraryMiniPlayerProps={libraryMiniPlayerProps}
           mobileBottomNavProps={mobileBottomNavProps}
         />
       </div>

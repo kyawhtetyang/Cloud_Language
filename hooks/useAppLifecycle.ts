@@ -155,6 +155,13 @@ export function useAppLifecycle({
           return;
         }
 
+        if (sidebarTab !== 'lesson') {
+          setIsMobileBottomBarsVisible(true);
+          lastScrollYRef.current = currentScrollY;
+          scrollTickingRef.current = false;
+          return;
+        }
+
         const delta = currentScrollY - lastScrollYRef.current;
         if (currentScrollY <= 12 || delta < -8) {
           setIsMobileBottomBarsVisible(true);
@@ -179,7 +186,7 @@ export function useAppLifecycle({
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
     };
-  }, []);
+  }, [sidebarTab]);
 
   useEffect(() => {
     setIsMobileBottomBarsVisible(true);
