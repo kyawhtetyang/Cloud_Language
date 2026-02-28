@@ -244,6 +244,7 @@ const APP_TEXT_ENGLISH: AppTextPack = {
     defaultLanguageOptions: {
       burmese: 'Burmese',
       english: 'English',
+      thai: 'Thai',
       vietnamese: 'Vietnamese',
     },
     learnLanguageOptions: {
@@ -272,6 +273,7 @@ const APP_TEXT_ENGLISH: AppTextPack = {
 
 const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
   english: APP_TEXT_ENGLISH,
+  thai: APP_TEXT_ENGLISH,
   burmese: {
     navigation: {
       feedLabel: 'ပြန်လေ့ကျင့်',
@@ -388,6 +390,7 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       defaultLanguageOptions: {
         burmese: 'မြန်မာ',
         english: 'အင်္ဂလိပ်',
+        thai: 'ထိုင်း',
         vietnamese: 'ဗီယက်နမ်',
       },
       learnLanguageOptions: {
@@ -529,6 +532,7 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       defaultLanguageOptions: {
         burmese: 'Tiếng Miến Điện',
         english: 'Tiếng Anh',
+        thai: 'Tiếng Thái',
         vietnamese: 'Tiếng Việt',
       },
       learnLanguageOptions: {

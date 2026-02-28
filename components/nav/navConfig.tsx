@@ -25,6 +25,10 @@ export const NAV_LAYOUT_UI = {
   sidebarLabelClass: 'truncate',
 } as const;
 
+const REVISION_ICON_STROKE_WIDTH = 2;
+const REVISION_ICON_OUTER_RADIUS = NAV_ICON_UI.outerCircleRadius + 1;
+const REVISION_ICON_STROKE_RADIUS = REVISION_ICON_OUTER_RADIUS - (REVISION_ICON_STROKE_WIDTH / 2);
+
 const FeedIcon: React.FC<NavIconProps> = ({ className, isActive = false }) => (
   <svg
     viewBox={NAV_ICON_UI.viewBox}
@@ -32,7 +36,7 @@ const FeedIcon: React.FC<NavIconProps> = ({ className, isActive = false }) => (
     aria-hidden="true"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth={REVISION_ICON_STROKE_WIDTH}
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -41,7 +45,7 @@ const FeedIcon: React.FC<NavIconProps> = ({ className, isActive = false }) => (
         <circle
           cx={NAV_ICON_UI.centerX}
           cy={NAV_ICON_UI.centerY}
-          r={NAV_ICON_UI.outerCircleRadius}
+          r={REVISION_ICON_OUTER_RADIUS}
           fill="currentColor"
           stroke="none"
         />
@@ -52,7 +56,7 @@ const FeedIcon: React.FC<NavIconProps> = ({ className, isActive = false }) => (
         <circle
           cx={NAV_ICON_UI.centerX}
           cy={NAV_ICON_UI.centerY}
-          r={NAV_ICON_UI.outerCircleRadius}
+          r={REVISION_ICON_STROKE_RADIUS}
         />
         <path d="M9 12.3l2.1 2.1 3.9-3.9" />
       </>

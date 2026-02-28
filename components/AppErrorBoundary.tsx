@@ -13,6 +13,7 @@ function resolveBoundaryLanguage(): DefaultLanguage {
   if (typeof document === 'undefined') return 'english';
   const htmlLang = (document.documentElement.lang || '').toLowerCase();
   if (htmlLang.startsWith('my')) return 'burmese';
+  if (htmlLang.startsWith('th')) return 'thai';
   if (htmlLang.startsWith('vi')) return 'vietnamese';
   return 'english';
 }

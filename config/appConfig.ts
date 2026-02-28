@@ -137,6 +137,7 @@ export type LearnLanguage = (typeof LEARN_LANGUAGE_OPTIONS)[number]['code'];
 export const DEFAULT_LANGUAGE_OPTIONS = [
   { code: 'burmese', label: 'Burmese' },
   { code: 'english', label: 'English' },
+  { code: 'thai', label: 'Thai' },
   { code: 'vietnamese', label: 'Tiếng Việt' },
 ] as const;
 export type DefaultLanguage = (typeof DEFAULT_LANGUAGE_OPTIONS)[number]['code'];
@@ -241,6 +242,7 @@ type TranslationTextInput = {
 function normalizeTranslationLocale(rawLocale: string): string {
   const normalized = String(rawLocale || '').trim().toLowerCase().replace(/-/g, '_');
   if (normalized === 'en' || normalized === 'eng' || normalized === 'english') return 'english';
+  if (normalized === 'th' || normalized === 'tha' || normalized === 'thai' || normalized === 'thailand') return 'thai';
   if (normalized === 'vi' || normalized === 'vie' || normalized === 'vietnamese') return 'vietnamese';
   if (
     normalized === 'my'

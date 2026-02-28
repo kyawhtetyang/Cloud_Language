@@ -133,6 +133,8 @@ export function useAppLifecycle({
     document.documentElement.lang =
       defaultLanguage === 'burmese'
         ? 'my'
+        : defaultLanguage === 'thai'
+          ? 'th'
         : defaultLanguage === 'vietnamese'
           ? 'vi'
           : 'en';
