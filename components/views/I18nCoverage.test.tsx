@@ -6,6 +6,10 @@ import { ProfileView } from './ProfileView';
 import { SettingsView } from './SettingsView';
 import { WelcomeView } from './AppStateViews';
 
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const startsWithLabel = (label: string): RegExp =>
+  new RegExp(`^${escapeRegExp(label)}(?:\\s|$)`, 'i');
+
 describe('i18n coverage', () => {
   it('renders vietnamese navigation labels in sidebar', () => {
     const text = getAppText('vietnamese');
@@ -58,6 +62,7 @@ describe('i18n coverage', () => {
         settingsText={text.settings}
         defaultLanguage="vietnamese"
         learnLanguage="english"
+        isEnglishUiLocked={false}
         isPronunciationEnabled
         isBoldTextEnabled={false}
         isAutoScrollEnabled
@@ -67,6 +72,7 @@ describe('i18n coverage', () => {
         appTheme="light"
         voiceProvider="default"
         onDefaultLanguageChange={vi.fn()}
+        onToggleEnglishUiLock={vi.fn()}
         onLearnLanguageChange={vi.fn()}
         onTogglePronunciation={vi.fn()}
         onToggleBoldText={vi.fn()}
@@ -122,6 +128,7 @@ describe('i18n coverage', () => {
         settingsText={text.settings}
         defaultLanguage="vietnamese"
         learnLanguage="hsk_chinese"
+        isEnglishUiLocked={false}
         isPronunciationEnabled
         isBoldTextEnabled={false}
         isAutoScrollEnabled
@@ -131,6 +138,7 @@ describe('i18n coverage', () => {
         appTheme="light"
         voiceProvider="default"
         onDefaultLanguageChange={vi.fn()}
+        onToggleEnglishUiLock={vi.fn()}
         onLearnLanguageChange={vi.fn()}
         onTogglePronunciation={vi.fn()}
         onToggleBoldText={vi.fn()}
@@ -143,16 +151,20 @@ describe('i18n coverage', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: new RegExp(text.settings.defaultLanguageLabel, 'i') }))
+    expect(screen.getByRole('button', { name: startsWithLabel(text.settings.defaultLanguageLabel) }))
       .toHaveTextContent(selectedDefaultLanguageLabel);
-    expect(screen.getByRole('button', { name: new RegExp(text.settings.learnLanguageLabel, 'i') }))
+    expect(screen.getByRole('button', { name: startsWithLabel(text.settings.learnLanguageLabel) }))
       .toHaveTextContent(selectedLearnLanguageLabel);
-    expect(screen.getByRole('button', { name: new RegExp(text.settings.appearanceLabel, 'i') }))
+    expect(
+      screen.getByRole('button', {
+        name: startsWithLabel(text.settings.appearanceLabel),
+      }),
+    )
       .toHaveTextContent(selectedAppearanceLabel);
-    expect(screen.getByRole('button', { name: new RegExp(text.settings.voiceProviderLabel, 'i') }))
+    expect(screen.getByRole('button', { name: startsWithLabel(text.settings.voiceProviderLabel) }))
       .toHaveTextContent(selectedVoiceProviderLabel);
 
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(text.settings.defaultLanguageLabel, 'i') }));
+    fireEvent.click(screen.getByRole('button', { name: startsWithLabel(text.settings.defaultLanguageLabel) }));
     expect(screen.getByRole('button', { name: new RegExp(englishOptionLabel, 'i') })).toBeInTheDocument();
   });
 

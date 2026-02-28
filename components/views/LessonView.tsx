@@ -39,11 +39,13 @@ type LessonViewProps = {
   currentIndex: number;
   currentBatchEntries: LessonEntry[];
   allBatchGroups?: LessonEntry[][];
+  isRevisionView?: boolean;
   currentStep?: number;
   isReading?: boolean;
   onSelectStep?: (step: number) => void | Promise<void>;
   englishReferenceByKey: Map<string, string>;
   defaultLanguage: DefaultLanguage;
+  translationLanguage?: DefaultLanguage;
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled?: boolean;
@@ -164,11 +166,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
   currentIndex,
   currentBatchEntries,
   allBatchGroups,
+  isRevisionView = false,
   currentStep,
   isReading,
   onSelectStep,
   englishReferenceByKey,
   defaultLanguage,
+  translationLanguage = defaultLanguage,
   isPronunciationEnabled,
   isBoldTextEnabled,
   isAutoScrollEnabled = true,
@@ -215,6 +219,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
     ? Math.min(1.2, Math.max(0.9, textScalePercent / 100))
     : 1;
   const lessonTextScaleStyle = { '--lesson-text-scale': String(lessonTextScale) } as React.CSSProperties;
+  const shouldCenterRevisionRows = isRevisionView && (!allBatchGroups || allBatchGroups.length === 0);
+  const revisionTabBaseClass =
+    'inline-flex min-w-24 items-center justify-center rounded-full border-2 px-4 py-1.5 text-xs font-extrabold uppercase tracking-wide transition-all';
+  const lessonBodyClass = 'overflow-hidden bg-transparent min-h-[60vh]';
+  const singleBatchListClass = shouldCenterRevisionRows
+    ? 'px-0 flex min-h-[60vh] flex-col justify-center'
+    : 'divide-y divide-[var(--border-subtle)] px-0';
 
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current !== null && typeof window !== 'undefined') {
@@ -386,7 +397,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
       lessonEnglish: lesson.english,
       lessonBurmese: lesson.burmese,
       lessonTranslations: lesson.translations,
-      defaultLanguage,
+      defaultLanguage: translationLanguage,
       learnLanguage,
       englishReferenceText: englishReferenceByKey.get(lessonKey),
     });
@@ -626,32 +637,54 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
   return (
     <div className="w-full max-w-3xl" {...swipeBackHandlers}>
-      <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
-        <div className="top-toolbar-row flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2.5">
-            {onBackToLibrary && (
-              <button
-                type="button"
-                onClick={onBackToLibrary}
-                aria-label={appText.lesson.backToLibraryAriaLabel}
-                className={`${BUTTON_UI.iconNavButton} ${BUTTON_UI.iconNavGlyph}`}
-              >
-                <span aria-hidden="true">‹</span>
-              </button>
-            )}
-            <div className="min-w-0">
-              <p className="truncate text-[11px] font-semibold tracking-wide text-[var(--text-muted)]">{unitCode}</p>
-              <p className="truncate text-sm font-bold text-ink-strong md:text-base">
-                {topicTitle}
-              </p>
-            </div>
+      {isRevisionView ? (
+        <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
+          <div className="top-toolbar-row flex items-center justify-center gap-2">
+            <button
+              type="button"
+              className={`${revisionTabBaseClass} btn-selected`}
+              aria-current="page"
+            >
+              {appText.lesson.revisionReviewTabLabel}
+            </button>
+            <button
+              type="button"
+              className={`${revisionTabBaseClass} btn-unselected text-[var(--text-secondary)] opacity-70`}
+              disabled
+              aria-disabled="true"
+            >
+              {appText.lesson.revisionQuizTabLabel}
+            </button>
           </div>
-          <p className="shrink-0 text-xs font-semibold tracking-wide text-[var(--text-muted)]">
-            {topRightProgressLabel}
-          </p>
         </div>
-      </div>
-      <div className="overflow-hidden bg-transparent">
+      ) : (
+        <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
+          <div className="top-toolbar-row flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2.5">
+              {onBackToLibrary && (
+                <button
+                  type="button"
+                  onClick={onBackToLibrary}
+                  aria-label={appText.lesson.backToLibraryAriaLabel}
+                  className={`${BUTTON_UI.iconNavButton} ${BUTTON_UI.iconNavGlyph}`}
+                >
+                  <span aria-hidden="true">‹</span>
+                </button>
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-[11px] font-semibold tracking-wide text-[var(--text-muted)]">{unitCode}</p>
+                <p className="truncate text-sm font-bold text-ink-strong md:text-base">
+                  {topicTitle}
+                </p>
+              </div>
+            </div>
+            <p className="shrink-0 text-xs font-semibold tracking-wide text-[var(--text-muted)]">
+              {topRightProgressLabel}
+            </p>
+          </div>
+        </div>
+      )}
+      <div className={lessonBodyClass}>
         {allBatchGroups && allBatchGroups.length > 0 ? (
           <div className="px-0">
             {allBatchGroups.map((entries, batchIdx) => {
@@ -686,7 +719,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
             })}
           </div>
         ) : (
-          <div className="divide-y divide-[var(--border-subtle)] px-0">
+          <div className={singleBatchListClass}>
             {currentBatchEntries.map(({ lesson, lessonIndex }, idx) => {
               const rowKey = `${lesson.english}-${currentIndex + idx}`;
               return renderLessonRow(lesson, lessonIndex, rowKey);

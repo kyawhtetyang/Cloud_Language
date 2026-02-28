@@ -14,6 +14,8 @@ type UseAppPreferencesResult = {
   setLearnLanguage: React.Dispatch<React.SetStateAction<LearnLanguage>>;
   defaultLanguage: DefaultLanguage;
   setDefaultLanguage: React.Dispatch<React.SetStateAction<DefaultLanguage>>;
+  isEnglishUiLocked: boolean;
+  setIsEnglishUiLocked: React.Dispatch<React.SetStateAction<boolean>>;
   textScalePercent: number;
   setTextScalePercent: React.Dispatch<React.SetStateAction<number>>;
   isBoldTextEnabled: boolean;
@@ -38,6 +40,7 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
   const [isPronunciationEnabled, setIsPronunciationEnabled] = useState<boolean>(initialSettings.isPronunciationEnabled);
   const [learnLanguage, setLearnLanguage] = useState<LearnLanguage>(initialSettings.learnLanguage);
   const [defaultLanguage, setDefaultLanguage] = useState<DefaultLanguage>(initialSettings.defaultLanguage);
+  const [isEnglishUiLocked, setIsEnglishUiLocked] = useState<boolean>(initialSettings.isEnglishUiLocked);
   const [textScalePercent, setTextScalePercent] = useState<number>(initialSettings.textScalePercent);
   const [isBoldTextEnabled, setIsBoldTextEnabled] = useState<boolean>(initialSettings.isBoldTextEnabled);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState<boolean>(initialSettings.isAutoScrollEnabled);
@@ -54,6 +57,7 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     const next = readSyncedSettingsFromStorage(profileStorageId);
     setLearnLanguage(next.learnLanguage);
     setDefaultLanguage(next.defaultLanguage);
+    setIsEnglishUiLocked(next.isEnglishUiLocked);
     setIsPronunciationEnabled(next.isPronunciationEnabled);
     setTextScalePercent(next.textScalePercent);
     setIsBoldTextEnabled(next.isBoldTextEnabled);
@@ -72,6 +76,8 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setLearnLanguage,
     defaultLanguage,
     setDefaultLanguage,
+    isEnglishUiLocked,
+    setIsEnglishUiLocked,
     textScalePercent,
     setTextScalePercent,
     isBoldTextEnabled,

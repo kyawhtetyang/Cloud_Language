@@ -1,6 +1,6 @@
 import React from 'react';
 import { SidebarTab } from '../../config/appConfig';
-import { NAV_TAB_META } from '../nav/navConfig';
+import { NAV_ICON_UI, NAV_LAYOUT_UI, NAV_TAB_META } from '../nav/navConfig';
 import { BUTTON_UI, getSidebarNavButtonClass } from '../../config/buttonUi';
 import { AppTextPack } from '../../config/appI18n';
 
@@ -22,6 +22,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onReload,
 }) => {
   const labelByTab: Record<SidebarTab, string> = {
+    feed: navText.feedLabel,
     library: navText.libraryLabel,
     lesson: navText.lessonLabel,
     profile: navText.profileLabel,
@@ -36,9 +37,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         onClick={() => onSelectTab(tab)}
         className={getSidebarNavButtonClass(isActive)}
       >
-        <span className="flex items-center gap-2">
-          <Icon isActive={isActive} className="h-4 w-4 shrink-0" />
-          <span>{labelByTab[tab]}</span>
+        <span className={NAV_LAYOUT_UI.sidebarItemContentClass}>
+          <Icon isActive={isActive} className={NAV_ICON_UI.sidebarSizeClass} />
+          <span className={NAV_LAYOUT_UI.sidebarLabelClass}>{labelByTab[tab]}</span>
         </span>
       </button>
     );
@@ -75,6 +76,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         <div className="mb-4 flex flex-col gap-2">
           {renderNavButton('library')}
           {renderNavButton('lesson')}
+          {renderNavButton('feed')}
         </div>
 
         <div className="mt-auto">
@@ -82,9 +84,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             onClick={() => onSelectTab('profile')}
             className={getSidebarNavButtonClass(isProfileActive, true)}
           >
-            <span className="flex items-center gap-2">
-              <ProfileIcon isActive={isProfileActive} className="h-4 w-4 shrink-0" />
-              <span>{labelByTab.profile}</span>
+            <span className={NAV_LAYOUT_UI.sidebarItemContentClass}>
+              <ProfileIcon isActive={isProfileActive} className={NAV_ICON_UI.sidebarSizeClass} />
+              <span className={NAV_LAYOUT_UI.sidebarLabelClass}>{labelByTab.profile}</span>
             </span>
           </button>
         </div>

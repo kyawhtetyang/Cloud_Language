@@ -26,6 +26,7 @@ type UseAppProfileSettingsSyncParams = {
   hasHydratedSettings: boolean;
   learnLanguage: LearnLanguage;
   defaultLanguage: DefaultLanguage;
+  isEnglishUiLocked: boolean;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
@@ -39,6 +40,7 @@ type UseAppProfileSettingsSyncParams = {
   setStreak: Dispatch<SetStateAction<number>>;
   setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
   setDefaultLanguage: Dispatch<SetStateAction<DefaultLanguage>>;
+  setIsEnglishUiLocked: Dispatch<SetStateAction<boolean>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
@@ -66,6 +68,7 @@ export function useAppProfileSettingsSync({
   hasHydratedSettings,
   learnLanguage,
   defaultLanguage,
+  isEnglishUiLocked,
   isPronunciationEnabled,
   textScalePercent,
   isBoldTextEnabled,
@@ -79,6 +82,7 @@ export function useAppProfileSettingsSync({
   setStreak,
   setLearnLanguage,
   setDefaultLanguage,
+  setIsEnglishUiLocked,
   setIsPronunciationEnabled,
   setTextScalePercent,
   setIsBoldTextEnabled,
@@ -102,6 +106,7 @@ export function useAppProfileSettingsSync({
     streak,
     learnLanguage,
     defaultLanguage,
+    isEnglishUiLocked,
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,
@@ -119,6 +124,7 @@ export function useAppProfileSettingsSync({
     setStreak,
     setLearnLanguage,
     setDefaultLanguage,
+    setIsEnglishUiLocked,
     setIsPronunciationEnabled,
     setTextScalePercent,
     setIsBoldTextEnabled,
@@ -134,6 +140,7 @@ export function useAppProfileSettingsSync({
     enabled: Boolean(profileName) && hasHydratedSettings,
     learnLanguage,
     defaultLanguage,
+    isEnglishUiLocked,
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,

@@ -20,6 +20,7 @@ type LessonEntry = {
 
 type BuildAppViewPropsArgs = {
   defaultLanguage: DefaultLanguage;
+  selectedDefaultLanguage: DefaultLanguage;
   currentIndex: number;
   lessons: LessonData[];
   currentLevel: number;
@@ -38,6 +39,7 @@ type BuildAppViewPropsArgs = {
   onCloseLogoutModal: () => void;
   onConfirmLogoutModal: () => void;
   profileName: string;
+  profileStorageId: string;
   profileInput: string;
   profileError: string | null;
   hasProfileWhitespace: boolean;
@@ -64,6 +66,8 @@ type BuildAppViewPropsArgs = {
   appTheme: AppTheme;
   voiceProvider: VoiceProvider;
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
+  isEnglishUiLocked: boolean;
+  onToggleEnglishUiLock: () => void;
   onLearnLanguageChange: (value: LearnLanguage) => void;
   onTogglePronunciation: () => void;
   onToggleBoldText: () => void;
@@ -82,6 +86,7 @@ type BuildAppViewPropsArgs = {
   englishReferenceByKey: Map<string, string>;
   activeSpeakingLessonIndex: number | null;
   onPlayLesson: (lesson: LessonData, lessonIndex: number) => void;
+  onStopAudio: () => Promise<void>;
   savedHighlightPhrasesByLessonKey: Map<string, string[]>;
   onSaveLessonHighlight: (lesson: LessonData, selectedText: string) => boolean;
   onClearLessonHighlight: (lesson: LessonData) => boolean;
@@ -102,6 +107,7 @@ type BuildAppViewPropsArgs = {
 
 export function buildAppViewProps({
   defaultLanguage,
+  selectedDefaultLanguage,
   currentIndex,
   lessons,
   currentLevel,
@@ -120,6 +126,7 @@ export function buildAppViewProps({
   onCloseLogoutModal,
   onConfirmLogoutModal,
   profileName,
+  profileStorageId,
   profileInput,
   profileError,
   hasProfileWhitespace,
@@ -146,6 +153,8 @@ export function buildAppViewProps({
   appTheme,
   voiceProvider,
   onDefaultLanguageChange,
+  isEnglishUiLocked,
+  onToggleEnglishUiLock,
   onLearnLanguageChange,
   onTogglePronunciation,
   onToggleBoldText,
@@ -164,6 +173,7 @@ export function buildAppViewProps({
   englishReferenceByKey,
   activeSpeakingLessonIndex,
   onPlayLesson,
+  onStopAudio,
   savedHighlightPhrasesByLessonKey,
   onSaveLessonHighlight,
   onClearLessonHighlight,
@@ -196,14 +206,15 @@ export function buildAppViewProps({
   const isLibraryView = sidebarTab === 'library';
   const isProfileView = sidebarTab === 'profile';
   const isLessonView = sidebarTab === 'lesson';
+  const isFeedView = sidebarTab === 'feed' && mode === 'learn';
   const isSettingsView = sidebarTab === 'settings';
-  const showLessonActions = isLessonView;
+  const showLessonActions = isLessonView || isFeedView;
   const activeOrCurrentLesson = (
     typeof activeSpeakingLessonIndex === 'number'
       ? lessons[activeSpeakingLessonIndex]
       : null
   ) || currentBatchEntries[0]?.lesson || lessons[currentIndex] || null;
-  const showLibraryMiniPlayer = isLibraryView && Boolean(selectedAlbumKey) && Boolean(activeOrCurrentLesson);
+  const showLibraryMiniPlayer = isLibraryView && Boolean(activeOrCurrentLesson);
   const activeOrCurrentUnitCode = activeOrCurrentLesson
     ? `${Math.max(1, getLessonOrderIndex(activeOrCurrentLesson))}.${Math.max(1, getLessonUnitId(activeOrCurrentLesson))}`
     : '';
@@ -214,10 +225,13 @@ export function buildAppViewProps({
   const isReadDisabled = mode !== 'learn' || orderedUnitIndexes.length === 0;
   const isPreviousDisabled = mode !== 'learn' || isNextDisabled;
   const computedIsNextDisabled = isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end);
+  const revisionBatchEntries = isFeedView ? currentBatchEntries.slice(0, 3) : currentBatchEntries;
+  const lessonViewBatchGroups = isFeedView ? undefined : lessonBatchGroups;
 
   return {
     isLibraryView,
     isProfileView,
+    isFeedView,
     isSettingsView,
     showLessonActions,
     showLibraryMiniPlayer,
@@ -274,8 +288,9 @@ export function buildAppViewProps({
     },
     settingsViewProps: {
       settingsText: appText.settings,
-      defaultLanguage,
+      defaultLanguage: selectedDefaultLanguage,
       learnLanguage,
+      isEnglishUiLocked,
       isPronunciationEnabled,
       isBoldTextEnabled,
       isAutoScrollEnabled,
@@ -285,6 +300,7 @@ export function buildAppViewProps({
       appTheme,
       voiceProvider,
       onDefaultLanguageChange,
+      onToggleEnglishUiLock,
       onLearnLanguageChange,
       onTogglePronunciation,
       onToggleBoldText,
@@ -299,13 +315,15 @@ export function buildAppViewProps({
       onBackToLibrary: () => onMobileTabChange('library'),
       progressLabel: `${Math.min(learnStepCount, learnStep + 1)}/${learnStepCount}`,
       currentIndex,
-      currentBatchEntries,
-      allBatchGroups: lessonBatchGroups,
+      currentBatchEntries: revisionBatchEntries,
+      allBatchGroups: lessonViewBatchGroups,
+      isRevisionView: isFeedView,
       currentStep: learnStep,
       isReading,
       onSelectStep: onSelectLessonStep,
       englishReferenceByKey,
       defaultLanguage,
+      translationLanguage: selectedDefaultLanguage,
       isPronunciationEnabled,
       isBoldTextEnabled,
       isAutoScrollEnabled,
@@ -314,6 +332,22 @@ export function buildAppViewProps({
       activeSpeakingLessonIndex,
       onPlayLesson,
       savedHighlightPhrasesByLessonKey,
+      onSaveLessonHighlight,
+      onClearLessonHighlight,
+    },
+    feedViewProps: {
+      lessons,
+      defaultLanguage,
+      learnLanguage,
+      profileStorageId,
+      isPronunciationEnabled,
+      isBoldTextEnabled,
+      textScalePercent,
+      englishReferenceByKey,
+      highlightPhrasesByLessonKey: savedHighlightPhrasesByLessonKey,
+      activeSpeakingLessonIndex,
+      onPlayLesson,
+      onStopAudio,
       onSaveLessonHighlight,
       onClearLessonHighlight,
     },

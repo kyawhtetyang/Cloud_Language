@@ -1,6 +1,8 @@
 import React from 'react';
 import { AppMode } from '../config/appConfig';
 import {
+  BUTTON_UI,
+  getBottomBarCardClass,
   getFooterLargeButtonClass,
   getFooterSmallButtonClass,
 } from '../config/buttonUi';
@@ -97,20 +99,20 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
 
   return (
     <footer
-      className={`fixed left-0 right-0 z-30 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] bottom-[calc(76px+env(safe-area-inset-bottom))] transition-all duration-200 ease-out md:bottom-4 md:left-1/2 md:right-auto md:w-full md:max-w-[720px] md:-translate-x-1/2 md:px-6 md:pb-0 ${
+      className={`fixed left-0 right-0 z-30 px-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] bottom-[calc(60px+env(safe-area-inset-bottom))] transition-all duration-200 ease-out ${BUTTON_UI.bottomBarDesktopAnchor} ${
         isVisible
           ? 'translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-[160%] opacity-0 md:pointer-events-auto md:translate-y-0 md:opacity-100'
       }`}
     >
-      <div className="mx-auto flex max-w-md flex-col gap-2.5 md:gap-3">
+      <div className={BUTTON_UI.bottomBarContentFrame}>
         {mode === 'learn' && (
-          <div className="mx-auto flex w-full max-w-[min(640px,calc(100vw-1rem))] items-center justify-between gap-1.5 rounded-[22px] border border-[var(--border-strong)] bg-[var(--surface-default)] px-2 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.16)] backdrop-blur-md">
+          <div className={`${getBottomBarCardClass({ variant: 'frosted' })} grid grid-cols-5 items-center px-2 py-1.5`}>
             <button
               onClick={onToggleShuffle}
               aria-label={shuffleLabel}
               title={shuffleLabel}
-              className={getFooterSmallButtonClass({ isSelected: isShuffleEnabled })}
+              className={`${getFooterSmallButtonClass({ isSelected: isShuffleEnabled })} justify-self-center`}
             >
               <ShuffleIcon />
               <span className="sr-only">{shuffleLabel}</span>
@@ -123,7 +125,7 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
               className={getFooterSmallButtonClass({
                 isDisabled: isPreviousDisabled,
                 isInteractive: true,
-              })}
+              }) + ' justify-self-center'}
             >
               <PreviousIcon />
               <span className="sr-only">{lessonText.previousLabel}</span>
@@ -133,7 +135,7 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
               disabled={isReadDisabled}
               aria-label={readLabel}
               title={readLabel}
-              className={getFooterLargeButtonClass(isReadDisabled)}
+              className={`${getFooterLargeButtonClass(isReadDisabled)} justify-self-center`}
             >
               {isReading ? <PauseIcon /> : <PlayIcon />}
               <span className="sr-only">{readLabel}</span>
@@ -146,7 +148,7 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
               className={getFooterSmallButtonClass({
                 isDisabled: isNextDisabled,
                 isInteractive: true,
-              })}
+              }) + ' justify-self-center'}
             >
               <NextIcon />
               <span className="sr-only">{lessonText.nextLabel}</span>
@@ -155,7 +157,7 @@ export const LessonActionFooter: React.FC<LessonActionFooterProps> = ({
               onClick={onToggleRepeat}
               aria-label={repeatLabel}
               title={repeatLabel}
-              className={`relative ${getFooterSmallButtonClass({ isSelected: repeatMode !== 'off' })}`}
+              className={`relative justify-self-center ${getFooterSmallButtonClass({ isSelected: repeatMode !== 'off' })}`}
             >
               <RepeatIcon />
               {repeatMode === 'one' && (

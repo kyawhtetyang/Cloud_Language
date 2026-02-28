@@ -53,6 +53,7 @@ describe('Swipe-back behavior', () => {
         settingsText={getAppText('english').settings}
         defaultLanguage="english"
         learnLanguage="burmese"
+        isEnglishUiLocked={false}
         isPronunciationEnabled
         isBoldTextEnabled={false}
         isAutoScrollEnabled
@@ -62,6 +63,7 @@ describe('Swipe-back behavior', () => {
         appTheme="dark"
         voiceProvider="default"
         onDefaultLanguageChange={vi.fn()}
+        onToggleEnglishUiLock={vi.fn()}
         onLearnLanguageChange={vi.fn()}
         onTogglePronunciation={vi.fn()}
         onToggleBoldText={vi.fn()}
@@ -80,5 +82,34 @@ describe('Swipe-back behavior', () => {
     swipeFromLeftEdge(container.firstElementChild as HTMLElement);
     expect(screen.queryByLabelText(/back to settings/i)).not.toBeInTheDocument();
     expect(screen.getByText('Preferences')).toBeInTheDocument();
+  });
+
+  it('shows review and quiz toolbar tabs in revision view', () => {
+    const lesson: LessonData = {
+      level: 1,
+      unit: 1,
+      stage: 'A1',
+      topic: 'Greetings',
+      english: 'Hello',
+      burmese: 'မင်္ဂလာပါ',
+      pronunciation: 'mingalaba',
+    };
+
+    render(
+      <LessonView
+        onBackToLibrary={vi.fn()}
+        currentIndex={0}
+        currentBatchEntries={[{ lesson, lessonIndex: 0 }]}
+        isRevisionView
+        englishReferenceByKey={new Map()}
+        defaultLanguage="english"
+        isPronunciationEnabled
+        isBoldTextEnabled={false}
+        learnLanguage="burmese"
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Quiz' })).toBeInTheDocument();
   });
 });

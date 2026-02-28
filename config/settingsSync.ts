@@ -8,6 +8,7 @@ import {
   clampTextScale,
   DEFAULT_LANGUAGE_KEY,
   DefaultLanguage,
+  ENGLISH_UI_LOCK_KEY,
   isDefaultLanguage,
   isLearnLanguage,
   LEARN_LANGUAGE_KEY,
@@ -24,6 +25,7 @@ import {
 export type SyncedAppSettings = {
   learnLanguage: LearnLanguage;
   defaultLanguage: DefaultLanguage;
+  isEnglishUiLocked: boolean;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
@@ -37,6 +39,7 @@ export type SyncedAppSettings = {
 export type SyncedAppSettingsSetters = {
   setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
   setDefaultLanguage: Dispatch<SetStateAction<DefaultLanguage>>;
+  setIsEnglishUiLocked: Dispatch<SetStateAction<boolean>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
@@ -123,6 +126,10 @@ export function readSyncedSettingsFromStorage(profileStorageId?: string): Synced
   return {
     learnLanguage: parseLearnLanguage(readWithFallback(LEARN_LANGUAGE_KEY, profileStorageId)),
     defaultLanguage: parseDefaultLanguage(readWithFallback(DEFAULT_LANGUAGE_KEY, profileStorageId)),
+    isEnglishUiLocked: parseBooleanWithFallback(
+      readWithFallback(ENGLISH_UI_LOCK_KEY, profileStorageId),
+      APP_DEFAULTS.isEnglishUiLocked,
+    ),
     isPronunciationEnabled: parseBoolean(readWithFallback(PRONUNCIATION_ENABLED_KEY, profileStorageId)),
     textScalePercent: parseTextScale(readWithFallback(TEXT_SCALE_PERCENT_KEY, profileStorageId)),
     isBoldTextEnabled: parseBoolean(readWithFallback(BOLD_TEXT_ENABLED_KEY, profileStorageId)),
@@ -145,6 +152,7 @@ export function persistSyncedSettingsToStorage(
     profileStorageId ? toScopedKey(baseKey, profileStorageId) : baseKey;
   safeWrite(resolveKey(LEARN_LANGUAGE_KEY), settings.learnLanguage);
   safeWrite(resolveKey(DEFAULT_LANGUAGE_KEY), settings.defaultLanguage);
+  safeWrite(resolveKey(ENGLISH_UI_LOCK_KEY), String(settings.isEnglishUiLocked));
   safeWrite(resolveKey(PRONUNCIATION_ENABLED_KEY), String(settings.isPronunciationEnabled));
   safeWrite(resolveKey(TEXT_SCALE_PERCENT_KEY), String(settings.textScalePercent));
   safeWrite(resolveKey(BOLD_TEXT_ENABLED_KEY), String(settings.isBoldTextEnabled));
@@ -159,6 +167,7 @@ export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedA
   return {
     learnLanguage: settings.learnLanguage,
     defaultLanguage: settings.defaultLanguage,
+    isEnglishUiLocked: settings.isEnglishUiLocked,
     isPronunciationEnabled: settings.isPronunciationEnabled,
     textScalePercent: settings.textScalePercent,
     isBoldTextEnabled: settings.isBoldTextEnabled,
@@ -179,6 +188,9 @@ export function applyRemoteSyncedSettings(
   }
   if (isDefaultLanguage(remote.defaultLanguage)) {
     setters.setDefaultLanguage(remote.defaultLanguage);
+  }
+  if (typeof remote.isEnglishUiLocked === 'boolean') {
+    setters.setIsEnglishUiLocked(remote.isEnglishUiLocked);
   }
   if (typeof remote.isPronunciationEnabled === 'boolean') {
     setters.setIsPronunciationEnabled(remote.isPronunciationEnabled);

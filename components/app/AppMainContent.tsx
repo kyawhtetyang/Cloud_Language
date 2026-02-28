@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppMode } from '../../config/appConfig';
+import { FeedView } from '../views/FeedView';
 import { LibraryView } from '../views/LibraryView';
 import { LessonView } from '../views/LessonView';
 import { ProfileView } from '../views/ProfileView';
@@ -11,11 +12,13 @@ type AppMainContentProps = {
   isProfileView: boolean;
   isLibraryView: boolean;
   isSettingsView: boolean;
+  isFeedView: boolean;
   mode: AppMode;
   profileViewProps: React.ComponentProps<typeof ProfileView>;
   libraryViewProps: React.ComponentProps<typeof LibraryView>;
   settingsViewProps: React.ComponentProps<typeof SettingsView>;
   lessonViewProps: React.ComponentProps<typeof LessonView>;
+  feedViewProps: React.ComponentProps<typeof FeedView>;
   appStateText: AppTextPack['appState'];
   onCompletedRestart: () => void;
 };
@@ -24,11 +27,13 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
   isProfileView,
   isLibraryView,
   isSettingsView,
+  isFeedView,
   mode,
   profileViewProps,
   libraryViewProps,
   settingsViewProps,
   lessonViewProps,
+  feedViewProps,
   appStateText,
   onCompletedRestart,
 }) => (
@@ -39,6 +44,8 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
       <LibraryView {...libraryViewProps} />
     ) : isSettingsView ? (
       <SettingsView {...settingsViewProps} />
+    ) : isFeedView ? (
+      <LessonView {...lessonViewProps} />
     ) : mode === 'completed' ? (
       <CompletedView onRestart={onCompletedRestart} appStateText={appStateText} />
     ) : (

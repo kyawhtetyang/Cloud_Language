@@ -11,6 +11,7 @@ export const STREAK_KEY = 'lingo_burmese_streak';
 export const PRONUNCIATION_ENABLED_KEY = 'lingo_burmese_pronunciation_enabled';
 export const LEARN_LANGUAGE_KEY = 'lingo_burmese_learn_language';
 export const DEFAULT_LANGUAGE_KEY = 'lingo_burmese_default_language';
+export const ENGLISH_UI_LOCK_KEY = 'lingo_burmese_english_ui_lock';
 export const TEXT_SCALE_PERCENT_KEY = 'lingo_burmese_text_scale_percent';
 export const BOLD_TEXT_ENABLED_KEY = 'lingo_burmese_bold_text_enabled';
 export const RANDOM_LESSON_ORDER_ENABLED_KEY = 'lingo_burmese_random_lesson_order_enabled';
@@ -122,7 +123,7 @@ export const STAGE_META = {
 } as const;
 
 export type AppMode = 'learn' | 'completed';
-export type SidebarTab = 'profile' | 'library' | 'lesson' | 'settings';
+export type SidebarTab = 'profile' | 'feed' | 'library' | 'lesson' | 'settings';
 export const LEARN_LANGUAGE_OPTIONS = [
   { code: 'english', label: 'English' },
   { code: 'chinese', label: 'Chinese' },
@@ -172,6 +173,7 @@ export const DEFAULT_PROGRESS_INDEX = 0;
 export const APP_DEFAULTS = {
   learnLanguage: 'english' as LearnLanguage,
   defaultLanguage: 'burmese' as DefaultLanguage,
+  isEnglishUiLocked: true,
   isPronunciationEnabled: false,
   textScalePercent: DEFAULT_TEXT_SCALE_PERCENT,
   isBoldTextEnabled: false,

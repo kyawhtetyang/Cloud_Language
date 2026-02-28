@@ -44,12 +44,23 @@ export const BUTTON_UI = {
   mobileNavButtonBase: 'flex flex-col items-center justify-center gap-1 rounded-xl py-1.5 transition-all',
   mobileNavButtonActive: 'bg-transparent text-brand',
   mobileNavButtonInactive: 'bg-transparent text-[var(--text-secondary)]',
-  mobileNavIconWrapBase: 'flex h-8 w-8 items-center justify-center rounded-full transition-all',
+  mobileNavIconWrapBase: 'flex items-center justify-center transition-all',
   mobileNavIconWrapActive: 'bg-transparent text-brand shadow-none',
-  mobileNavIconWrapInactive: 'bg-[var(--surface-subtle)] text-[var(--text-secondary)]',
+  mobileNavIconWrapInactive: 'bg-transparent text-[var(--text-secondary)]',
   mobileNavLabelBase: 'text-xs font-bold leading-none',
   mobileNavLabelActive: 'text-brand',
   mobileNavLabelInactive: 'text-[var(--text-secondary)]',
+  bottomBarCardBase:
+    'w-full rounded-xl border border-[var(--border-strong)] backdrop-blur-md',
+  bottomBarCardSolid:
+    'bg-[var(--surface-default)] shadow-[0_12px_28px_rgba(0,0,0,0.16)]',
+  bottomBarCardFrosted:
+    'bg-[color:color-mix(in_srgb,var(--surface-default)_88%,transparent)] shadow-[0_12px_28px_rgba(0,0,0,0.16)]',
+  bottomBarCardInteractive:
+    'transition-transform duration-300 md:hover:translate-y-[-1px]',
+  bottomBarDesktopAnchor:
+    'md:bottom-4 md:left-72 md:right-0 md:w-auto md:max-w-none md:translate-x-0 md:px-6 md:pb-0',
+  bottomBarContentFrame: 'mx-auto w-full max-w-3xl',
   pillButtonBase: 'rounded-full border px-2 py-0.5 text-[11px] font-semibold',
   pillButtonDefault:
     'border-[var(--border-subtle)] bg-[var(--surface-default)] text-[var(--text-secondary)]',
@@ -144,6 +155,21 @@ export function getMobileNavLabelClass(isActive: boolean): string {
   return `${BUTTON_UI.mobileNavLabelBase} ${
     isActive ? BUTTON_UI.mobileNavLabelActive : BUTTON_UI.mobileNavLabelInactive
   }`;
+}
+
+type BottomBarCardOptions = {
+  variant?: 'solid' | 'frosted';
+  interactive?: boolean;
+};
+
+export function getBottomBarCardClass({
+  variant = 'solid',
+  interactive = false,
+}: BottomBarCardOptions = {}): string {
+  const variantClass = variant === 'frosted'
+    ? BUTTON_UI.bottomBarCardFrosted
+    : BUTTON_UI.bottomBarCardSolid;
+  return `${BUTTON_UI.bottomBarCardBase} ${variantClass} ${interactive ? BUTTON_UI.bottomBarCardInteractive : ''}`.trim();
 }
 
 export function getPillButtonClass(state: 'default' | 'muted' | 'selected'): string {

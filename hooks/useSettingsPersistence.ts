@@ -12,6 +12,7 @@ type UseSettingsPersistenceParams = {
   enabled?: boolean;
   learnLanguage: LearnLanguage;
   defaultLanguage: DefaultLanguage;
+  isEnglishUiLocked: boolean;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
@@ -27,6 +28,7 @@ export function useSettingsPersistence({
   enabled = true,
   learnLanguage,
   defaultLanguage,
+  isEnglishUiLocked,
   isPronunciationEnabled,
   textScalePercent,
   isBoldTextEnabled,
@@ -41,6 +43,7 @@ export function useSettingsPersistence({
     persistSyncedSettingsToStorage({
       learnLanguage,
       defaultLanguage,
+      isEnglishUiLocked,
       isPronunciationEnabled,
       textScalePercent,
       isBoldTextEnabled,
@@ -55,6 +58,7 @@ export function useSettingsPersistence({
     enabled,
     learnLanguage,
     defaultLanguage,
+    isEnglishUiLocked,
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,

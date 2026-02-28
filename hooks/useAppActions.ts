@@ -6,6 +6,7 @@ import {
   getLessonUnitId,
   getPlayableLessonText,
   PROFILE_NAME_KEY,
+  SidebarTab,
 } from '../config/appConfig';
 import { LessonData } from '../types';
 import { SpeakEntry } from './useTrackPlayback';
@@ -36,7 +37,7 @@ type UseAppActionsArgs = {
   setLibrarySelectedAlbumKey: Dispatch<SetStateAction<string | null>>;
   setPendingAutoPlayUnitKey: Dispatch<SetStateAction<string | null>>;
   setRepeatMode: Dispatch<SetStateAction<RepeatMode>>;
-  setSidebarTab: Dispatch<SetStateAction<'profile' | 'library' | 'lesson' | 'settings'>>;
+  setSidebarTab: Dispatch<SetStateAction<SidebarTab>>;
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
   setRandomOrderVersion: Dispatch<SetStateAction<number>>;
   setIsRandomLessonOrderEnabled: Dispatch<SetStateAction<boolean>>;

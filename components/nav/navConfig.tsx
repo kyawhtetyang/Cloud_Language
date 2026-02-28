@@ -10,9 +10,78 @@ type NavTabMeta = {
   Icon: React.FC<NavIconProps>;
 };
 
+export const NAV_ICON_UI = {
+  viewBox: '0 0 24 24',
+  mobileSizeClass: 'h-[22px] w-[22px]',
+  sidebarSizeClass: 'h-4 w-4 shrink-0',
+  outerCircleRadius: 9,
+  centerX: 12,
+  centerY: 12,
+} as const;
+
+export const NAV_LAYOUT_UI = {
+  mobileGridClass: 'grid gap-1 px-2 pb-2 pt-1.5',
+  sidebarItemContentClass: 'flex items-center gap-2',
+  sidebarLabelClass: 'truncate',
+} as const;
+
+const FeedIcon: React.FC<NavIconProps> = ({ className, isActive = false }) => (
+  <svg
+    viewBox={NAV_ICON_UI.viewBox}
+    className={className}
+    aria-hidden="true"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    {isActive ? (
+      <>
+        <circle
+          cx={NAV_ICON_UI.centerX}
+          cy={NAV_ICON_UI.centerY}
+          r={NAV_ICON_UI.outerCircleRadius}
+          fill="currentColor"
+          stroke="none"
+        />
+        <path d="M9 12.3l2.1 2.1 3.9-3.9" stroke="#fff" />
+      </>
+    ) : (
+      <>
+        <circle
+          cx={NAV_ICON_UI.centerX}
+          cy={NAV_ICON_UI.centerY}
+          r={NAV_ICON_UI.outerCircleRadius}
+        />
+        <path d="M9 12.3l2.1 2.1 3.9-3.9" />
+      </>
+    )}
+  </svg>
+);
+
 const LibraryIcon: React.FC<NavIconProps> = ({ className, isActive = false }) => (
   <svg
-    viewBox="0 0 24 24"
+    viewBox={NAV_ICON_UI.viewBox}
+    className={className}
+    aria-hidden="true"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path
+      d="M3.8 10 12 3.8 20.2 10V20h-4.9v-4.8h-6.6V20H3.8z"
+      fill={isActive ? 'currentColor' : 'none'}
+      stroke="currentColor"
+    />
+  </svg>
+);
+
+const LessonIcon: React.FC<NavIconProps> = ({ className, isActive = false }) => (
+  <svg
+    viewBox={NAV_ICON_UI.viewBox}
     className={className}
     aria-hidden="true"
     fill="none"
@@ -22,36 +91,26 @@ const LibraryIcon: React.FC<NavIconProps> = ({ className, isActive = false }) =>
     strokeLinejoin="round"
   >
     {isActive && (
-      <>
-        <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H11v15H5.5A2.5 2.5 0 0 0 3 21.5z" fill="currentColor" stroke="none" />
-        <path d="M21 6.5A2.5 2.5 0 0 0 18.5 4H13v15h5.5a2.5 2.5 0 0 1 2.5 2.5z" fill="currentColor" stroke="none" />
-      </>
+      <circle
+        cx={NAV_ICON_UI.centerX}
+        cy={NAV_ICON_UI.centerY}
+        r={NAV_ICON_UI.outerCircleRadius}
+        fill="currentColor"
+        stroke="none"
+      />
     )}
-    <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H11v15H5.5A2.5 2.5 0 0 0 3 21.5z" />
-    <path d="M21 6.5A2.5 2.5 0 0 0 18.5 4H13v15h5.5a2.5 2.5 0 0 1 2.5 2.5z" />
-  </svg>
-);
-
-const LessonIcon: React.FC<NavIconProps> = ({ className, isActive = false }) => (
-  <svg
-    viewBox="0 0 24 24"
-    className={className}
-    aria-hidden="true"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    {isActive && <circle cx="12" cy="12" r="9" fill="currentColor" stroke="none" />}
-    <circle cx="12" cy="12" r="9" />
+    <circle
+      cx={NAV_ICON_UI.centerX}
+      cy={NAV_ICON_UI.centerY}
+      r={NAV_ICON_UI.outerCircleRadius}
+    />
     <path d="M10 9.5v5l4-2.5z" fill={isActive ? '#fff' : 'currentColor'} stroke="none" />
   </svg>
 );
 
 const SettingsIcon: React.FC<NavIconProps> = ({ className, isActive = false }) => (
   <svg
-    viewBox="0 0 24 24"
+    viewBox={NAV_ICON_UI.viewBox}
     className={className}
     aria-hidden="true"
     fill="none"
@@ -73,7 +132,7 @@ const SettingsIcon: React.FC<NavIconProps> = ({ className, isActive = false }) =
 
 const ProfileIcon: React.FC<NavIconProps> = ({ className, isActive = false }) => (
   <svg
-    viewBox="0 0 24 24"
+    viewBox={NAV_ICON_UI.viewBox}
     className={className}
     aria-hidden="true"
     fill="none"
@@ -92,9 +151,12 @@ const ProfileIcon: React.FC<NavIconProps> = ({ className, isActive = false }) =>
   </svg>
 );
 
-export const NAV_TABS: readonly SidebarTab[] = ['library', 'lesson', 'profile'] as const;
+export const NAV_TABS: readonly SidebarTab[] = ['library', 'lesson', 'feed', 'profile'] as const;
 
 export const NAV_TAB_META: Record<SidebarTab, NavTabMeta> = {
+  feed: {
+    Icon: FeedIcon,
+  },
   library: {
     Icon: LibraryIcon,
   },

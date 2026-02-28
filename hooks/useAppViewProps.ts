@@ -18,6 +18,7 @@ type LessonEntry = {
 
 type UseAppViewPropsArgs = {
   defaultLanguage: DefaultLanguage;
+  selectedDefaultLanguage: DefaultLanguage;
   currentIndex: number;
   lessons: LessonData[];
   currentLevel: number;
@@ -36,6 +37,7 @@ type UseAppViewPropsArgs = {
   setIsLogoutModalOpen: Dispatch<SetStateAction<boolean>>;
   handleLogoutConfirm: () => Promise<void>;
   profileName: string;
+  profileStorageId: string;
   profileInput: string;
   profileError: string | null;
   hasProfileWhitespace: boolean;
@@ -61,6 +63,8 @@ type UseAppViewPropsArgs = {
   appTheme: AppTheme;
   voiceProvider: VoiceProvider;
   setDefaultLanguage: Dispatch<SetStateAction<DefaultLanguage>>;
+  isEnglishUiLocked: boolean;
+  setIsEnglishUiLocked: Dispatch<SetStateAction<boolean>>;
   setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
@@ -77,6 +81,7 @@ type UseAppViewPropsArgs = {
   englishReferenceByKey: Map<string, string>;
   activeSpeakingLessonIndex: number | null;
   handlePlaySingleLesson: (lesson: LessonData, lessonIndex: number) => void;
+  stopActivePlayback: () => Promise<void>;
   highlightPhrasesByLessonKey: Map<string, string[]>;
   saveHighlightSelection: (lesson: LessonData, selectedText: string) => boolean;
   clearHighlightSelection: (lesson: LessonData) => boolean;
@@ -97,6 +102,7 @@ type UseAppViewPropsArgs = {
 
 export function useAppViewProps({
   defaultLanguage,
+  selectedDefaultLanguage,
   currentIndex,
   lessons,
   currentLevel,
@@ -115,6 +121,7 @@ export function useAppViewProps({
   setIsLogoutModalOpen,
   handleLogoutConfirm,
   profileName,
+  profileStorageId,
   profileInput,
   profileError,
   hasProfileWhitespace,
@@ -140,6 +147,8 @@ export function useAppViewProps({
   appTheme,
   voiceProvider,
   setDefaultLanguage,
+  isEnglishUiLocked,
+  setIsEnglishUiLocked,
   setLearnLanguage,
   setIsPronunciationEnabled,
   setIsBoldTextEnabled,
@@ -156,6 +165,7 @@ export function useAppViewProps({
   englishReferenceByKey,
   activeSpeakingLessonIndex,
   handlePlaySingleLesson,
+  stopActivePlayback,
   highlightPhrasesByLessonKey,
   saveHighlightSelection,
   clearHighlightSelection,
@@ -175,6 +185,7 @@ export function useAppViewProps({
 }: UseAppViewPropsArgs) {
   return buildAppViewProps({
     defaultLanguage,
+    selectedDefaultLanguage,
     currentIndex,
     lessons,
     currentLevel,
@@ -193,6 +204,7 @@ export function useAppViewProps({
     onCloseLogoutModal: () => setIsLogoutModalOpen(false),
     onConfirmLogoutModal: () => { void handleLogoutConfirm(); },
     profileName,
+    profileStorageId,
     profileInput,
     profileError,
     hasProfileWhitespace,
@@ -227,6 +239,8 @@ export function useAppViewProps({
     appTheme,
     voiceProvider,
     onDefaultLanguageChange: setDefaultLanguage,
+    isEnglishUiLocked,
+    onToggleEnglishUiLock: () => setIsEnglishUiLocked((prev) => !prev),
     onLearnLanguageChange: setLearnLanguage,
     onTogglePronunciation: () => setIsPronunciationEnabled((prev) => !prev),
     onToggleBoldText: () => setIsBoldTextEnabled((prev) => !prev),
@@ -248,6 +262,7 @@ export function useAppViewProps({
     englishReferenceByKey,
     activeSpeakingLessonIndex,
     onPlayLesson: handlePlaySingleLesson,
+    onStopAudio: stopActivePlayback,
     savedHighlightPhrasesByLessonKey: highlightPhrasesByLessonKey,
     onSaveLessonHighlight: saveHighlightSelection,
     onClearLessonHighlight: clearHighlightSelection,

@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+  BUTTON_UI,
+  getBottomBarCardClass,
   getFooterLargeButtonClass,
   getFooterSmallButtonClass,
 } from '../config/buttonUi';
@@ -70,13 +72,13 @@ export const LibraryMiniPlayer: React.FC<LibraryMiniPlayerProps> = ({
   onOpenPlayer,
 }) => (
   <footer
-    className={`fixed left-0 right-0 z-30 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] bottom-[calc(76px+env(safe-area-inset-bottom))] transition-all duration-300 ease-out md:bottom-4 md:left-1/2 md:right-auto md:w-full md:max-w-[720px] md:-translate-x-1/2 md:px-6 md:pb-0 ${
+    className={`fixed left-0 right-0 z-30 px-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] bottom-[calc(60px+env(safe-area-inset-bottom))] transition-all duration-300 ease-out ${BUTTON_UI.bottomBarDesktopAnchor} ${
       isVisible
         ? 'translate-y-0 opacity-100'
         : 'pointer-events-none translate-y-[160%] opacity-0 md:pointer-events-auto md:translate-y-0 md:opacity-100'
     }`}
   >
-    <div className="mx-auto w-full max-w-[min(640px,calc(100vw-1rem))]">
+    <div className={BUTTON_UI.bottomBarContentFrame}>
       <div
         role="button"
         tabIndex={0}
@@ -86,7 +88,7 @@ export const LibraryMiniPlayer: React.FC<LibraryMiniPlayerProps> = ({
           event.preventDefault();
           onOpenPlayer();
         }}
-        className="group flex items-center gap-2.5 rounded-2xl border border-[var(--border-strong)] bg-[color:color-mix(in_srgb,var(--surface-default)_88%,transparent)] px-2.5 py-2 shadow-[0_14px_30px_rgba(0,0,0,0.2)] backdrop-blur-md transition-transform duration-300 md:hover:translate-y-[-1px]"
+        className={`${getBottomBarCardClass({ variant: 'frosted', interactive: true })} group flex items-center gap-2.5 px-2.5 py-2`}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-secondary)]">

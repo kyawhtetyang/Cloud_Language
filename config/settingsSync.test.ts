@@ -15,6 +15,7 @@ describe('settingsSync', () => {
     expect(readSyncedSettingsFromStorage()).toEqual({
       learnLanguage: 'english',
       defaultLanguage: 'burmese',
+      isEnglishUiLocked: true,
       isPronunciationEnabled: false,
       textScalePercent: 100,
       isBoldTextEnabled: false,
@@ -30,6 +31,7 @@ describe('settingsSync', () => {
     const settings = {
       learnLanguage: 'chinese' as const,
       defaultLanguage: 'english' as const,
+      isEnglishUiLocked: false,
       isPronunciationEnabled: true,
       textScalePercent: 115,
       isBoldTextEnabled: true,
@@ -49,6 +51,7 @@ describe('settingsSync', () => {
     const legacyGlobal = {
       learnLanguage: 'english' as const,
       defaultLanguage: 'burmese' as const,
+      isEnglishUiLocked: true,
       isPronunciationEnabled: false,
       textScalePercent: 100,
       isBoldTextEnabled: false,
@@ -61,6 +64,7 @@ describe('settingsSync', () => {
     const profileSettings = {
       learnLanguage: 'chinese' as const,
       defaultLanguage: 'english' as const,
+      isEnglishUiLocked: false,
       isPronunciationEnabled: true,
       textScalePercent: 115,
       isBoldTextEnabled: true,
@@ -83,6 +87,7 @@ describe('settingsSync', () => {
     const setters = {
       setLearnLanguage: vi.fn(),
       setDefaultLanguage: vi.fn(),
+      setIsEnglishUiLocked: vi.fn(),
       setIsPronunciationEnabled: vi.fn(),
       setTextScalePercent: vi.fn(),
       setIsBoldTextEnabled: vi.fn(),
@@ -97,6 +102,7 @@ describe('settingsSync', () => {
       {
         learnLanguage: 'chinese',
         defaultLanguage: 'vietnamese',
+        isEnglishUiLocked: false,
         isPronunciationEnabled: true,
         textScalePercent: 999,
         isBoldTextEnabled: true,
@@ -111,6 +117,7 @@ describe('settingsSync', () => {
 
     expect(setters.setLearnLanguage).toHaveBeenCalledWith('chinese');
     expect(setters.setDefaultLanguage).toHaveBeenCalledWith('vietnamese');
+    expect(setters.setIsEnglishUiLocked).toHaveBeenCalledWith(false);
     expect(setters.setIsPronunciationEnabled).toHaveBeenCalledWith(true);
     expect(setters.setTextScalePercent).toHaveBeenCalledWith(120);
     expect(setters.setIsBoldTextEnabled).toHaveBeenCalledWith(true);

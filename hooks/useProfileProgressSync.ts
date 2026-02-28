@@ -33,6 +33,7 @@ type UseProfileProgressSyncParams = {
   streak: number;
   learnLanguage: LearnLanguage;
   defaultLanguage: DefaultLanguage;
+  isEnglishUiLocked: boolean;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
@@ -50,6 +51,7 @@ type UseProfileProgressSyncParams = {
   setStreak: React.Dispatch<React.SetStateAction<number>>;
   setLearnLanguage: React.Dispatch<React.SetStateAction<LearnLanguage>>;
   setDefaultLanguage: React.Dispatch<React.SetStateAction<DefaultLanguage>>;
+  setIsEnglishUiLocked: React.Dispatch<React.SetStateAction<boolean>>;
   setIsPronunciationEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setTextScalePercent: React.Dispatch<React.SetStateAction<number>>;
   setIsBoldTextEnabled: React.Dispatch<React.SetStateAction<boolean>>;
@@ -70,6 +72,7 @@ export function useProfileProgressSync({
   streak,
   learnLanguage,
   defaultLanguage,
+  isEnglishUiLocked,
   isPronunciationEnabled,
   textScalePercent,
   isBoldTextEnabled,
@@ -87,6 +90,7 @@ export function useProfileProgressSync({
   setStreak,
   setLearnLanguage,
   setDefaultLanguage,
+  setIsEnglishUiLocked,
   setIsPronunciationEnabled,
   setTextScalePercent,
   setIsBoldTextEnabled,
@@ -171,6 +175,7 @@ export function useProfileProgressSync({
           applyRemoteSyncedSettings(remote as Record<string, unknown>, {
             setLearnLanguage,
             setDefaultLanguage,
+            setIsEnglishUiLocked,
             setIsPronunciationEnabled,
             setTextScalePercent,
             setIsBoldTextEnabled,
@@ -200,6 +205,7 @@ export function useProfileProgressSync({
     progressStorageKey,
     setCurrentIndex,
     setDefaultLanguage,
+    setIsEnglishUiLocked,
     setIsPronunciationEnabled,
     setTextScalePercent,
     setIsBoldTextEnabled,
@@ -269,6 +275,7 @@ export function useProfileProgressSync({
       ...buildSyncedSettingsPayload({
         learnLanguage,
         defaultLanguage,
+        isEnglishUiLocked,
         isPronunciationEnabled,
         textScalePercent,
         isBoldTextEnabled,
@@ -308,6 +315,7 @@ export function useProfileProgressSync({
     apiBaseUrl,
     currentIndex,
     defaultLanguage,
+    isEnglishUiLocked,
     hasHydratedProfile,
     isPronunciationEnabled,
     textScalePercent,

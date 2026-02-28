@@ -26,6 +26,7 @@ type SettingsViewProps = {
   settingsText: AppTextPack['settings'];
   defaultLanguage: DefaultLanguage;
   learnLanguage: LearnLanguage;
+  isEnglishUiLocked: boolean;
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled: boolean;
@@ -35,6 +36,7 @@ type SettingsViewProps = {
   appTheme: AppTheme;
   voiceProvider: VoiceProvider;
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
+  onToggleEnglishUiLock: () => void;
   onLearnLanguageChange: (value: LearnLanguage) => void;
   onTogglePronunciation: () => void;
   onToggleBoldText: () => void;
@@ -69,6 +71,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   settingsText,
   defaultLanguage,
   learnLanguage,
+  isEnglishUiLocked,
   isPronunciationEnabled,
   isBoldTextEnabled,
   isAutoScrollEnabled,
@@ -78,6 +81,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   appTheme,
   voiceProvider,
   onDefaultLanguageChange,
+  onToggleEnglishUiLock,
   onLearnLanguageChange,
   onTogglePronunciation,
   onToggleBoldText,
@@ -204,6 +208,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <section className="mb-4">
         <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{settingsText.preferencesSectionLabel}</h3>
         <div className={SETTINGS_UI.listCard}>
+          <button type="button" onClick={onToggleEnglishUiLock} className={SETTINGS_UI.listRow}>
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.keepEnglishUiLabel}</p>
+            <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
+              <ToggleStateBadge
+                isOn={isEnglishUiLocked}
+                onLabel={settingsText.onLabel}
+                offLabel={settingsText.offLabel}
+              />
+            </span>
+          </button>
+          <div className={SETTINGS_UI.listDivider} />
           <button type="button" onClick={() => setRoute('defaultLanguage')} className={SETTINGS_UI.listRow}>
             <p className={SETTINGS_UI.sectionTitle}>{settingsText.defaultLanguageLabel}</p>
             <span className={SETTINGS_UI.rowValue}>

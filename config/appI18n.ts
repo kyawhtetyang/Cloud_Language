@@ -2,6 +2,7 @@ import { AppTheme, DefaultLanguage, LearnLanguage, VoiceProvider } from './appCo
 
 export type AppTextPack = {
   navigation: {
+    feedLabel: string;
     libraryLabel: string;
     lessonLabel: string;
     profileLabel: string;
@@ -49,6 +50,8 @@ export type AppTextPack = {
     untitledSourceLabel: string;
   };
   lesson: {
+    revisionReviewTabLabel: string;
+    revisionQuizTabLabel: string;
     unitPrefix: string;
     previousLabel: string;
     nextLabel: string;
@@ -94,6 +97,7 @@ export type AppTextPack = {
     preferencesSectionLabel: string;
     displaySectionLabel: string;
     audioSectionLabel: string;
+    keepEnglishUiLabel: string;
     defaultLanguageLabel: string;
     learnLanguageLabel: string;
     appearanceLabel: string;
@@ -125,6 +129,7 @@ export type AppTextPack = {
 
 const APP_TEXT_ENGLISH: AppTextPack = {
   navigation: {
+    feedLabel: 'Revision',
     libraryLabel: 'Library',
     lessonLabel: 'Lesson',
     profileLabel: 'Profile',
@@ -172,6 +177,8 @@ const APP_TEXT_ENGLISH: AppTextPack = {
     untitledSourceLabel: 'Untitled',
   },
   lesson: {
+    revisionReviewTabLabel: 'Review',
+    revisionQuizTabLabel: 'Quiz',
     unitPrefix: 'Unit',
     previousLabel: 'Previous',
     nextLabel: 'Next',
@@ -217,6 +224,7 @@ const APP_TEXT_ENGLISH: AppTextPack = {
     preferencesSectionLabel: 'Preferences',
     displaySectionLabel: 'Display',
     audioSectionLabel: 'Audio',
+    keepEnglishUiLabel: 'English UI',
     defaultLanguageLabel: 'Default Language',
     learnLanguageLabel: 'Learn Language',
     appearanceLabel: 'Appearance',
@@ -264,6 +272,7 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
   english: APP_TEXT_ENGLISH,
   burmese: {
     navigation: {
+      feedLabel: 'ပြန်လေ့ကျင့်',
       libraryLabel: 'စာကြည့်တိုက်',
       lessonLabel: 'သင်ခန်းစာ',
       profileLabel: 'ပရိုဖိုင်',
@@ -311,6 +320,8 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       untitledSourceLabel: 'ခေါင်းစဉ်မရှိ',
     },
     lesson: {
+      revisionReviewTabLabel: 'Review',
+      revisionQuizTabLabel: 'Quiz',
       unitPrefix: 'ယူနစ်',
       previousLabel: 'နောက်သို့',
       nextLabel: 'ရှေ့သို့',
@@ -356,6 +367,7 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       preferencesSectionLabel: 'Preferences',
       displaySectionLabel: 'Display',
       audioSectionLabel: 'Audio',
+      keepEnglishUiLabel: 'English UI',
       defaultLanguageLabel: 'မူလဘာသာစကား',
       learnLanguageLabel: 'လေ့လာမည့်ဘာသာစကား',
       appearanceLabel: 'မြင်ကွင်း',
@@ -400,6 +412,7 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
   },
   vietnamese: {
     navigation: {
+      feedLabel: 'Ôn tập',
       libraryLabel: 'Thư viện',
       lessonLabel: 'Bài học',
       profileLabel: 'Hồ sơ',
@@ -447,6 +460,8 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       untitledSourceLabel: 'Chưa đặt tên',
     },
     lesson: {
+      revisionReviewTabLabel: 'Review',
+      revisionQuizTabLabel: 'Quiz',
       unitPrefix: 'Bài',
       previousLabel: 'Trước',
       nextLabel: 'Tiếp',
@@ -492,6 +507,7 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       preferencesSectionLabel: 'Tùy chọn',
       displaySectionLabel: 'Hiển thị',
       audioSectionLabel: 'Âm thanh',
+      keepEnglishUiLabel: 'English UI',
       defaultLanguageLabel: 'Ngôn ngữ mặc định',
       learnLanguageLabel: 'Ngôn ngữ học',
       appearanceLabel: 'Giao diện',

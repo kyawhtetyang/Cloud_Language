@@ -22,8 +22,11 @@ import {
   AppMode,
   DEFAULT_PROGRESS_INDEX,
   SidebarTab,
+  DefaultLanguage,
   DEFAULT_STREAK,
   DEFAULT_UNLOCKED_LEVEL,
+  getLessonUnitId,
+  getPlayableLessonText,
   PROFILE_NAME_KEY,
   toProfileStorageId,
 } from './config/appConfig';
@@ -68,6 +71,8 @@ const App: React.FC = () => {
     setLearnLanguage,
     defaultLanguage,
     setDefaultLanguage,
+    isEnglishUiLocked,
+    setIsEnglishUiLocked,
     textScalePercent,
     setTextScalePercent,
     isBoldTextEnabled,
@@ -84,6 +89,7 @@ const App: React.FC = () => {
     setVoiceProvider,
     hasHydratedSettings,
   } = useAppPreferences(profileStorageId);
+  const effectiveDefaultLanguage: DefaultLanguage = isEnglishUiLocked ? 'english' : defaultLanguage;
   const [learnStep, setLearnStep] = useState(0);
   const [completedUnitKeys, setCompletedUnitKeys] = useState<Set<string>>(new Set());
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -109,7 +115,7 @@ const App: React.FC = () => {
     leaveCompletedUnitConfirmLabel,
   } = useAppContentState({
     learnLanguage,
-    defaultLanguage,
+    defaultLanguage: effectiveDefaultLanguage,
   });
   const { highlightPhrasesByLessonKey, saveHighlightSelection, clearHighlightSelection } = useLessonHighlights(
     profileStorageId,
@@ -128,6 +134,7 @@ const App: React.FC = () => {
     hasHydratedSettings,
     learnLanguage,
     defaultLanguage,
+    isEnglishUiLocked,
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,
@@ -141,6 +148,7 @@ const App: React.FC = () => {
     setStreak,
     setLearnLanguage,
     setDefaultLanguage,
+    setIsEnglishUiLocked,
     setIsPronunciationEnabled,
     setTextScalePercent,
     setIsBoldTextEnabled,
@@ -286,7 +294,7 @@ const App: React.FC = () => {
     handleReadLibraryAlbum,
     handleRestartCourse,
   } = useAppLifecycle({
-    defaultLanguage,
+    defaultLanguage: effectiveDefaultLanguage,
     mode,
     sidebarTab,
     currentLevel,
@@ -334,8 +342,8 @@ const App: React.FC = () => {
     setSidebarTab,
     setIsSidebarOpen,
   });
-  const appText = getAppText(defaultLanguage);
-  const welcomeText = getAppText('english').welcome;
+  const appText = getAppText(effectiveDefaultLanguage);
+  const welcomeText = getAppText(effectiveDefaultLanguage).welcome;
 
   if (loading) {
     return <LoadingView label={appText.appState.loadingLessonsLabel} />;
@@ -379,12 +387,60 @@ const App: React.FC = () => {
       return;
     }
     lastLibraryTabTapAtRef.current = 0;
+    const isLessonRevisionSwitch = (
+      (sidebarTab === 'lesson' && tab === 'feed')
+      || (sidebarTab === 'feed' && tab === 'lesson')
+    );
+    if (isLessonRevisionSwitch) {
+      setTrackPlaybackEnabled(false);
+      resetUnitPlaybackAnchor();
+      if (isReading || activeSpeakingLessonIndex !== null) {
+        void stopActivePlayback();
+      }
+    }
     selectTab(tab);
+  };
+
+  const handleReadForActiveTab = async () => {
+    const isRevisionTab = sidebarTab === 'feed' && mode === 'learn';
+    if (!isRevisionTab) {
+      await handleReadCurrentBatch();
+      return;
+    }
+
+    if (isReading || activeSpeakingLessonIndex !== null) {
+      await stopActivePlayback();
+      return;
+    }
+
+    setTrackPlaybackEnabled(false);
+    const revisionEntries = currentBatchEntries
+      .slice(0, 3)
+      .map(({ lesson, lessonIndex }) => {
+        const speakTextValue = getPlayableLessonText(lesson);
+        if (!speakTextValue) return null;
+        return {
+          text: speakTextValue,
+          unitId: getLessonUnitId(lesson),
+          audioUrl: lesson.audioPath,
+          lessonIndex,
+        };
+      })
+      .filter((entry): entry is {
+        text: string;
+        unitId: number;
+        audioUrl: string | undefined;
+        lessonIndex: number;
+      } => entry !== null);
+
+    if (revisionEntries.length === 0) return;
+    await playEntriesSequentially(revisionEntries);
   };
 
   const {
     isLibraryView,
     isProfileView,
+    isFeedView,
     isSettingsView,
     showLessonActions,
     showLibraryMiniPlayer,
@@ -394,12 +450,14 @@ const App: React.FC = () => {
     libraryViewProps,
     settingsViewProps,
     lessonViewProps,
+    feedViewProps,
     lessonActionFooterProps,
     libraryMiniPlayerProps,
     mobileBottomNavProps,
     appStateText,
   } = useAppViewProps({
-    defaultLanguage,
+    defaultLanguage: effectiveDefaultLanguage,
+    selectedDefaultLanguage: defaultLanguage,
     currentIndex,
     lessons,
     currentLevel,
@@ -418,6 +476,7 @@ const App: React.FC = () => {
     setIsLogoutModalOpen,
     handleLogoutConfirm,
     profileName,
+    profileStorageId,
     profileInput,
     profileError,
     hasProfileWhitespace,
@@ -443,6 +502,8 @@ const App: React.FC = () => {
     appTheme,
     voiceProvider,
     setDefaultLanguage,
+    isEnglishUiLocked,
+    setIsEnglishUiLocked,
     setLearnLanguage,
     setIsPronunciationEnabled,
     setIsBoldTextEnabled,
@@ -459,6 +520,7 @@ const App: React.FC = () => {
     englishReferenceByKey,
     activeSpeakingLessonIndex,
     handlePlaySingleLesson,
+    stopActivePlayback,
     highlightPhrasesByLessonKey,
     saveHighlightSelection,
     clearHighlightSelection,
@@ -472,11 +534,12 @@ const App: React.FC = () => {
     handleToggleShuffle,
     handleToggleRepeat,
     handlePrevious,
-    handleReadCurrentBatch,
+    handleReadCurrentBatch: handleReadForActiveTab,
     handleNext,
     selectTab: handleMobileTabChange,
   });
-  const mobileBottomPaddingClass = showLibraryMiniPlayer ? 'pb-56' : 'pb-36';
+  const mobileBottomPaddingClass = isFeedView ? 'pb-0' : (showLibraryMiniPlayer ? 'pb-56' : 'pb-36');
+  const desktopBottomPaddingClass = isFeedView ? 'md:pb-0' : 'md:pb-32';
 
   return (
     <div className="min-h-screen bg-app-radial md:flex">
@@ -493,20 +556,22 @@ const App: React.FC = () => {
         isSidebarOpen={isSidebarOpen}
         sidebarTab={sidebarTab}
         onClose={closeSidebar}
-        onSelectTab={selectTab}
+        onSelectTab={handleMobileTabChange}
         onReload={reloadApp}
       />
 
-      <div className={`flex-1 flex flex-col min-h-screen ${mobileBottomPaddingClass} md:ml-72 md:pb-32`}>
+      <div className={`flex-1 flex flex-col min-h-screen ${mobileBottomPaddingClass} md:ml-72 ${desktopBottomPaddingClass}`}>
         <AppMainContent
           isProfileView={isProfileView}
           isLibraryView={isLibraryView}
+          isFeedView={isFeedView}
           isSettingsView={isSettingsView}
           mode={mode}
           profileViewProps={profileViewProps}
           libraryViewProps={libraryViewProps}
           settingsViewProps={settingsViewProps}
           lessonViewProps={lessonViewProps}
+          feedViewProps={feedViewProps}
           appStateText={appStateText}
           onCompletedRestart={handleRestartCourse}
         />
