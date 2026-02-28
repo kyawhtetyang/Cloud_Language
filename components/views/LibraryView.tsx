@@ -1,13 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { LessonData } from '../../types';
 import {
+  DEFAULT_LIBRARY_VIEW_MODE,
   DefaultLanguage,
-  getLessonOrderIndex,
-  getLessonUnitId,
   LearnLanguage,
+  LibraryViewMode,
   StageCode,
 } from '../../config/appConfig';
-import { getLibraryText, localizeLibraryTopic, localizeLibraryTopicConcise } from '../../config/libraryI18n';
+import { getLibraryText, localizeLibraryTopic } from '../../config/libraryI18n';
 import { getAppText } from '../../config/appI18n';
 import { VIEW_PAGE_CLASS } from './viewShared';
 import { useSwipeBack } from '../../hooks/useSwipeBack';
@@ -15,8 +15,9 @@ import { AlbumHeader } from './library/AlbumHeader';
 import { AlbumList } from './library/AlbumList';
 import { AlbumDetail } from './library/AlbumDetail';
 import { LIBRARY_STATE_STYLE } from './library/libraryUiTokens';
-import type { AlbumCollectionSection, AlbumGroup } from './library/libraryTypes';
+import type { AlbumGroup } from './library/libraryTypes';
 import { getIconCircleButtonClass } from '../../config/buttonUi';
+import { buildLibraryUnitKey, useLibraryCollections } from './library/useLibraryCollections';
 
 type LibraryViewProps = {
   lessons: LessonData[];
@@ -25,6 +26,7 @@ type LibraryViewProps = {
   onSelectUnit: (level: number, unit: number, albumKey?: string | null) => void;
   onReadAlbum?: (units: Array<{ level: number; unit: number }>, albumKey?: string | null) => void;
   selectedAlbumKey?: string | null;
+  viewMode?: LibraryViewMode;
   onSelectedAlbumKeyChange?: (key: string | null) => void;
   completedUnitKeys?: Set<string>;
   activeUnitKey?: string;
@@ -37,110 +39,6 @@ type LibraryViewProps = {
 function shortenLabel(text: string, max = 56): string {
   if (text.length <= max) return text;
   return `${text.slice(0, max - 1).trim()}...`;
-}
-
-function buildUnitKey(level: number, unit: number): string {
-  return `${level}:${unit}`;
-}
-
-function stableHash(input: string): number {
-  let hash = 0;
-  for (let i = 0; i < input.length; i += 1) {
-    hash = ((hash << 5) - hash + input.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
-}
-
-const REAL_PHOTO_POOL = [
-  'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&w=600&h=800&q=80',
-  'https://images.unsplash.com/photo-1515165562835-c3b8c8d1f18f?auto=format&fit=crop&w=600&h=800&q=80',
-];
-
-const PHOTO_CATEGORY_POOL: Record<string, string[]> = {
-  commerce: [
-    'https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=600&h=800&q=80',
-    'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&w=600&h=800&q=80',
-  ],
-  family: [
-    'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=600&h=800&q=80',
-    'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=600&h=800&q=80',
-  ],
-  daily: [
-    'https://images.unsplash.com/photo-1531545514256-b1400bc00f31?auto=format&fit=crop&w=600&h=800&q=80',
-    'https://images.unsplash.com/photo-1494172961521-33799ddd43a5?auto=format&fit=crop&w=600&h=800&q=80',
-  ],
-  map: [
-    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=600&h=800&q=80',
-    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=600&h=800&q=80',
-  ],
-  work: [
-    'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=600&h=800&q=80',
-    'https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=600&h=800&q=80',
-  ],
-  debate: [
-    'https://images.unsplash.com/photo-1515187029135-18ee286d815b?auto=format&fit=crop&w=600&h=800&q=80',
-    'https://images.unsplash.com/photo-1560439514-4e9645039924?auto=format&fit=crop&w=600&h=800&q=80',
-  ],
-};
-
-function getTopicPhotoUrl(topic: string, seed: string): string {
-  const lower = topic.toLowerCase();
-  let category: keyof typeof PHOTO_CATEGORY_POOL | null = null;
-  if (/buy|sell|price|payment|discount|return|exchange|market/.test(lower)) {
-    category = 'commerce';
-  } else if (/family|friends/.test(lower)) {
-    category = 'family';
-  } else if (/time|date|daily|weekend|future|past/.test(lower)) {
-    category = 'daily';
-  } else if (/directions|map/.test(lower)) {
-    category = 'map';
-  } else if (/meeting|presentation|negotiation|executive|q&a/.test(lower)) {
-    category = 'work';
-  } else if (/debate|argument|opinions|discussion|viewpoints/.test(lower)) {
-    category = 'debate';
-  }
-  const pool = category ? PHOTO_CATEGORY_POOL[category] : REAL_PHOTO_POOL;
-  const pick = stableHash(seed) % pool.length;
-  return pool[pick];
-}
-
-function getGroupCoverUrl(
-  groupIndex: number,
-  topic: string,
-  coverLanguageCode: string,
-): string {
-  if (/^hsk[1-6]$/i.test(coverLanguageCode)) {
-    return `/api/lesson-cover/${coverLanguageCode}`;
-  }
-  return getTopicPhotoUrl(topic, `group:${groupIndex + 1}`);
-}
-
-function resolveHskLanguageCodeFromCollectionLabel(label: string): string {
-  const match = label.match(/hsk\s*([1-6])/i);
-  if (!match) return 'hsk_chinese';
-  return `hsk${match[1]}`;
-}
-
-function getConciseTopicTitle(rawTopic: string, defaultLanguage: DefaultLanguage): string {
-  return localizeLibraryTopicConcise(rawTopic, defaultLanguage);
-}
-
-function getDisplayAlbumTitle(rawTitle: string, defaultLanguage: DefaultLanguage): string {
-  return localizeLibraryTopic(rawTitle, defaultLanguage);
 }
 
 async function handleAlbumDownloadAction(
@@ -160,7 +58,7 @@ async function handleAlbumDownloadAction(
   }
 
   const pendingEntries = group.units.filter(
-    (entry) => !downloadedUnitKeys?.has(buildUnitKey(entry.level, entry.unit)),
+    (entry) => !downloadedUnitKeys?.has(buildLibraryUnitKey(entry.level, entry.unit)),
   );
   await Promise.all(
     pendingEntries.map((entry) => Promise.resolve(onDownloadUnit(entry.level, entry.unit))),
@@ -174,6 +72,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onSelectUnit,
   onReadAlbum,
   selectedAlbumKey,
+  viewMode = DEFAULT_LIBRARY_VIEW_MODE,
   onSelectedAlbumKeyChange,
   completedUnitKeys,
   activeUnitKey,
@@ -192,136 +91,31 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     }
     setInternalSelectedAlbumKey(key);
   };
+
   const text = getLibraryText(defaultLanguage);
   const appText = getAppText(defaultLanguage);
   const libraryText = appText.library;
   const playAllLabel = libraryText.playAllLabel;
-  const collectionSections = useMemo<AlbumCollectionSection[]>(() => {
-    const byCollection = new Map<
-      string,
-      {
-        sourceOrder: string[];
-        bySource: Map<string, AlbumGroup['units']>;
-        levelScheme?: string;
-        levelCode?: string;
-        levelOrder?: number;
-      }
-    >();
-    for (const lesson of lessons) {
-      const level = getLessonOrderIndex(lesson);
-      const unit = getLessonUnitId(lesson);
-      const collectionLabel = (lesson.collectionLabel || '').trim() || `${libraryText.collectionFallbackPrefix} ${level}`;
-      const sourceLabel = (lesson.sourceLabel || '').trim() || libraryText.untitledSourceLabel;
-      const levelScheme = String(lesson.levelScheme || '').trim().toLowerCase() || undefined;
-      const levelCode = String(lesson.levelCode || '').trim().toUpperCase() || undefined;
-      const levelOrder = typeof lesson.levelOrder === 'number' ? lesson.levelOrder : undefined;
-      if (!byCollection.has(collectionLabel)) {
-        byCollection.set(collectionLabel, {
-          sourceOrder: [],
-          bySource: new Map(),
-          levelScheme,
-          levelCode,
-          levelOrder,
-        });
-      }
-      const collection = byCollection.get(collectionLabel)!;
-      if (!collection.levelScheme && levelScheme) collection.levelScheme = levelScheme;
-      if (!collection.levelCode && levelCode) collection.levelCode = levelCode;
-      if (typeof collection.levelOrder !== 'number' && typeof levelOrder === 'number') {
-        collection.levelOrder = levelOrder;
-      }
-      if (!collection.bySource.has(sourceLabel)) {
-        collection.bySource.set(sourceLabel, []);
-        collection.sourceOrder.push(sourceLabel);
-      }
-      const units = collection.bySource.get(sourceLabel)!;
-      if (!units.some((entry) => entry.level === level && entry.unit === unit)) {
-        units.push({
-          stage: 'A1',
-          level,
-          unit,
-          topic: lesson.topic,
-        });
-      }
-    }
-    const schemePriority = (scheme: string | undefined): number => {
-      if (scheme === 'cefr') return 10;
-      if (scheme === 'hsk') return 20;
-      if (scheme === 'jlpt') return 30;
-      return 40;
-    };
-    const collectionEntries = Array.from(byCollection.entries()).sort(([labelA, metaA], [labelB, metaB]) => {
-      const priorityDiff = schemePriority(metaA.levelScheme) - schemePriority(metaB.levelScheme);
-      if (priorityDiff !== 0) return priorityDiff;
 
-      const orderA = typeof metaA.levelOrder === 'number' ? metaA.levelOrder : Number.POSITIVE_INFINITY;
-      const orderB = typeof metaB.levelOrder === 'number' ? metaB.levelOrder : Number.POSITIVE_INFINITY;
-      if (orderA !== orderB) return orderA - orderB;
+  const {
+    filteredCollectionSections,
+    hasFilteredResults,
+    selectedAlbum,
+  } = useLibraryCollections({
+    lessons,
+    defaultLanguage,
+    learnLanguage,
+    viewMode,
+    downloadedUnitKeys,
+    selectedAlbumKey: activeSelectedAlbumKey,
+    libraryQuery,
+    collectionFallbackPrefix: libraryText.collectionFallbackPrefix,
+    untitledSourceLabel: libraryText.untitledSourceLabel,
+  });
 
-      const aNum = Number((labelA.match(/^hsk\s*([1-9]\d*)$/i)?.[1]) || 0);
-      const bNum = Number((labelB.match(/^hsk\s*([1-9]\d*)$/i)?.[1]) || 0);
-      if (aNum > 0 && bNum > 0) return aNum - bNum;
-      if (aNum > 0) return 1;
-      if (bNum > 0) return -1;
-      return labelA.localeCompare(labelB, undefined, { sensitivity: 'base' });
-    });
-    return collectionEntries.map(([collectionLabel, collection]) => {
-      const coverLanguage = /^hsk\s*[1-6]$/i.test(collectionLabel)
-        ? resolveHskLanguageCodeFromCollectionLabel(collectionLabel)
-        : learnLanguage;
-      const groups = collection.sourceOrder.map((sourceLabel, groupIndex) => {
-        const units = collection.bySource.get(sourceLabel) || [];
-        units.sort((a, b) => (a.level - b.level) || (a.unit - b.unit));
-        return {
-          key: `hsk-collection-${collectionLabel}-group-${groupIndex}`,
-          stage: 'A1' as StageCode,
-          groupIndex,
-          units,
-          firstTopicConcise: sourceLabel,
-          coverUrl: getGroupCoverUrl(groupIndex, sourceLabel, coverLanguage),
-        };
-      });
-      return {
-        key: `${collection.levelScheme || 'custom'}-${(collection.levelCode || collectionLabel).toLowerCase().replace(/\s+/g, '-')}`,
-        label: collectionLabel,
-        levelScheme: collection.levelScheme,
-        levelCode: collection.levelCode,
-        levelOrder: collection.levelOrder,
-        groups,
-      };
-    });
-  }, [learnLanguage, lessons, libraryText.collectionFallbackPrefix, libraryText.untitledSourceLabel]);
-  const selectedAlbum = useMemo(() => {
-    if (!activeSelectedAlbumKey) return null;
-    for (const section of collectionSections) {
-      const found = section.groups.find((group) => group.key === activeSelectedAlbumKey);
-      if (found) return found;
-    }
-    return null;
-  }, [activeSelectedAlbumKey, collectionSections]);
   const albumSwipeBackHandlers = useSwipeBack(
     selectedAlbum ? () => setSelectedAlbumKey(null) : null,
   );
-  const normalizedLibraryQuery = libraryQuery.trim().toLowerCase();
-  const filteredCollectionSections = useMemo(() => {
-    if (!normalizedLibraryQuery) return collectionSections;
-    return collectionSections
-      .map((section) => ({
-        ...section,
-        groups: section.groups.filter((group) => {
-          const localizedGroupTitle = getDisplayAlbumTitle(group.firstTopicConcise, defaultLanguage).toLowerCase();
-          if (group.firstTopicConcise.toLowerCase().includes(normalizedLibraryQuery)) return true;
-          if (localizedGroupTitle.includes(normalizedLibraryQuery)) return true;
-          return group.units.some((unitEntry) => {
-            const conciseTopic = getConciseTopicTitle(unitEntry.topic, defaultLanguage).toLowerCase();
-            const localizedTopic = localizeLibraryTopic(unitEntry.topic, defaultLanguage).toLowerCase();
-            return conciseTopic.includes(normalizedLibraryQuery) || localizedTopic.includes(normalizedLibraryQuery);
-          });
-        }),
-      }))
-      .filter((section) => section.groups.length > 0);
-  }, [collectionSections, defaultLanguage, normalizedLibraryQuery]);
-  const hasFilteredResults = filteredCollectionSections.length > 0;
 
   const formatUnitCode = (level: number, unit: number): string => (
     `${Math.max(1, level)}.${Math.max(1, unit)}`
@@ -340,7 +134,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   const renderDownloadButton = (group: AlbumGroup) => {
     if (!onDownloadUnit) return null;
 
-    const groupUnitKeys = group.units.map((entry) => buildUnitKey(entry.level, entry.unit));
+    const groupUnitKeys = group.units.map((entry) => buildLibraryUnitKey(entry.level, entry.unit));
     const downloadedCount = groupUnitKeys.filter((key) => downloadedUnitKeys?.has(key)).length;
     const isGroupDownloaded = downloadedCount === group.units.length && group.units.length > 0;
     const isGroupPartial = downloadedCount > 0 && downloadedCount < group.units.length;
@@ -397,7 +191,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   };
 
   if (selectedAlbum) {
-    const albumTitle = shortenLabel(getDisplayAlbumTitle(selectedAlbum.firstTopicConcise, defaultLanguage), 58);
+    const albumTitle = shortenLabel(localizeLibraryTopic(selectedAlbum.firstTopicConcise, defaultLanguage), 58);
 
     return (
       <AlbumDetail

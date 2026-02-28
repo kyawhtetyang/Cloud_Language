@@ -1,7 +1,9 @@
-import React from 'react';
+import { Component, PropsWithChildren } from 'react';
 import { getActionButtonClass } from '../config/buttonUi';
 import { DefaultLanguage } from '../config/appConfig';
 import { getAppText } from '../config/appI18n';
+
+type AppErrorBoundaryProps = PropsWithChildren<object>;
 
 type AppErrorBoundaryState = {
   hasError: boolean;
@@ -15,7 +17,9 @@ function resolveBoundaryLanguage(): DefaultLanguage {
   return 'english';
 }
 
-export class AppErrorBoundary extends React.Component<React.PropsWithChildren, AppErrorBoundaryState> {
+export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
+  declare props: AppErrorBoundaryProps;
+
   state: AppErrorBoundaryState = {
     hasError: false,
   };

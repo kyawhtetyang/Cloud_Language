@@ -72,7 +72,7 @@ export const LibraryMiniPlayer: React.FC<LibraryMiniPlayerProps> = ({
   onOpenPlayer,
 }) => (
   <footer
-    className={`fixed left-0 right-0 z-30 px-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] bottom-[calc(60px+env(safe-area-inset-bottom))] transition-all duration-300 ease-out ${BUTTON_UI.bottomBarDesktopAnchor} ${
+    className={`fixed left-0 right-0 z-30 px-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] ${BUTTON_UI.bottomBarMobileAnchor} transition-all duration-300 ease-out ${BUTTON_UI.bottomBarDesktopAnchor} ${
       isVisible
         ? 'translate-y-0 opacity-100'
         : 'pointer-events-none translate-y-[160%] opacity-0 md:pointer-events-auto md:translate-y-0 md:opacity-100'

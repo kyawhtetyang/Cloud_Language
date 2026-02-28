@@ -489,6 +489,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
             {isPronunciationEnabled && (
               <p
                 className={`lesson-row-pronunciation text-[var(--text-secondary)] ${isBoldTextEnabled ? 'font-semibold' : 'font-normal'}`}
+                style={isActiveSpeaking ? ACTIVE_SPEAKING_TEXT_STYLE : undefined}
               >
                 {lesson.pronunciation}
               </p>
@@ -691,7 +692,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               return (
                 <React.Fragment key={`batch-${batchIdx}`}>
                   {entries.map(({ lesson, lessonIndex }, idx) => {
-                    const rowKey = `${lesson.english}-${batchIdx}-${idx}`;
+                    const rowKey = `lesson-${lessonIndex}-group-${batchIdx}-row-${idx}-l${lesson.level}-u${lesson.unit}`;
                     return renderLessonRow(
                       lesson,
                       lessonIndex,
@@ -721,7 +722,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         ) : (
           <div className={singleBatchListClass}>
             {currentBatchEntries.map(({ lesson, lessonIndex }, idx) => {
-              const rowKey = `${lesson.english}-${currentIndex + idx}`;
+              const rowKey = `lesson-${lessonIndex}-single-${currentIndex + idx}-l${lesson.level}-u${lesson.unit}`;
               return renderLessonRow(lesson, lessonIndex, rowKey);
             })}
           </div>

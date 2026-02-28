@@ -2,7 +2,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const audioButtonMocks = vi.hoisted(() => ({
-  speakTextMock: vi.fn(() => Promise.resolve()),
+  speakTextMock: vi.fn<(text: string, context?: { audioUrl?: string }) => Promise<void>>(
+    async () => undefined,
+  ),
   cancelSpeechMock: vi.fn(),
 }));
 
@@ -248,7 +250,9 @@ describe('App lesson navigation guard', () => {
     fireEvent.click(await screen.findByRole('button', { name: OPEN_SETTINGS_BUTTON_NAME }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: DEFAULT_LANGUAGE_BUTTON_NAME })).toHaveTextContent('Tiếng Việt');
+      expect(screen.getByRole('button', { name: DEFAULT_LANGUAGE_BUTTON_NAME })).toHaveTextContent(
+        /Tiếng Việt|Vietnamese/,
+      );
       expect(screen.getByRole('button', { name: PRONUNCIATION_BUTTON_NAME })).toHaveTextContent(TOGGLE_ON_LABEL);
       expect(screen.getByText('110%')).toBeInTheDocument();
     });

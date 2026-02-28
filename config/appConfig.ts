@@ -124,6 +124,9 @@ export const STAGE_META = {
 
 export type AppMode = 'learn' | 'completed';
 export type SidebarTab = 'profile' | 'feed' | 'library' | 'lesson' | 'settings';
+export const LIBRARY_VIEW_MODES = ['all', 'downloaded'] as const;
+export type LibraryViewMode = (typeof LIBRARY_VIEW_MODES)[number];
+export const DEFAULT_LIBRARY_VIEW_MODE: LibraryViewMode = 'all';
 export const LEARN_LANGUAGE_OPTIONS = [
   { code: 'english', label: 'English' },
   { code: 'chinese', label: 'Chinese' },
@@ -142,12 +145,6 @@ const LESSON_TRANSLATION_POLICY: Record<LearnLanguage, { englishUiUsesLessonTran
   english: { englishUiUsesLessonTranslation: false },
   chinese: { englishUiUsesLessonTranslation: false },
   hsk_chinese: { englishUiUsesLessonTranslation: true },
-  hsk1: { englishUiUsesLessonTranslation: true },
-  hsk2: { englishUiUsesLessonTranslation: true },
-  hsk3: { englishUiUsesLessonTranslation: true },
-  hsk4: { englishUiUsesLessonTranslation: true },
-  hsk5: { englishUiUsesLessonTranslation: true },
-  hsk6: { englishUiUsesLessonTranslation: true },
 };
 
 export const APP_THEME_OPTIONS = [

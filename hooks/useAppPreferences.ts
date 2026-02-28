@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import {
   AppTheme,
   DefaultLanguage,
@@ -9,27 +9,27 @@ import { readSyncedSettingsFromStorage } from '../config/settingsSync';
 
 type UseAppPreferencesResult = {
   isPronunciationEnabled: boolean;
-  setIsPronunciationEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
   learnLanguage: LearnLanguage;
-  setLearnLanguage: React.Dispatch<React.SetStateAction<LearnLanguage>>;
+  setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
   defaultLanguage: DefaultLanguage;
-  setDefaultLanguage: React.Dispatch<React.SetStateAction<DefaultLanguage>>;
+  setDefaultLanguage: Dispatch<SetStateAction<DefaultLanguage>>;
   isEnglishUiLocked: boolean;
-  setIsEnglishUiLocked: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsEnglishUiLocked: Dispatch<SetStateAction<boolean>>;
   textScalePercent: number;
-  setTextScalePercent: React.Dispatch<React.SetStateAction<number>>;
+  setTextScalePercent: Dispatch<SetStateAction<number>>;
   isBoldTextEnabled: boolean;
-  setIsBoldTextEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
   isAutoScrollEnabled: boolean;
-  setIsAutoScrollEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsAutoScrollEnabled: Dispatch<SetStateAction<boolean>>;
   isRandomLessonOrderEnabled: boolean;
-  setIsRandomLessonOrderEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsRandomLessonOrderEnabled: Dispatch<SetStateAction<boolean>>;
   isReviewQuestionsRemoved: boolean;
-  setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsReviewQuestionsRemoved: Dispatch<SetStateAction<boolean>>;
   appTheme: AppTheme;
-  setAppTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
+  setAppTheme: Dispatch<SetStateAction<AppTheme>>;
   voiceProvider: VoiceProvider;
-  setVoiceProvider: React.Dispatch<React.SetStateAction<VoiceProvider>>;
+  setVoiceProvider: Dispatch<SetStateAction<VoiceProvider>>;
   hasHydratedSettings: boolean;
 };
 

@@ -5,6 +5,7 @@ import {
   AppTheme,
   clampTextScale,
   DefaultLanguage,
+  LibraryViewMode,
   LearnLanguage,
   SidebarTab,
   VoiceProvider,
@@ -37,7 +38,6 @@ type UseAppViewPropsArgs = {
   setIsLogoutModalOpen: Dispatch<SetStateAction<boolean>>;
   handleLogoutConfirm: () => Promise<void>;
   profileName: string;
-  profileStorageId: string;
   profileInput: string;
   profileError: string | null;
   hasProfileWhitespace: boolean;
@@ -45,12 +45,14 @@ type UseAppViewPropsArgs = {
   currentCourseCode: string;
   setProfileInput: (value: string) => void;
   handleApplyProfileName: () => void;
+  handleOpenDownloadedLessons: () => void;
   setSidebarTab: Dispatch<SetStateAction<SidebarTab>>;
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
   learnLanguage: LearnLanguage;
   goToLibraryUnit: (level: number, unit: number, albumKey?: string | null) => void;
   handleReadLibraryAlbum: (units: Array<{ level: number; unit: number }>, albumKey?: string | null) => Promise<void>;
   librarySelectedAlbumKey: string | null;
+  libraryViewMode: LibraryViewMode;
   setLibrarySelectedAlbumKey: Dispatch<SetStateAction<string | null>>;
   downloadedUnitKeys: Set<string>;
   downloadUnitPack: (level: number, unit: number) => Promise<void>;
@@ -81,7 +83,6 @@ type UseAppViewPropsArgs = {
   englishReferenceByKey: Map<string, string>;
   activeSpeakingLessonIndex: number | null;
   handlePlaySingleLesson: (lesson: LessonData, lessonIndex: number) => void;
-  stopActivePlayback: () => Promise<void>;
   highlightPhrasesByLessonKey: Map<string, string[]>;
   saveHighlightSelection: (lesson: LessonData, selectedText: string) => boolean;
   clearHighlightSelection: (lesson: LessonData) => boolean;
@@ -121,7 +122,6 @@ export function useAppViewProps({
   setIsLogoutModalOpen,
   handleLogoutConfirm,
   profileName,
-  profileStorageId,
   profileInput,
   profileError,
   hasProfileWhitespace,
@@ -129,12 +129,14 @@ export function useAppViewProps({
   currentCourseCode,
   setProfileInput,
   handleApplyProfileName,
+  handleOpenDownloadedLessons,
   setSidebarTab,
   setIsSidebarOpen,
   learnLanguage,
   goToLibraryUnit,
   handleReadLibraryAlbum,
   librarySelectedAlbumKey,
+  libraryViewMode,
   setLibrarySelectedAlbumKey,
   downloadedUnitKeys,
   downloadUnitPack,
@@ -165,7 +167,6 @@ export function useAppViewProps({
   englishReferenceByKey,
   activeSpeakingLessonIndex,
   handlePlaySingleLesson,
-  stopActivePlayback,
   highlightPhrasesByLessonKey,
   saveHighlightSelection,
   clearHighlightSelection,
@@ -204,7 +205,6 @@ export function useAppViewProps({
     onCloseLogoutModal: () => setIsLogoutModalOpen(false),
     onConfirmLogoutModal: () => { void handleLogoutConfirm(); },
     profileName,
-    profileStorageId,
     profileInput,
     profileError,
     hasProfileWhitespace,
@@ -216,6 +216,7 @@ export function useAppViewProps({
       setSidebarTab('lesson');
       setIsSidebarOpen(false);
     },
+    onOpenDownloadedLessons: handleOpenDownloadedLessons,
     onOpenSettings: () => {
       setSidebarTab('settings');
       setIsSidebarOpen(false);
@@ -227,6 +228,7 @@ export function useAppViewProps({
       void handleReadLibraryAlbum(units, albumKey);
     },
     selectedAlbumKey: librarySelectedAlbumKey,
+    libraryViewMode,
     onSelectedAlbumKeyChange: setLibrarySelectedAlbumKey,
     downloadedUnitKeys,
     onDownloadUnit: (level: number, unit: number) => { void downloadUnitPack(level, unit); },
@@ -262,7 +264,6 @@ export function useAppViewProps({
     englishReferenceByKey,
     activeSpeakingLessonIndex,
     onPlayLesson: handlePlaySingleLesson,
-    onStopAudio: stopActivePlayback,
     savedHighlightPhrasesByLessonKey: highlightPhrasesByLessonKey,
     onSaveLessonHighlight: saveHighlightSelection,
     onClearLessonHighlight: clearHighlightSelection,

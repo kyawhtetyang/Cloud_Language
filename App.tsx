@@ -20,11 +20,13 @@ import { AppMainContent } from './components/app/AppMainContent';
 import { AppBottomBars } from './components/app/AppBottomBars';
 import {
   AppMode,
+  DEFAULT_LIBRARY_VIEW_MODE,
   DEFAULT_PROGRESS_INDEX,
-  SidebarTab,
   DefaultLanguage,
   DEFAULT_STREAK,
   DEFAULT_UNLOCKED_LEVEL,
+  LibraryViewMode,
+  SidebarTab,
   getLessonUnitId,
   getPlayableLessonText,
   PROFILE_NAME_KEY,
@@ -97,6 +99,7 @@ const App: React.FC = () => {
   const [pendingAutoPlayUnitKey, setPendingAutoPlayUnitKey] = useState<string | null>(null);
 
   const [librarySelectedAlbumKey, setLibrarySelectedAlbumKey] = useState<string | null>(null);
+  const [libraryViewMode, setLibraryViewMode] = useState<LibraryViewMode>(DEFAULT_LIBRARY_VIEW_MODE);
   const [randomOrderVersion, setRandomOrderVersion] = useState(0);
   const {
     apiBaseUrl,
@@ -379,6 +382,7 @@ const App: React.FC = () => {
       const isDoubleTap = (now - lastLibraryTabTapAtRef.current) <= 450;
       lastLibraryTabTapAtRef.current = now;
       if (isDoubleTap) {
+        setLibraryViewMode(DEFAULT_LIBRARY_VIEW_MODE);
         setLibrarySelectedAlbumKey(null);
         if (typeof window !== 'undefined') {
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -387,6 +391,9 @@ const App: React.FC = () => {
       return;
     }
     lastLibraryTabTapAtRef.current = 0;
+    if (tab === 'library') {
+      setLibraryViewMode(DEFAULT_LIBRARY_VIEW_MODE);
+    }
     const isLessonRevisionSwitch = (
       (sidebarTab === 'lesson' && tab === 'feed')
       || (sidebarTab === 'feed' && tab === 'lesson')
@@ -399,6 +406,13 @@ const App: React.FC = () => {
       }
     }
     selectTab(tab);
+  };
+
+  const handleOpenDownloadedLessons = () => {
+    setLibraryViewMode('downloaded');
+    setLibrarySelectedAlbumKey(null);
+    setSidebarTab('library');
+    setIsSidebarOpen(false);
   };
 
   const handleReadForActiveTab = async () => {
@@ -450,7 +464,6 @@ const App: React.FC = () => {
     libraryViewProps,
     settingsViewProps,
     lessonViewProps,
-    feedViewProps,
     lessonActionFooterProps,
     libraryMiniPlayerProps,
     mobileBottomNavProps,
@@ -476,7 +489,6 @@ const App: React.FC = () => {
     setIsLogoutModalOpen,
     handleLogoutConfirm,
     profileName,
-    profileStorageId,
     profileInput,
     profileError,
     hasProfileWhitespace,
@@ -484,12 +496,14 @@ const App: React.FC = () => {
     currentCourseCode,
     setProfileInput,
     handleApplyProfileName,
+    handleOpenDownloadedLessons,
     setSidebarTab,
     setIsSidebarOpen,
     learnLanguage,
     goToLibraryUnit,
     handleReadLibraryAlbum,
     librarySelectedAlbumKey,
+    libraryViewMode,
     setLibrarySelectedAlbumKey,
     downloadedUnitKeys,
     downloadUnitPack,
@@ -520,7 +534,6 @@ const App: React.FC = () => {
     englishReferenceByKey,
     activeSpeakingLessonIndex,
     handlePlaySingleLesson,
-    stopActivePlayback,
     highlightPhrasesByLessonKey,
     saveHighlightSelection,
     clearHighlightSelection,
@@ -571,7 +584,6 @@ const App: React.FC = () => {
           libraryViewProps={libraryViewProps}
           settingsViewProps={settingsViewProps}
           lessonViewProps={lessonViewProps}
-          feedViewProps={feedViewProps}
           appStateText={appStateText}
           onCompletedRestart={handleRestartCourse}
         />

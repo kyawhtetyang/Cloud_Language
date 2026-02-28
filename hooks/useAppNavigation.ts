@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { PROFILE_NAME_KEY, RELOAD_TO_LESSON_KEY, SidebarTab } from '../config/appConfig';
 
 type UseAppNavigationResult = {
   isSidebarOpen: boolean;
   sidebarTab: SidebarTab;
-  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setSidebarTab: React.Dispatch<React.SetStateAction<SidebarTab>>;
+  setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
+  setSidebarTab: Dispatch<SetStateAction<SidebarTab>>;
   closeSidebar: () => void;
   selectTab: (tab: SidebarTab) => void;
   reloadApp: () => void;
@@ -58,6 +58,5 @@ export function useAppNavigation(): UseAppNavigationResult {
     reloadApp,
   };
 }
-
 
 

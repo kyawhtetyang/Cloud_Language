@@ -2,7 +2,6 @@ import { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import {
   AppMode,
   DEFAULT_PROGRESS_INDEX,
-  getLessonOrderIndex,
   getLessonUnitId,
   getPlayableLessonText,
   PROFILE_NAME_KEY,

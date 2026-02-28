@@ -7,6 +7,7 @@ import {
 } from './viewShared';
 import { BUTTON_UI, getActionButtonClass } from '../../config/buttonUi';
 import { AppTextPack } from '../../config/appI18n';
+import { ProfileStatsRow } from './profile/ProfileStatsRow';
 
 type ProfileViewProps = {
   profileName: string;
@@ -18,9 +19,11 @@ type ProfileViewProps = {
   hasProfileWhitespace: boolean;
   isProfileInputValid: boolean;
   currentCourseCode: string;
+  downloadedLessonsCount?: number;
   onProfileInputChange: (value: string) => void;
   onApplyProfileName: () => void;
   onOpenCurrentCourse: () => void;
+  onOpenDownloadedLessons?: () => void;
   onOpenSettings: () => void;
   onRequestLogout: () => void;
 };
@@ -35,9 +38,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   hasProfileWhitespace,
   isProfileInputValid,
   currentCourseCode,
+  downloadedLessonsCount = 0,
   onProfileInputChange,
   onApplyProfileName,
   onOpenCurrentCourse,
+  onOpenDownloadedLessons,
   onOpenSettings,
   onRequestLogout,
 }) => {
@@ -50,8 +55,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const listDividerClass = 'border-t border-[var(--border-subtle)]';
   const listRowClass =
     'w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-hover)]';
-  const sectionTitleClass = 'text-base font-medium text-[var(--text-primary)]';
-  const rowValueClass = 'flex items-center gap-2 text-sm font-normal text-[var(--text-secondary)]';
 
   return (
     <div className={`${VIEW_PAGE_CLASS} space-y-4 px-1 md:px-0`}>
@@ -114,13 +117,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       <section className={`border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
         <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{profileText.progressStatsSectionLabel}</h3>
         <div className={listCardClass}>
-          <button type="button" onClick={onOpenCurrentCourse} className={listRowClass}>
-            <span className={sectionTitleClass}>{profileText.currentCourseLabel}</span>
-            <span className={rowValueClass}>
-              {currentCourseCode}
-              <span aria-hidden="true">&gt;</span>
-            </span>
-          </button>
+          <ProfileStatsRow
+            label={profileText.currentCourseLabel}
+            value={currentCourseCode}
+            onClick={onOpenCurrentCourse}
+          />
+          <div className={listDividerClass} />
+          <ProfileStatsRow
+            label={profileText.downloadedLessonsLabel}
+            value={Math.max(0, downloadedLessonsCount).toLocaleString()}
+            onClick={onOpenDownloadedLessons}
+          />
         </div>
       </section>
 

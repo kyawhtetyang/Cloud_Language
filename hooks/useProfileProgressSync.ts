@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import { LessonData, ProgressState } from '../types';
 import {
   AppTheme,
@@ -46,20 +46,20 @@ type UseProfileProgressSyncParams = {
   progressStorageKey: string;
   unlockedStorageKey: string;
   streakStorageKey: string;
-  setCurrentIndex: React.Dispatch<React.SetStateAction<number>>;
-  setUnlockedLevel: React.Dispatch<React.SetStateAction<number>>;
-  setStreak: React.Dispatch<React.SetStateAction<number>>;
-  setLearnLanguage: React.Dispatch<React.SetStateAction<LearnLanguage>>;
-  setDefaultLanguage: React.Dispatch<React.SetStateAction<DefaultLanguage>>;
-  setIsEnglishUiLocked: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsPronunciationEnabled: React.Dispatch<React.SetStateAction<boolean>>;
-  setTextScalePercent: React.Dispatch<React.SetStateAction<number>>;
-  setIsBoldTextEnabled: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsAutoScrollEnabled: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsRandomLessonOrderEnabled: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsReviewQuestionsRemoved: React.Dispatch<React.SetStateAction<boolean>>;
-  setAppTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
-  setVoiceProvider: React.Dispatch<React.SetStateAction<VoiceProvider>>;
+  setCurrentIndex: Dispatch<SetStateAction<number>>;
+  setUnlockedLevel: Dispatch<SetStateAction<number>>;
+  setStreak: Dispatch<SetStateAction<number>>;
+  setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
+  setDefaultLanguage: Dispatch<SetStateAction<DefaultLanguage>>;
+  setIsEnglishUiLocked: Dispatch<SetStateAction<boolean>>;
+  setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
+  setTextScalePercent: Dispatch<SetStateAction<number>>;
+  setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
+  setIsAutoScrollEnabled: Dispatch<SetStateAction<boolean>>;
+  setIsRandomLessonOrderEnabled: Dispatch<SetStateAction<boolean>>;
+  setIsReviewQuestionsRemoved: Dispatch<SetStateAction<boolean>>;
+  setAppTheme: Dispatch<SetStateAction<AppTheme>>;
+  setVoiceProvider: Dispatch<SetStateAction<VoiceProvider>>;
 };
 
 export function useProfileProgressSync({

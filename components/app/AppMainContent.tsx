@@ -1,6 +1,5 @@
 import React from 'react';
 import { AppMode } from '../../config/appConfig';
-import { FeedView } from '../views/FeedView';
 import { LibraryView } from '../views/LibraryView';
 import { LessonView } from '../views/LessonView';
 import { ProfileView } from '../views/ProfileView';
@@ -18,7 +17,6 @@ type AppMainContentProps = {
   libraryViewProps: React.ComponentProps<typeof LibraryView>;
   settingsViewProps: React.ComponentProps<typeof SettingsView>;
   lessonViewProps: React.ComponentProps<typeof LessonView>;
-  feedViewProps: React.ComponentProps<typeof FeedView>;
   appStateText: AppTextPack['appState'];
   onCompletedRestart: () => void;
 };
@@ -33,7 +31,6 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
   libraryViewProps,
   settingsViewProps,
   lessonViewProps,
-  feedViewProps,
   appStateText,
   onCompletedRestart,
 }) => (

@@ -5,6 +5,7 @@ import {
   DefaultLanguage,
   getLessonOrderIndex,
   getLessonUnitId,
+  LibraryViewMode,
   LearnLanguage,
   SidebarTab,
   VoiceProvider,
@@ -39,7 +40,6 @@ type BuildAppViewPropsArgs = {
   onCloseLogoutModal: () => void;
   onConfirmLogoutModal: () => void;
   profileName: string;
-  profileStorageId: string;
   profileInput: string;
   profileError: string | null;
   hasProfileWhitespace: boolean;
@@ -48,12 +48,14 @@ type BuildAppViewPropsArgs = {
   onProfileInputChange: (value: string) => void;
   onApplyProfileName: () => void;
   onOpenCurrentCourse: () => void;
+  onOpenDownloadedLessons: () => void;
   onOpenSettings: () => void;
   onRequestLogout: () => void;
   learnLanguage: LearnLanguage;
   onSelectUnit: (level: number, unit: number, albumKey?: string | null) => void;
   onReadAlbum: (units: Array<{ level: number; unit: number }>, albumKey?: string | null) => void;
   selectedAlbumKey: string | null;
+  libraryViewMode: LibraryViewMode;
   onSelectedAlbumKeyChange: (key: string | null) => void;
   downloadedUnitKeys: Set<string>;
   onDownloadUnit: (level: number, unit: number) => void;
@@ -86,7 +88,6 @@ type BuildAppViewPropsArgs = {
   englishReferenceByKey: Map<string, string>;
   activeSpeakingLessonIndex: number | null;
   onPlayLesson: (lesson: LessonData, lessonIndex: number) => void;
-  onStopAudio: () => Promise<void>;
   savedHighlightPhrasesByLessonKey: Map<string, string[]>;
   onSaveLessonHighlight: (lesson: LessonData, selectedText: string) => boolean;
   onClearLessonHighlight: (lesson: LessonData) => boolean;
@@ -126,7 +127,6 @@ export function buildAppViewProps({
   onCloseLogoutModal,
   onConfirmLogoutModal,
   profileName,
-  profileStorageId,
   profileInput,
   profileError,
   hasProfileWhitespace,
@@ -135,12 +135,14 @@ export function buildAppViewProps({
   onProfileInputChange,
   onApplyProfileName,
   onOpenCurrentCourse,
+  onOpenDownloadedLessons,
   onOpenSettings,
   onRequestLogout,
   learnLanguage,
   onSelectUnit,
   onReadAlbum,
   selectedAlbumKey,
+  libraryViewMode,
   onSelectedAlbumKeyChange,
   downloadedUnitKeys,
   onDownloadUnit,
@@ -173,7 +175,6 @@ export function buildAppViewProps({
   englishReferenceByKey,
   activeSpeakingLessonIndex,
   onPlayLesson,
-  onStopAudio,
   savedHighlightPhrasesByLessonKey,
   onSaveLessonHighlight,
   onClearLessonHighlight,
@@ -222,6 +223,10 @@ export function buildAppViewProps({
   const miniPlayerTrackMeta = activeOrCurrentLesson
     ? `${activeOrCurrentUnitCode} · ${localizeLibraryTopic(activeOrCurrentLesson.topic, defaultLanguage)}`
     : '';
+  const downloadedLessonsCount = lessons.reduce((count, lesson) => {
+    const unitKey = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
+    return downloadedUnitKeys.has(unitKey) ? count + 1 : count;
+  }, 0);
   const isReadDisabled = mode !== 'learn' || orderedUnitIndexes.length === 0;
   const isPreviousDisabled = mode !== 'learn' || isNextDisabled;
   const computedIsNextDisabled = isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end);
@@ -265,9 +270,11 @@ export function buildAppViewProps({
       hasProfileWhitespace,
       isProfileInputValid,
       currentCourseCode: currentCourseCode || appText.profile.courseNotAvailableLabel,
+      downloadedLessonsCount,
       onProfileInputChange,
       onApplyProfileName,
       onOpenCurrentCourse,
+      onOpenDownloadedLessons,
       onOpenSettings,
       onRequestLogout,
     },
@@ -278,6 +285,7 @@ export function buildAppViewProps({
       onSelectUnit,
       onReadAlbum,
       selectedAlbumKey,
+      viewMode: libraryViewMode,
       onSelectedAlbumKeyChange,
       completedUnitKeys: completedLibraryKeys,
       activeUnitKey,
@@ -332,22 +340,6 @@ export function buildAppViewProps({
       activeSpeakingLessonIndex,
       onPlayLesson,
       savedHighlightPhrasesByLessonKey,
-      onSaveLessonHighlight,
-      onClearLessonHighlight,
-    },
-    feedViewProps: {
-      lessons,
-      defaultLanguage,
-      learnLanguage,
-      profileStorageId,
-      isPronunciationEnabled,
-      isBoldTextEnabled,
-      textScalePercent,
-      englishReferenceByKey,
-      highlightPhrasesByLessonKey: savedHighlightPhrasesByLessonKey,
-      activeSpeakingLessonIndex,
-      onPlayLesson,
-      onStopAudio,
       onSaveLessonHighlight,
       onClearLessonHighlight,
     },

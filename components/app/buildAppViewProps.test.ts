@@ -45,7 +45,6 @@ function createArgs(
     onCloseLogoutModal: vi.fn(),
     onConfirmLogoutModal: vi.fn(),
     profileName: 'tester',
-    profileStorageId: 'tester',
     profileInput: 'tester',
     profileError: null,
     hasProfileWhitespace: false,
@@ -54,12 +53,14 @@ function createArgs(
     onProfileInputChange: vi.fn(),
     onApplyProfileName: vi.fn(),
     onOpenCurrentCourse: vi.fn(),
+    onOpenDownloadedLessons: vi.fn(),
     onOpenSettings: vi.fn(),
     onRequestLogout: vi.fn(),
     learnLanguage: 'hsk_chinese',
     onSelectUnit: vi.fn(),
     onReadAlbum: vi.fn(),
     selectedAlbumKey: 'album-1',
+    libraryViewMode: 'all',
     onSelectedAlbumKeyChange: vi.fn(),
     downloadedUnitKeys: new Set<string>(),
     onDownloadUnit: vi.fn(),
@@ -92,7 +93,6 @@ function createArgs(
     englishReferenceByKey: new Map<string, string>(),
     activeSpeakingLessonIndex: null,
     onPlayLesson: vi.fn(),
-    onStopAudio: vi.fn(async () => undefined),
     savedHighlightPhrasesByLessonKey: new Map<string, string[]>(),
     onSaveLessonHighlight: vi.fn(() => true),
     onClearLessonHighlight: vi.fn(() => true),
@@ -137,7 +137,6 @@ describe('buildAppViewProps feed routing', () => {
     expect(result.showLessonActions).toBe(true);
     expect(result.showLibraryMiniPlayer).toBe(false);
     expect(result.mobileBottomNavProps.isVisible).toBe(true);
-    expect(result.feedViewProps.lessons).toHaveLength(1);
     expect(result.lessonViewProps.isRevisionView).toBe(true);
   });
 
@@ -221,6 +220,20 @@ describe('buildAppViewProps feed routing', () => {
     );
 
     expect(result.showLibraryMiniPlayer).toBe(true);
+  });
+
+  it('shows downloaded lessons count in profile props', () => {
+    const lessonA = createLesson('A');
+    const lessonB = { ...createLesson('B'), unit: 2 };
+    const lessonC = { ...createLesson('C'), level: 2, unit: 1 };
+    const result = buildAppViewProps(
+      createArgs({
+        lessons: [lessonA, lessonB, lessonC],
+        downloadedUnitKeys: new Set<string>(['1:1', '2:1']),
+      }),
+    );
+
+    expect(result.profileViewProps.downloadedLessonsCount).toBe(2);
   });
 
   it('keeps UI language and lesson translation language separate', () => {

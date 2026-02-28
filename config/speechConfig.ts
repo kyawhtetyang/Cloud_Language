@@ -23,30 +23,6 @@ export const SPEECH_LANGUAGE_PROFILES: Record<LearnLanguage, SpeechLanguageProfi
     locale: 'zh-CN',
     prefix: 'zh-',
   },
-  hsk1: {
-    locale: 'zh-CN',
-    prefix: 'zh-',
-  },
-  hsk2: {
-    locale: 'zh-CN',
-    prefix: 'zh-',
-  },
-  hsk3: {
-    locale: 'zh-CN',
-    prefix: 'zh-',
-  },
-  hsk4: {
-    locale: 'zh-CN',
-    prefix: 'zh-',
-  },
-  hsk5: {
-    locale: 'zh-CN',
-    prefix: 'zh-',
-  },
-  hsk6: {
-    locale: 'zh-CN',
-    prefix: 'zh-',
-  },
 };
 
 export function getSpeechLanguageProfile(learnLanguage?: string): SpeechLanguageProfile {

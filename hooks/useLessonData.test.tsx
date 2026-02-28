@@ -2,6 +2,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLessonData } from './useLessonData';
 import { LessonData } from '../types';
+import { LearnLanguage } from '../config/appConfig';
 
 const offlineMocks = vi.hoisted(() => ({
   readDownloadedLessonsByLanguage: vi.fn(async () => [] as LessonData[]),
@@ -70,8 +71,8 @@ describe('useLessonData', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const { result, rerender } = renderHook(
-      ({ language }) => useLessonData('/api', language, 'Failed to load'),
-      { initialProps: { language: 'english' as const } },
+      ({ language }: { language: LearnLanguage }) => useLessonData('/api', language, 'Failed to load'),
+      { initialProps: { language: 'english' as LearnLanguage } },
     );
 
     rerender({ language: 'chinese' });
