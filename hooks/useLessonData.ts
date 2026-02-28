@@ -5,14 +5,33 @@ import { readDownloadedLessonsByLanguage } from '../offline/offlineStore';
 
 const LESSON_FETCH_TIMEOUT_MS = 25000;
 
-async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+async function fetchWithTimeout(
+  url: string,
+  timeoutMs: number,
+  upstreamSignal?: AbortSignal,
+): Promise<Response> {
   const controller = new AbortController();
+  const onUpstreamAbort = () => controller.abort();
+  if (upstreamSignal?.aborted) {
+    controller.abort();
+  } else {
+    upstreamSignal?.addEventListener('abort', onUpstreamAbort, { once: true });
+  }
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, { signal: controller.signal });
   } finally {
     window.clearTimeout(timeoutId);
+    upstreamSignal?.removeEventListener('abort', onUpstreamAbort);
   }
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    error instanceof DOMException
+      ? error.name === 'AbortError'
+      : Boolean(error && typeof error === 'object' && 'name' in error && (error as { name?: string }).name === 'AbortError')
+  );
 }
 
 type UseLessonDataResult = {
@@ -33,13 +52,18 @@ export function useLessonData(
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    let isActive = true;
+    const requestController = new AbortController();
+
     const fetchData = async () => {
       try {
+        if (!isActive) return;
         setLoading(true);
         setErrorMessage(null);
         const response = await fetchWithTimeout(
           `${apiBaseUrl}/api/lessons?language=${encodeURIComponent(learnLanguage)}`,
           LESSON_FETCH_TIMEOUT_MS,
+          requestController.signal,
         );
         if (!response.ok) throw new Error(`API responded with ${response.status}`);
 
@@ -52,6 +76,7 @@ export function useLessonData(
             const englishResponse = await fetchWithTimeout(
               `${apiBaseUrl}/api/lessons?language=english`,
               LESSON_FETCH_TIMEOUT_MS,
+              requestController.signal,
             );
             if (!englishResponse.ok) throw new Error(`API responded with ${englishResponse.status}`);
             const englishLessons = (await englishResponse.json()) as LessonData[];
@@ -63,15 +88,18 @@ export function useLessonData(
           }
         }
 
+        if (!isActive) return;
         setLessons(data);
         setEnglishReferenceLessons(englishData);
       } catch (error) {
+        if (isAbortError(error)) return;
         console.error('Error loading lessons from API, trying offline packs:', error);
         const [offlineLearnLessons, offlineEnglishLessons] = await Promise.all([
           readDownloadedLessonsByLanguage(learnLanguage),
           readDownloadedLessonsByLanguage('english'),
         ]);
 
+        if (!isActive) return;
         if (offlineLearnLessons.length > 0) {
           setLessons(offlineLearnLessons);
           setEnglishReferenceLessons(
@@ -83,11 +111,16 @@ export function useLessonData(
 
         setErrorMessage(lessonsLoadFailedMessage);
       } finally {
+        if (!isActive) return;
         setLoading(false);
       }
     };
 
     void fetchData();
+    return () => {
+      isActive = false;
+      requestController.abort();
+    };
   }, [apiBaseUrl, learnLanguage, lessonsLoadFailedMessage]);
 
   return { lessons, englishReferenceLessons, loading, errorMessage };
