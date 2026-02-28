@@ -41,7 +41,7 @@ export const BUTTON_UI = {
     'border-[var(--border-strong)] bg-[var(--surface-active)] text-[var(--text-secondary)]',
   iconCircleButtonLoading:
     'border-[var(--border-strong)] bg-[var(--surface-active)] text-[var(--text-muted)] cursor-wait',
-  mobileNavButtonBase: 'h-14 flex flex-col items-center justify-center gap-1 rounded-xl transition-all',
+  mobileNavButtonBase: 'h-16 flex flex-col items-center justify-center gap-1 rounded-xl transition-all',
   mobileNavButtonActive: 'bg-transparent text-brand',
   mobileNavButtonInactive: 'bg-transparent text-[var(--text-secondary)]',
   mobileNavIconWrapBase: 'flex items-center justify-center transition-all',
@@ -59,7 +59,7 @@ export const BUTTON_UI = {
   bottomBarCardInteractive:
     'transition-transform duration-300 md:hover:translate-y-[-1px]',
   bottomBarMobileAnchor:
-    'bottom-[calc(68px+env(safe-area-inset-bottom))]',
+    'bottom-[calc(78px+env(safe-area-inset-bottom))]',
   bottomBarDesktopAnchor:
     'md:bottom-4 md:left-72 md:right-0 md:w-auto md:max-w-none md:translate-x-0 md:px-6 md:pb-0',
   bottomBarContentFrame: 'mx-auto w-full max-w-3xl',
