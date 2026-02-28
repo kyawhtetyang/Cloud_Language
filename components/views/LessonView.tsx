@@ -480,7 +480,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
           onClick={() => {
             void handleRowClick(lesson, lessonIndex, rowKey, onBeforePlay);
           }}
-          className="selection-hover w-full rounded-lg px-3 py-3 text-left transition-colors"
+          className="selection-hover w-full rounded-lg px-0 py-3 text-left transition-colors"
           style={LESSON_ROW_NO_SELECT_STYLE}
           aria-label={`${appText.lesson.playAudioAriaPrefix} ${lesson.english}`}
           title={appText.lesson.highlightHintTitle}
@@ -511,7 +511,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
           </div>
         </button>
         {isInteractiveSelecting && (
-          <div className="mx-3 mb-2 mt-1 flex items-center justify-end gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-2 py-1.5">
+          <div className="mx-0 mb-2 mt-1 flex items-center justify-end gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-2 py-1.5">
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
@@ -712,7 +712,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   {batchIdx < allBatchGroups.length - 1 && (
                     <div
                       aria-hidden="true"
-                      className="mx-1 my-1 border-t border-[var(--border-subtle)]"
+                      className="mx-0 my-1 border-t border-[var(--border-subtle)]"
                     />
                   )}
                 </React.Fragment>

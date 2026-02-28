@@ -19,6 +19,27 @@ type LessonEntry = {
   lessonIndex: number;
 };
 
+type ProfileAlbumCard = {
+  key: string;
+  title: string;
+  meta: string;
+  coverUrl: string | null;
+  totalUnitCount: number;
+  downloadedUnitCount: number;
+  onOpen: () => void;
+};
+
+type ProfileAlbumAccumulator = {
+  key: string;
+  label: string;
+  levelScheme?: string;
+  levelCode?: string;
+  levelOrder?: number;
+  units: Set<string>;
+  unitEntries: Array<{ level: number; unit: number }>;
+  downloadedUnitsCount: number;
+};
+
 type BuildAppViewPropsArgs = {
   defaultLanguage: DefaultLanguage;
   selectedDefaultLanguage: DefaultLanguage;
@@ -105,6 +126,120 @@ type BuildAppViewPropsArgs = {
   onNext: () => void;
   onMobileTabChange: (tab: SidebarTab) => void;
 };
+
+function buildCollectionKey(levelScheme: string | undefined, levelCode: string | undefined, collectionLabel: string): string {
+  const normalizedSource = (levelCode || collectionLabel).toLowerCase().replace(/\s+/g, '-');
+  return `${levelScheme || 'custom'}-${normalizedSource}`;
+}
+
+function getProfileAlbumCoverUrl(collectionLabel: string): string | null {
+  const hskMatch = collectionLabel.match(/hsk[\s_]*([1-6])/i);
+  if (hskMatch) return `/api/lesson-cover/hsk${hskMatch[1]}`;
+  return null;
+}
+
+function formatUnitCode(level: number, unit: number): string {
+  return `${Math.max(1, level)}.${Math.max(1, unit)}`;
+}
+
+function formatAlbumRange(unitEntries: Array<{ level: number; unit: number }>): string {
+  if (unitEntries.length === 0) return '';
+  const sorted = [...unitEntries].sort((a, b) => (a.level - b.level) || (a.unit - b.unit));
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  if (first.level === last.level && first.unit === last.unit) {
+    return formatUnitCode(first.level, first.unit);
+  }
+  return `${formatUnitCode(first.level, first.unit)}-${formatUnitCode(last.level, last.unit)}`;
+}
+
+function buildProfileAlbumCards({
+  lessons,
+  downloadedUnitKeys,
+  collectionFallbackPrefix,
+  unitSingularLabel,
+  unitPluralLabel,
+  onOpenAlbumLesson,
+}: {
+  lessons: LessonData[];
+  downloadedUnitKeys: Set<string>;
+  collectionFallbackPrefix: string;
+  unitSingularLabel: string;
+  unitPluralLabel: string;
+  onOpenAlbumLesson: (albumKey: string, level: number, unit: number) => void;
+}): ProfileAlbumCard[] {
+  const byCollection = new Map<string, ProfileAlbumAccumulator>();
+
+  for (const lesson of lessons) {
+    const level = getLessonOrderIndex(lesson);
+    const unit = getLessonUnitId(lesson);
+    const collectionLabel = (lesson.collectionLabel || '').trim() || `${collectionFallbackPrefix} ${level}`;
+    const levelScheme = String(lesson.levelScheme || '').trim().toLowerCase() || undefined;
+    const levelCode = String(lesson.levelCode || '').trim().toUpperCase() || undefined;
+    const levelOrder = typeof lesson.levelOrder === 'number' ? lesson.levelOrder : undefined;
+    const collectionKey = buildCollectionKey(levelScheme, levelCode, collectionLabel);
+    const unitKey = `${level}:${unit}`;
+
+    if (!byCollection.has(collectionKey)) {
+      byCollection.set(collectionKey, {
+        key: collectionKey,
+        label: collectionLabel,
+        levelScheme,
+        levelCode,
+        levelOrder,
+        units: new Set<string>(),
+        unitEntries: [],
+        downloadedUnitsCount: 0,
+      });
+    }
+
+    const collection = byCollection.get(collectionKey)!;
+    if (!collection.units.has(unitKey)) {
+      collection.units.add(unitKey);
+      collection.unitEntries.push({ level, unit });
+      if (downloadedUnitKeys.has(unitKey)) {
+        collection.downloadedUnitsCount += 1;
+      }
+    }
+  }
+
+  const schemePriority = (scheme: string | undefined): number => {
+    if (scheme === 'cefr') return 10;
+    if (scheme === 'hsk') return 20;
+    if (scheme === 'jlpt') return 30;
+    return 40;
+  };
+
+  return Array.from(byCollection.values())
+    .sort((a, b) => {
+      const priorityDiff = schemePriority(a.levelScheme) - schemePriority(b.levelScheme);
+      if (priorityDiff !== 0) return priorityDiff;
+
+      const orderA = typeof a.levelOrder === 'number' ? a.levelOrder : Number.POSITIVE_INFINITY;
+      const orderB = typeof b.levelOrder === 'number' ? b.levelOrder : Number.POSITIVE_INFINITY;
+      if (orderA !== orderB) return orderA - orderB;
+
+      return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
+    })
+    .map((collection) => {
+      const totalUnits = collection.units.size;
+      const unitWord = totalUnits === 1 ? unitSingularLabel : unitPluralLabel;
+      const rangeLabel = formatAlbumRange(collection.unitEntries);
+      const progressLabel = `${collection.downloadedUnitsCount}/${totalUnits} ${unitWord}`;
+      const meta = rangeLabel ? `${rangeLabel} · ${progressLabel}` : progressLabel;
+      const sortedEntries = [...collection.unitEntries].sort((a, b) => (a.level - b.level) || (a.unit - b.unit));
+      const firstEntry = sortedEntries[0] || { level: 1, unit: 1 };
+      return {
+        key: collection.key,
+        title: collection.label,
+        meta,
+        coverUrl: getProfileAlbumCoverUrl(collection.label),
+        totalUnitCount: totalUnits,
+        downloadedUnitCount: collection.downloadedUnitsCount,
+        onOpen: () => onOpenAlbumLesson(collection.key, firstEntry.level, firstEntry.unit),
+      };
+    });
+}
 
 export function buildAppViewProps({
   defaultLanguage,
@@ -227,6 +362,16 @@ export function buildAppViewProps({
     const unitKey = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
     return downloadedUnitKeys.has(unitKey) ? count + 1 : count;
   }, 0);
+  const profileAlbumCards = buildProfileAlbumCards({
+    lessons,
+    downloadedUnitKeys,
+    collectionFallbackPrefix: appText.library.collectionFallbackPrefix,
+    unitSingularLabel: appText.library.unitSingularLabel,
+    unitPluralLabel: appText.library.unitPluralLabel,
+    onOpenAlbumLesson: (albumKey, level, unit) => {
+      onSelectUnit(level, unit, albumKey);
+    },
+  });
   const isReadDisabled = mode !== 'learn' || orderedUnitIndexes.length === 0;
   const isPreviousDisabled = mode !== 'learn' || isNextDisabled;
   const computedIsNextDisabled = isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end);
@@ -265,18 +410,12 @@ export function buildAppViewProps({
       progressPercent: overallProgressPercent,
       progressLabel: `${completedLessonsCount}/${totalLessonsCount}`,
       profileText: appText.profile,
-      profileInput,
-      profileError,
-      hasProfileWhitespace,
-      isProfileInputValid,
       currentCourseCode: currentCourseCode || appText.profile.courseNotAvailableLabel,
       downloadedLessonsCount,
-      onProfileInputChange,
-      onApplyProfileName,
+      albumCards: profileAlbumCards,
       onOpenCurrentCourse,
       onOpenDownloadedLessons,
       onOpenSettings,
-      onRequestLogout,
     },
     libraryViewProps: {
       lessons,
@@ -296,6 +435,7 @@ export function buildAppViewProps({
     },
     settingsViewProps: {
       settingsText: appText.settings,
+      profileText: appText.profile,
       defaultLanguage: selectedDefaultLanguage,
       learnLanguage,
       isEnglishUiLocked,
@@ -307,6 +447,10 @@ export function buildAppViewProps({
       canIncreaseTextSize: textScalePercent < 120,
       appTheme,
       voiceProvider,
+      profileInput,
+      profileError,
+      hasProfileWhitespace,
+      isProfileInputValid,
       onDefaultLanguageChange,
       onToggleEnglishUiLock,
       onLearnLanguageChange,
@@ -317,6 +461,9 @@ export function buildAppViewProps({
       onIncreaseTextSize,
       onAppThemeChange,
       onVoiceProviderChange,
+      onProfileInputChange,
+      onApplyProfileName,
+      onRequestLogout,
       onBackToProfile,
     },
     lessonViewProps: {

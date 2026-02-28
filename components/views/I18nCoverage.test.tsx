@@ -37,22 +37,15 @@ describe('i18n coverage', () => {
         progressPercent={10}
         progressLabel="1/10"
         profileText={text.profile}
-        profileInput="tester"
-        profileError={null}
-        hasProfileWhitespace={false}
-        isProfileInputValid
         currentCourseCode="HSK 1 Unit 1"
-        onProfileInputChange={vi.fn()}
-        onApplyProfileName={vi.fn()}
         onOpenCurrentCourse={vi.fn()}
         onOpenSettings={vi.fn()}
-        onRequestLogout={vi.fn()}
       />,
     );
 
-    expect(screen.getByText('Tài khoản')).toBeInTheDocument();
-    expect(screen.getByText('Thống kê tiến độ')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Lưu' })).toBeInTheDocument();
+    expect(screen.getByText('Chào mừng quay lại')).toBeInTheDocument();
+    expect(screen.getByText('Khóa học hiện tại')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Lưu' })).not.toBeInTheDocument();
   });
 
   it('renders vietnamese settings labels', () => {
@@ -60,6 +53,7 @@ describe('i18n coverage', () => {
     render(
       <SettingsView
         settingsText={text.settings}
+        profileText={text.profile}
         defaultLanguage="vietnamese"
         learnLanguage="english"
         isEnglishUiLocked={false}
@@ -71,6 +65,10 @@ describe('i18n coverage', () => {
         canIncreaseTextSize
         appTheme="light"
         voiceProvider="default"
+        profileInput="tester"
+        profileError={null}
+        hasProfileWhitespace={false}
+        isProfileInputValid
         onDefaultLanguageChange={vi.fn()}
         onToggleEnglishUiLock={vi.fn()}
         onLearnLanguageChange={vi.fn()}
@@ -81,6 +79,9 @@ describe('i18n coverage', () => {
         onIncreaseTextSize={vi.fn()}
         onAppThemeChange={vi.fn()}
         onVoiceProviderChange={vi.fn()}
+        onProfileInputChange={vi.fn()}
+        onApplyProfileName={vi.fn()}
+        onRequestLogout={vi.fn()}
         onBackToProfile={vi.fn()}
       />,
     );
@@ -126,6 +127,7 @@ describe('i18n coverage', () => {
     render(
       <SettingsView
         settingsText={text.settings}
+        profileText={text.profile}
         defaultLanguage="vietnamese"
         learnLanguage="hsk_chinese"
         isEnglishUiLocked={false}
@@ -137,6 +139,10 @@ describe('i18n coverage', () => {
         canIncreaseTextSize
         appTheme="light"
         voiceProvider="default"
+        profileInput="tester"
+        profileError={null}
+        hasProfileWhitespace={false}
+        isProfileInputValid
         onDefaultLanguageChange={vi.fn()}
         onToggleEnglishUiLock={vi.fn()}
         onLearnLanguageChange={vi.fn()}
@@ -147,6 +153,9 @@ describe('i18n coverage', () => {
         onIncreaseTextSize={vi.fn()}
         onAppThemeChange={vi.fn()}
         onVoiceProviderChange={vi.fn()}
+        onProfileInputChange={vi.fn()}
+        onApplyProfileName={vi.fn()}
+        onRequestLogout={vi.fn()}
         onBackToProfile={vi.fn()}
       />,
     );

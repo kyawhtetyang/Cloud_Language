@@ -61,7 +61,7 @@ export const UnitRow: React.FC<UnitRowProps> = ({
     >
       <div className="grid w-full grid-cols-[auto,1fr,20px] items-center gap-2">
         <div
-          className={`inline-flex h-7 min-w-[46px] items-center justify-center rounded-md px-1.5 text-[11px] font-bold ${badgeClass}`}
+          className={`inline-flex min-w-[46px] items-center justify-center px-0 text-[11px] font-bold ${badgeClass}`}
         >
           <span
             aria-label={
@@ -87,7 +87,7 @@ export const UnitRow: React.FC<UnitRowProps> = ({
           </span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-semibold leading-tight text-ink">
+          <p className={`truncate text-[15px] font-semibold leading-tight ${isActive ? 'text-brand' : 'text-ink'}`}>
             {localizeLibraryTopic(entry.topic, defaultLanguage)}
           </p>
         </div>
@@ -97,7 +97,7 @@ export const UnitRow: React.FC<UnitRowProps> = ({
             event.stopPropagation();
             onOpenUnit(entry.level, entry.unit, albumKey);
           }}
-          className={`${LIBRARY_UI_TOKENS.unitOpenButton} ${accentClass}`}
+          className={`${LIBRARY_UI_TOKENS.unitOpenButton} ${isActive ? 'text-brand' : accentClass}`}
           aria-label={`${libraryText.openLessonAriaPrefix} ${formatUnitCode(entry.level, entry.unit)}`}
           title={libraryText.openLessonTitle}
         >

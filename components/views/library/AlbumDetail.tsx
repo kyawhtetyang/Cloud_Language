@@ -83,9 +83,9 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
       </div>
 
       <div className={`overflow-hidden ${LIBRARY_UI_TOKENS.sectionWrap}`}>
-        <div className="border-b border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-2.5">
+        <div className="border-b border-[var(--border-subtle)] px-0 py-2.5">
           <div className="flex items-center gap-3">
-            <div className="relative aspect-[3/4] w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)]">
+            <div className="relative aspect-[3/4] w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--border-subtle)]">
               <div className="absolute inset-y-0 left-0 z-10 w-2 bg-black/12" aria-hidden="true" />
               <img
                 src={album.coverUrl}
