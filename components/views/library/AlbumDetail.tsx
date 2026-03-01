@@ -1,9 +1,11 @@
 import React from 'react';
 import type { DefaultLanguage } from '../../../config/appConfig';
 import { getAppText } from '../../../config/appI18n';
+import { localizeLibraryTopic } from '../../../config/libraryI18n';
 import { VIEW_PAGE_CLASS } from '../viewShared';
-import type { AlbumGroup } from './libraryTypes';
+import type { AlbumGroup, AlbumUnitEntry } from './libraryTypes';
 import { LIBRARY_UI_TOKENS } from './libraryUiTokens';
+import { TrackActionSheet } from './TrackActionSheet';
 import { UnitRow } from './UnitRow';
 import { BUTTON_UI } from '../../../config/buttonUi';
 
@@ -24,7 +26,10 @@ type AlbumDetailProps = {
   onPlayAlbum?: (units: Array<{ level: number; unit: number }>, albumKey?: string | null) => void;
   onPlayUnit?: (level: number, unit: number, albumKey?: string | null) => void;
   onOpenUnit: (level: number, unit: number, albumKey?: string | null) => void;
-  renderDownloadButton?: (group: AlbumGroup) => React.ReactNode;
+  isUnitBookmarked?: (level: number, unit: number) => boolean;
+  onToggleUnitBookmark?: (level: number, unit: number) => void;
+  isAlbumBookmarked?: boolean;
+  onToggleAlbumBookmark?: () => void;
   formatAlbumMeta: (group: AlbumGroup) => string;
   onTouchStart: React.TouchEventHandler<HTMLElement>;
   onTouchMove: React.TouchEventHandler<HTMLElement>;
@@ -49,7 +54,10 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
   onPlayAlbum,
   onPlayUnit,
   onOpenUnit,
-  renderDownloadButton,
+  isUnitBookmarked,
+  onToggleUnitBookmark,
+  isAlbumBookmarked = false,
+  onToggleAlbumBookmark,
   formatAlbumMeta,
   onTouchStart,
   onTouchMove,
@@ -57,6 +65,31 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
   onTouchCancel,
 }) => {
   const libraryText = getAppText(defaultLanguage).library;
+  const [activeActionUnit, setActiveActionUnit] = React.useState<AlbumUnitEntry | null>(null);
+  const activeUnitCode = activeActionUnit ? `${Math.max(1, activeActionUnit.level)}.${Math.max(1, activeActionUnit.unit)}` : '';
+  const isActionUnitBookmarked = activeActionUnit
+    ? Boolean(isUnitBookmarked?.(activeActionUnit.level, activeActionUnit.unit))
+    : false;
+
+  const closeActionMenu = () => setActiveActionUnit(null);
+
+  const handleOpenActionMenu = (level: number, unit: number) => {
+    const target = album.units.find((entry) => entry.level === level && entry.unit === unit) || null;
+    setActiveActionUnit(target);
+  };
+
+  const handleToggleBookmark = () => {
+    if (!activeActionUnit) return;
+    onToggleUnitBookmark?.(activeActionUnit.level, activeActionUnit.unit);
+    closeActionMenu();
+  };
+
+  const handleOpenLesson = () => {
+    if (!activeActionUnit) return;
+    onOpenUnit(activeActionUnit.level, activeActionUnit.unit, albumKey);
+    closeActionMenu();
+  };
+
   return (
     <div
       className={VIEW_PAGE_CLASS}
@@ -124,7 +157,25 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
                     <path d="M9 7.5v9l7-4.5z" fill="currentColor" stroke="none" />
                   </svg>
                 </button>
-                {renderDownloadButton?.(album)}
+                <button
+                  type="button"
+                  onClick={onToggleAlbumBookmark}
+                  className={isAlbumBookmarked
+                    ? `${BUTTON_UI.iconCircleButtonBase} ${BUTTON_UI.iconCircleButtonActive}`
+                    : LIBRARY_UI_TOKENS.iconButton}
+                  aria-label="Bookmark album"
+                  title="Bookmark album"
+                >
+                  {isAlbumBookmarked ? (
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+                      <path d="M6 3h12v18l-6-4-6 4z" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M6 3h12v18l-6-4-6 4z" />
+                    </svg>
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -144,12 +195,26 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
               badgeActiveClass={badgeActiveClass}
               badgeCompletedClass={badgeCompletedClass}
               accentClass={accentClass}
+              actionButtonMode="menu"
               onPlayUnit={onPlayUnit}
               onOpenUnit={onOpenUnit}
+              onOpenActionMenu={handleOpenActionMenu}
             />
           ))}
         </div>
       </div>
+
+      <TrackActionSheet
+        isOpen={Boolean(activeActionUnit)}
+        closeAriaLabel={libraryText.backToAlbumsAriaLabel}
+        trackTitle={activeActionUnit ? localizeLibraryTopic(activeActionUnit.topic, defaultLanguage) : ''}
+        trackUnitCode={activeUnitCode}
+        openLessonLabel={libraryText.openLessonTitle}
+        onClose={closeActionMenu}
+        onOpenLesson={handleOpenLesson}
+        onToggleBookmark={handleToggleBookmark}
+        isBookmarked={isActionUnitBookmarked}
+      />
     </div>
   );
 };

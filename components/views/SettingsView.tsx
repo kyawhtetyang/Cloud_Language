@@ -21,9 +21,11 @@ import {
   SETTINGS_UI,
 } from '../../config/settingsUi';
 import { AppTextPack } from '../../config/appI18n';
+import { getActionButtonClass } from '../../config/buttonUi';
 
 type SettingsViewProps = {
   settingsText: AppTextPack['settings'];
+  profileText: AppTextPack['profile'];
   defaultLanguage: DefaultLanguage;
   learnLanguage: LearnLanguage;
   isEnglishUiLocked: boolean;
@@ -35,6 +37,10 @@ type SettingsViewProps = {
   canIncreaseTextSize: boolean;
   appTheme: AppTheme;
   voiceProvider: VoiceProvider;
+  profileInput: string;
+  profileError: string | null;
+  hasProfileWhitespace: boolean;
+  isProfileInputValid: boolean;
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
   onToggleEnglishUiLock: () => void;
   onLearnLanguageChange: (value: LearnLanguage) => void;
@@ -45,6 +51,9 @@ type SettingsViewProps = {
   onIncreaseTextSize: () => void;
   onAppThemeChange: (value: AppTheme) => void;
   onVoiceProviderChange: (value: VoiceProvider) => void;
+  onProfileInputChange: (value: string) => void;
+  onApplyProfileName: () => void;
+  onRequestLogout: () => void;
   onBackToProfile: () => void;
 };
 
@@ -69,6 +78,7 @@ const ToggleStateBadge: React.FC<ToggleStateBadgeProps> = ({ isOn, onLabel, offL
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   settingsText,
+  profileText,
   defaultLanguage,
   learnLanguage,
   isEnglishUiLocked,
@@ -80,6 +90,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   canIncreaseTextSize,
   appTheme,
   voiceProvider,
+  profileInput,
+  profileError,
+  hasProfileWhitespace,
+  isProfileInputValid,
   onDefaultLanguageChange,
   onToggleEnglishUiLock,
   onLearnLanguageChange,
@@ -90,6 +104,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onIncreaseTextSize,
   onAppThemeChange,
   onVoiceProviderChange,
+  onProfileInputChange,
+  onApplyProfileName,
+  onRequestLogout,
   onBackToProfile,
 }) => {
   const [route, setRoute] = useState<SettingsRoute>('main');
@@ -206,7 +223,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       <section className="mb-4">
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{settingsText.preferencesSectionLabel}</h3>
         <div className={SETTINGS_UI.listCard}>
           <button type="button" onClick={onToggleEnglishUiLock} className={SETTINGS_UI.listRow}>
             <p className={SETTINGS_UI.sectionTitle}>{settingsText.keepEnglishUiLabel}</p>
@@ -254,7 +270,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </section>
 
       <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{settingsText.displaySectionLabel}</h3>
         <div className={SETTINGS_UI.listCard}>
           <button type="button" onClick={onToggleBoldText} className={SETTINGS_UI.listRow}>
             <p className={SETTINGS_UI.sectionTitle}>{settingsText.boldTextLabel}</p>
@@ -312,7 +327,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </section>
 
       <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
-        <h3 className={`${VIEW_SECTION_LABEL_CLASS} mb-2`}>{settingsText.audioSectionLabel}</h3>
         <div className={SETTINGS_UI.listCard}>
           <button type="button" onClick={onTogglePronunciation} className={SETTINGS_UI.listRow}>
             <p className={SETTINGS_UI.sectionTitle}>{settingsText.pronunciationLabel}</p>
@@ -323,6 +337,50 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 offLabel={settingsText.offLabel}
               />
             </span>
+          </button>
+        </div>
+      </section>
+
+      <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
+        <div className={SETTINGS_UI.listCard}>
+          <div className="px-4 py-3">
+            <div className="flex gap-2">
+              <input
+                value={profileInput}
+                onChange={(event) => onProfileInputChange(event.target.value)}
+                onKeyDown={(event) => event.key === 'Enter' && onApplyProfileName()}
+                placeholder={profileText.displayNamePlaceholder}
+                className="flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-default)] px-3 py-2 text-base font-semibold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)] md:text-sm"
+              />
+              <button
+                type="button"
+                onClick={onApplyProfileName}
+                disabled={!isProfileInputValid}
+                className={getActionButtonClass({
+                  variant: 'primary',
+                  size: 'sm',
+                  disabled: !isProfileInputValid,
+                })}
+              >
+                {profileText.saveLabel}
+              </button>
+            </div>
+            {(profileError || hasProfileWhitespace) && (
+              <p className="mt-2 text-xs font-bold text-danger">{profileText.usernameWhitespaceError}</p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
+        <div className={SETTINGS_UI.listCard}>
+          <button
+            type="button"
+            onClick={onRequestLogout}
+            className={`${SETTINGS_UI.listRow} text-danger`}
+          >
+            <span className={SETTINGS_UI.sectionTitle}>{profileText.logoutLabel}</span>
+            <span aria-hidden="true">›</span>
           </button>
         </div>
       </section>

@@ -8,6 +8,7 @@ import {
   SidebarTab,
 } from '../config/appConfig';
 import { LessonData } from '../types';
+import { buildLessonReferenceKey } from '../utils/lessonReference';
 import { SpeakEntry } from './useTrackPlayback';
 import { RepeatMode } from './useUnitNavigation';
 
@@ -42,6 +43,7 @@ type UseAppActionsArgs = {
   setIsRandomLessonOrderEnabled: Dispatch<SetStateAction<boolean>>;
   currentLevel: number;
   currentUnit: number;
+  logReviewEvent?: (eventType: string, metadata?: Record<string, unknown>) => void;
 };
 
 type UseAppActionsResult = {
@@ -84,6 +86,7 @@ export function useAppActions({
   setIsRandomLessonOrderEnabled,
   currentLevel,
   currentUnit,
+  logReviewEvent,
 }: UseAppActionsArgs): UseAppActionsResult {
   const getCurrentUnitSpeakEntries = (startFromLessonIndex?: number | null): SpeakEntry[] => {
     const entries = orderedUnitIndexes
@@ -115,6 +118,12 @@ export function useAppActions({
   const handlePlaySingleLesson = (lesson: LessonData, lessonIndex: number) => {
     const speakValue = getPlayableLessonText(lesson);
     if (!speakValue) return;
+    logReviewEvent?.('sentence_play', {
+      lessonKey: buildLessonReferenceKey(lesson),
+      sentenceText: speakValue,
+      lessonIndex,
+      mode,
+    });
     void playSingleEntry({
       text: speakValue,
       unitId: getLessonUnitId(lesson),
@@ -138,6 +147,13 @@ export function useAppActions({
       continueTrackPlaybackIfNeeded();
       return;
     }
+    logReviewEvent?.('batch_play', {
+      entryCount: texts.length,
+      startLessonIndex: texts[0]?.lessonIndex ?? null,
+      currentLevel,
+      currentUnit,
+      mode,
+    });
     const finished = await playEntriesSequentially(texts);
     if (!finished) return;
     continueTrackPlaybackIfNeeded();
@@ -190,9 +206,14 @@ export function useAppActions({
 
   const handleToggleRepeat = () => {
     setRepeatMode((prev) => {
-      if (prev === 'off') return 'all';
-      if (prev === 'all') return 'one';
-      return 'off';
+      const next = prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off';
+      logReviewEvent?.('repeat_mode_change', {
+        previousMode: prev,
+        nextMode: next,
+        currentLevel,
+        currentUnit,
+      });
+      return next;
     });
   };
 

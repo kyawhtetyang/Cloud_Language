@@ -14,24 +14,32 @@ function normalizeSelectionText(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+function getCreatedAtTimestamp(value: string): number {
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isLessonHighlight(value: unknown): value is LessonHighlight {
+  if (!value || typeof value !== 'object') return false;
+  const entry = value as Partial<LessonHighlight>;
+  return (
+    typeof entry.id === 'string'
+    && typeof entry.profileStorageId === 'string'
+    && typeof entry.learnLanguage === 'string'
+    && typeof entry.lessonKey === 'string'
+    && typeof entry.lessonText === 'string'
+    && typeof entry.selectedText === 'string'
+    && typeof entry.createdAt === 'string'
+  );
+}
+
 function readHighlightsFromStorage(storageKey: string): LessonHighlight[] {
   try {
     const rawValue = localStorage.getItem(storageKey);
     if (!rawValue) return [];
     const parsed = JSON.parse(rawValue);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((entry): entry is LessonHighlight => {
-      if (!entry || typeof entry !== 'object') return false;
-      return (
-        typeof entry.id === 'string'
-        && typeof entry.profileStorageId === 'string'
-        && typeof entry.learnLanguage === 'string'
-        && typeof entry.lessonKey === 'string'
-        && typeof entry.lessonText === 'string'
-        && typeof entry.selectedText === 'string'
-        && typeof entry.createdAt === 'string'
-      );
-    });
+    return parsed.filter(isLessonHighlight);
   } catch {
     return [];
   }
@@ -45,13 +53,111 @@ function writeHighlightsToStorage(storageKey: string, highlights: LessonHighligh
   }
 }
 
-export function useLessonHighlights(profileStorageId: string, learnLanguage: LearnLanguage) {
+function normalizeRemoteHighlight(
+  entry: unknown,
+  profileId: string,
+  learnLanguage: LearnLanguage,
+): LessonHighlight | null {
+  if (!entry || typeof entry !== 'object') return null;
+  const raw = entry as Record<string, unknown>;
+  const lessonKey = typeof raw.lessonKey === 'string' ? raw.lessonKey.trim() : '';
+  const lessonText = typeof raw.lessonText === 'string' ? raw.lessonText : '';
+  const selectedText = typeof raw.selectedText === 'string' ? normalizeSelectionText(raw.selectedText) : '';
+  const createdAt = typeof raw.createdAt === 'string' && raw.createdAt.trim()
+    ? raw.createdAt
+    : new Date().toISOString();
+  if (!lessonKey || !selectedText) return null;
+  const id = typeof raw.id === 'string' && raw.id.trim()
+    ? raw.id
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return {
+    id,
+    profileStorageId: profileId,
+    learnLanguage,
+    lessonKey,
+    lessonText,
+    selectedText,
+    createdAt,
+  };
+}
+
+function mergeHighlights(localHighlights: LessonHighlight[], remoteHighlights: LessonHighlight[]): LessonHighlight[] {
+  const mergedByLessonKey = new Map<string, LessonHighlight>();
+  for (const item of [...localHighlights, ...remoteHighlights]) {
+    const current = mergedByLessonKey.get(item.lessonKey);
+    if (!current) {
+      mergedByLessonKey.set(item.lessonKey, item);
+      continue;
+    }
+    const currentCreatedAt = getCreatedAtTimestamp(current.createdAt);
+    const nextCreatedAt = getCreatedAtTimestamp(item.createdAt);
+    if (nextCreatedAt >= currentCreatedAt) {
+      mergedByLessonKey.set(item.lessonKey, item);
+    }
+  }
+  return Array.from(mergedByLessonKey.values()).sort(
+    (a, b) => getCreatedAtTimestamp(b.createdAt) - getCreatedAtTimestamp(a.createdAt),
+  );
+}
+
+type UseLessonHighlightsParams = {
+  apiBaseUrl: string;
+  profileName: string;
+  profileStorageId: string;
+  learnLanguage: LearnLanguage;
+  logReviewEvent?: (eventType: string, metadata?: Record<string, unknown>) => void;
+};
+
+export function useLessonHighlights({
+  apiBaseUrl,
+  profileName,
+  profileStorageId,
+  learnLanguage,
+  logReviewEvent,
+}: UseLessonHighlightsParams) {
   const [highlights, setHighlights] = useState<LessonHighlight[]>([]);
   const storageKey = useMemo(() => getStorageKey(profileStorageId, learnLanguage), [learnLanguage, profileStorageId]);
 
   useEffect(() => {
-    setHighlights(readHighlightsFromStorage(storageKey));
-  }, [storageKey]);
+    const localHighlights = readHighlightsFromStorage(storageKey);
+    setHighlights(localHighlights);
+
+    const normalizedProfileName = profileName.trim();
+    if (!normalizedProfileName) return;
+
+    let cancelled = false;
+    const controller = new AbortController();
+    const profileId = profileStorageId?.trim() || GUEST_PROFILE_STORAGE_ID;
+
+    const hydrateRemoteHighlights = async () => {
+      try {
+        const response = await fetch(
+          `${apiBaseUrl}/api/highlights?profileName=${encodeURIComponent(normalizedProfileName)}&learnLanguage=${encodeURIComponent(learnLanguage)}`,
+          { signal: controller.signal },
+        );
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (!Array.isArray(payload)) return;
+        const remoteHighlights = payload
+          .map((entry) => normalizeRemoteHighlight(entry, profileId, learnLanguage))
+          .filter((entry): entry is LessonHighlight => entry !== null);
+        if (cancelled) return;
+        setHighlights((prev) => {
+          const merged = mergeHighlights(prev, remoteHighlights);
+          writeHighlightsToStorage(storageKey, merged);
+          return merged;
+        });
+      } catch {
+        // Remote sync is optional; local storage remains source of truth.
+      }
+    };
+
+    void hydrateRemoteHighlights();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [apiBaseUrl, learnLanguage, profileName, profileStorageId, storageKey]);
 
   const saveHighlightSelection = useCallback((lesson: LessonData, rawSelectedText: string): boolean => {
     const selectedText = normalizeSelectionText(rawSelectedText);
@@ -60,42 +166,81 @@ export function useLessonHighlights(profileStorageId: string, learnLanguage: Lea
 
     const lessonKey = buildLessonReferenceKey(lesson);
     const profileId = profileStorageId?.trim() || GUEST_PROFILE_STORAGE_ID;
+    const nextEntry: LessonHighlight = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      profileStorageId: profileId,
+      learnLanguage,
+      lessonKey,
+      lessonText: lesson.english,
+      selectedText,
+      createdAt: new Date().toISOString(),
+    };
 
     let didSave = false;
     setHighlights((prev) => {
-      const nextEntry: LessonHighlight = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        profileStorageId: profileId,
-        learnLanguage,
-        lessonKey,
-        lessonText: lesson.english,
-        selectedText,
-        createdAt: new Date().toISOString(),
-      };
       const next = [
         nextEntry,
         ...prev.filter((entry) => entry.lessonKey !== lessonKey),
       ];
       writeHighlightsToStorage(storageKey, next);
-      didSave = true;
       return next;
     });
+    didSave = true;
+
+    if (didSave) {
+      const normalizedProfileName = profileName.trim();
+      if (normalizedProfileName) {
+        void fetch(`${apiBaseUrl}/api/highlights`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            profileName: normalizedProfileName,
+            learnLanguage,
+            lessonKey,
+            lessonText: lesson.english,
+            selectedText,
+            createdAt: nextEntry.createdAt,
+          }),
+        }).catch(() => {
+          // Highlight sync is best effort; local storage remains source of truth.
+        });
+      }
+      logReviewEvent?.('highlight_saved', {
+        lessonKey,
+        selectedText,
+      });
+    }
 
     return didSave;
-  }, [learnLanguage, profileStorageId, storageKey]);
+  }, [apiBaseUrl, learnLanguage, logReviewEvent, profileName, profileStorageId, storageKey]);
 
   const clearHighlightSelection = useCallback((lesson: LessonData): boolean => {
     const lessonKey = buildLessonReferenceKey(lesson);
-    let didClear = false;
+    const hadExisting = highlights.some((entry) => entry.lessonKey === lessonKey);
     setHighlights((prev) => {
       const next = prev.filter((entry) => entry.lessonKey !== lessonKey);
-      didClear = next.length !== prev.length;
-      if (!didClear) return prev;
+      if (next.length === prev.length) return prev;
       writeHighlightsToStorage(storageKey, next);
       return next;
     });
-    return didClear;
-  }, [storageKey]);
+    if (hadExisting) {
+      const normalizedProfileName = profileName.trim();
+      if (normalizedProfileName) {
+        void fetch(
+          `${apiBaseUrl}/api/highlights?profileName=${encodeURIComponent(normalizedProfileName)}&learnLanguage=${encodeURIComponent(learnLanguage)}&lessonKey=${encodeURIComponent(lessonKey)}`,
+          { method: 'DELETE' },
+        ).catch(() => {
+          // Highlight sync is best effort; local storage remains source of truth.
+        });
+      }
+      logReviewEvent?.('highlight_cleared', {
+        lessonKey,
+      });
+    }
+    return hadExisting;
+  }, [apiBaseUrl, highlights, learnLanguage, logReviewEvent, profileName, storageKey]);
 
   const highlightCountByLessonKey = useMemo(() => {
     const counts = new Map<string, number>();

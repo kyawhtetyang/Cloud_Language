@@ -45,7 +45,7 @@ type UseAppViewPropsArgs = {
   currentCourseCode: string;
   setProfileInput: (value: string) => void;
   handleApplyProfileName: () => void;
-  handleOpenDownloadedLessons: () => void;
+  handleOpenProfileAlbumLibrary: () => void;
   setSidebarTab: Dispatch<SetStateAction<SidebarTab>>;
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
   learnLanguage: LearnLanguage;
@@ -55,9 +55,13 @@ type UseAppViewPropsArgs = {
   libraryViewMode: LibraryViewMode;
   setLibrarySelectedAlbumKey: Dispatch<SetStateAction<string | null>>;
   downloadedUnitKeys: Set<string>;
+  bookmarkedUnitKeys: Set<string>;
+  bookmarkedAlbumKeys: Set<string>;
   downloadUnitPack: (level: number, unit: number) => Promise<void>;
   removeUnitPack: (level: number, unit: number) => Promise<void>;
   isUnitDownloading: (level: number, unit: number) => boolean;
+  onToggleUnitBookmark: (level: number, unit: number) => void;
+  onToggleAlbumBookmark: (albumKey: string) => void;
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled: boolean;
@@ -129,7 +133,7 @@ export function useAppViewProps({
   currentCourseCode,
   setProfileInput,
   handleApplyProfileName,
-  handleOpenDownloadedLessons,
+  handleOpenProfileAlbumLibrary,
   setSidebarTab,
   setIsSidebarOpen,
   learnLanguage,
@@ -139,9 +143,13 @@ export function useAppViewProps({
   libraryViewMode,
   setLibrarySelectedAlbumKey,
   downloadedUnitKeys,
+  bookmarkedUnitKeys,
+  bookmarkedAlbumKeys,
   downloadUnitPack,
   removeUnitPack,
   isUnitDownloading,
+  onToggleUnitBookmark,
+  onToggleAlbumBookmark,
   isPronunciationEnabled,
   isBoldTextEnabled,
   isAutoScrollEnabled,
@@ -212,11 +220,7 @@ export function useAppViewProps({
     currentCourseCode,
     onProfileInputChange: setProfileInput,
     onApplyProfileName: handleApplyProfileName,
-    onOpenCurrentCourse: () => {
-      setSidebarTab('lesson');
-      setIsSidebarOpen(false);
-    },
-    onOpenDownloadedLessons: handleOpenDownloadedLessons,
+    onOpenProfileAlbumLibrary: handleOpenProfileAlbumLibrary,
     onOpenSettings: () => {
       setSidebarTab('settings');
       setIsSidebarOpen(false);
@@ -231,9 +235,13 @@ export function useAppViewProps({
     libraryViewMode,
     onSelectedAlbumKeyChange: setLibrarySelectedAlbumKey,
     downloadedUnitKeys,
+    bookmarkedUnitKeys,
+    bookmarkedAlbumKeys,
     onDownloadUnit: (level: number, unit: number) => { void downloadUnitPack(level, unit); },
     onRemoveUnitDownload: (level: number, unit: number) => { void removeUnitPack(level, unit); },
     isUnitDownloading,
+    onToggleUnitBookmark,
+    onToggleAlbumBookmark,
     isPronunciationEnabled,
     isBoldTextEnabled,
     isAutoScrollEnabled,

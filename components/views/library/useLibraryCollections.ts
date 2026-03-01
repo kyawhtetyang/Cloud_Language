@@ -258,13 +258,34 @@ export function useLibraryCollections({
       .filter((section) => section.groups.length > 0);
   }, [collectionSections, downloadedUnitKeys, viewMode]);
 
-  const selectedAlbum = useMemo(() => {
-    if (!selectedAlbumKey) return null;
-    for (const section of libraryModeSections) {
-      const found = section.groups.find((group) => group.key === selectedAlbumKey);
-      if (found) return found;
+  const selectedAlbumResult = useMemo(() => {
+    if (!selectedAlbumKey) {
+      return {
+        album: null as AlbumGroup | null,
+        collectionKey: null as string | null,
+      };
     }
-    return null;
+
+    for (const section of libraryModeSections) {
+      if (section.key === selectedAlbumKey) {
+        return {
+          album: section.groups[0] || null,
+          collectionKey: section.key,
+        };
+      }
+      const found = section.groups.find((group) => group.key === selectedAlbumKey);
+      if (found) {
+        return {
+          album: found,
+          collectionKey: section.key,
+        };
+      }
+    }
+
+    return {
+      album: null as AlbumGroup | null,
+      collectionKey: null as string | null,
+    };
   }, [libraryModeSections, selectedAlbumKey]);
 
   const normalizedLibraryQuery = libraryQuery.trim().toLowerCase();
@@ -290,6 +311,7 @@ export function useLibraryCollections({
   return {
     filteredCollectionSections,
     hasFilteredResults: filteredCollectionSections.length > 0,
-    selectedAlbum,
+    selectedAlbum: selectedAlbumResult.album,
+    selectedAlbumCollectionKey: selectedAlbumResult.collectionKey,
   };
 }

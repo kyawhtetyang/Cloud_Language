@@ -16,7 +16,6 @@ import { AlbumList } from './library/AlbumList';
 import { AlbumDetail } from './library/AlbumDetail';
 import { LIBRARY_STATE_STYLE } from './library/libraryUiTokens';
 import type { AlbumGroup } from './library/libraryTypes';
-import { getIconCircleButtonClass } from '../../config/buttonUi';
 import { buildLibraryUnitKey, useLibraryCollections } from './library/useLibraryCollections';
 
 type LibraryViewProps = {
@@ -31,38 +30,18 @@ type LibraryViewProps = {
   completedUnitKeys?: Set<string>;
   activeUnitKey?: string;
   downloadedUnitKeys?: Set<string>;
+  bookmarkedUnitKeys?: Set<string>;
+  bookmarkedAlbumKeys?: Set<string>;
   isUnitDownloading?: (level: number, unit: number) => boolean;
   onDownloadUnit?: (level: number, unit: number) => Promise<void> | void;
   onRemoveUnitDownload?: (level: number, unit: number) => Promise<void> | void;
+  onToggleUnitBookmark?: (level: number, unit: number) => void;
+  onToggleAlbumBookmark?: (albumKey: string) => void;
 };
 
 function shortenLabel(text: string, max = 56): string {
   if (text.length <= max) return text;
   return `${text.slice(0, max - 1).trim()}...`;
-}
-
-async function handleAlbumDownloadAction(
-  group: AlbumGroup,
-  downloadedUnitKeys: Set<string> | undefined,
-  isGroupDownloaded: boolean,
-  onDownloadUnit?: (level: number, unit: number) => Promise<void> | void,
-  onRemoveUnitDownload?: (level: number, unit: number) => Promise<void> | void,
-): Promise<void> {
-  if (!onDownloadUnit) return;
-
-  if (isGroupDownloaded && onRemoveUnitDownload) {
-    await Promise.all(
-      group.units.map((entry) => Promise.resolve(onRemoveUnitDownload(entry.level, entry.unit))),
-    );
-    return;
-  }
-
-  const pendingEntries = group.units.filter(
-    (entry) => !downloadedUnitKeys?.has(buildLibraryUnitKey(entry.level, entry.unit)),
-  );
-  await Promise.all(
-    pendingEntries.map((entry) => Promise.resolve(onDownloadUnit(entry.level, entry.unit))),
-  );
 }
 
 export const LibraryView: React.FC<LibraryViewProps> = ({
@@ -77,9 +56,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   completedUnitKeys,
   activeUnitKey,
   downloadedUnitKeys,
-  isUnitDownloading,
-  onDownloadUnit,
-  onRemoveUnitDownload,
+  bookmarkedUnitKeys,
+  bookmarkedAlbumKeys,
+  onToggleUnitBookmark,
+  onToggleAlbumBookmark,
 }) => {
   const [internalSelectedAlbumKey, setInternalSelectedAlbumKey] = useState<string | null>(null);
   const [libraryQuery, setLibraryQuery] = useState('');
@@ -101,6 +81,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     filteredCollectionSections,
     hasFilteredResults,
     selectedAlbum,
+    selectedAlbumCollectionKey,
   } = useLibraryCollections({
     lessons,
     defaultLanguage,
@@ -131,63 +112,19 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     return `${stage} · G${groupIndex + 1} (${unitCount} ${unitWord})`;
   };
 
-  const renderDownloadButton = (group: AlbumGroup) => {
-    if (!onDownloadUnit) return null;
+  const isUnitBookmarked = (level: number, unit: number): boolean => (
+    Boolean(bookmarkedUnitKeys?.has(buildLibraryUnitKey(level, unit)))
+  );
 
-    const groupUnitKeys = group.units.map((entry) => buildLibraryUnitKey(entry.level, entry.unit));
-    const downloadedCount = groupUnitKeys.filter((key) => downloadedUnitKeys?.has(key)).length;
-    const isGroupDownloaded = downloadedCount === group.units.length && group.units.length > 0;
-    const isGroupPartial = downloadedCount > 0 && downloadedCount < group.units.length;
-    const isGroupDownloading = group.units.some((entry) => Boolean(isUnitDownloading?.(entry.level, entry.unit)));
-    const groupDownloadLabel = isGroupDownloading
-      ? libraryText.downloadingLabel
-      : isGroupDownloaded
-        ? libraryText.offlineReadyLabel
-        : isGroupPartial
-          ? libraryText.downloadedLabel
-          : libraryText.downloadLabel;
+  const toggleUnitBookmark = (level: number, unit: number) => {
+    onToggleUnitBookmark?.(level, unit);
+  };
 
-    return (
-      <button
-        type="button"
-        onClick={() => {
-          if (isGroupDownloaded && onRemoveUnitDownload) {
-            const shouldRemove = window.confirm(libraryText.removeDownloadedConfirmMessage);
-            if (!shouldRemove) return;
-          }
-          void handleAlbumDownloadAction(group, downloadedUnitKeys, isGroupDownloaded, onDownloadUnit, onRemoveUnitDownload);
-        }}
-        disabled={isGroupDownloading}
-        aria-label={groupDownloadLabel}
-        title={groupDownloadLabel}
-        className={getIconCircleButtonClass(
-          isGroupDownloading
-            ? 'loading'
-            : (isGroupDownloaded || isGroupPartial)
-              ? 'active'
-              : 'default',
-        )}
-      >
-        {isGroupDownloading ? (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 animate-spin">
-            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-            <path d="M12 3a9 9 0 0 1 9 9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        ) : isGroupDownloaded ? (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
-            <path d="M20 7L10 17l-6-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        ) : isGroupPartial ? (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
-            <path d="M4 12h16M12 4v16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
-            <path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </button>
-    );
+  const isAlbumBookmarked = selectedAlbumCollectionKey !== null && Boolean(bookmarkedAlbumKeys?.has(selectedAlbumCollectionKey));
+
+  const toggleAlbumBookmark = () => {
+    if (!selectedAlbumCollectionKey) return;
+    onToggleAlbumBookmark?.(selectedAlbumCollectionKey);
   };
 
   if (selectedAlbum) {
@@ -211,7 +148,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         onPlayAlbum={onReadAlbum}
         onPlayUnit={(level, unit, albumKey) => onReadAlbum?.([{ level, unit }], albumKey)}
         onOpenUnit={onSelectUnit}
-        renderDownloadButton={renderDownloadButton}
+        isUnitBookmarked={isUnitBookmarked}
+        onToggleUnitBookmark={toggleUnitBookmark}
+        isAlbumBookmarked={isAlbumBookmarked}
+        onToggleAlbumBookmark={toggleAlbumBookmark}
         formatAlbumMeta={(group) =>
           formatAlbumMeta(group.stage, group.groupIndex, group.units.length, group)
         }

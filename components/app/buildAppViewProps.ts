@@ -13,6 +13,7 @@ import {
 import { getAppText } from '../../config/appI18n';
 import { localizeLibraryTopic } from '../../config/libraryI18n';
 import { LessonData } from '../../types';
+import type { AlbumUnitEntry } from '../views/library/libraryTypes';
 
 type LessonEntry = {
   lesson: LessonData;
@@ -25,7 +26,9 @@ type ProfileAlbumCard = {
   meta: string;
   coverUrl: string | null;
   totalUnitCount: number;
-  downloadedUnitCount: number;
+  bookmarkedUnitCount: number;
+  isCurrentCourse: boolean;
+  isBookmarked: boolean;
   onOpen: () => void;
 };
 
@@ -37,7 +40,18 @@ type ProfileAlbumAccumulator = {
   levelOrder?: number;
   units: Set<string>;
   unitEntries: Array<{ level: number; unit: number }>;
-  downloadedUnitsCount: number;
+  bookmarkedUnitsCount: number;
+};
+
+type ProfileBookmarkedLessonRow = {
+  key: string;
+  albumKey: string | null;
+  entry: AlbumUnitEntry;
+  isCompleted: boolean;
+  isBookmarked: boolean;
+  onPlay: () => void;
+  onOpen: () => void;
+  onToggleBookmark: () => void;
 };
 
 type BuildAppViewPropsArgs = {
@@ -68,8 +82,7 @@ type BuildAppViewPropsArgs = {
   currentCourseCode: string;
   onProfileInputChange: (value: string) => void;
   onApplyProfileName: () => void;
-  onOpenCurrentCourse: () => void;
-  onOpenDownloadedLessons: () => void;
+  onOpenProfileAlbumLibrary: () => void;
   onOpenSettings: () => void;
   onRequestLogout: () => void;
   learnLanguage: LearnLanguage;
@@ -79,9 +92,13 @@ type BuildAppViewPropsArgs = {
   libraryViewMode: LibraryViewMode;
   onSelectedAlbumKeyChange: (key: string | null) => void;
   downloadedUnitKeys: Set<string>;
+  bookmarkedUnitKeys: Set<string>;
+  bookmarkedAlbumKeys: Set<string>;
   onDownloadUnit: (level: number, unit: number) => void;
   onRemoveUnitDownload: (level: number, unit: number) => void;
   isUnitDownloading: (level: number, unit: number) => boolean;
+  onToggleUnitBookmark: (level: number, unit: number) => void;
+  onToggleAlbumBookmark: (albumKey: string) => void;
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled: boolean;
@@ -153,20 +170,55 @@ function formatAlbumRange(unitEntries: Array<{ level: number; unit: number }>): 
   return `${formatUnitCode(first.level, first.unit)}-${formatUnitCode(last.level, last.unit)}`;
 }
 
+function normalizeToken(value: string | undefined): string {
+  return String(value || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s_-]+/g, ' ');
+}
+
+function isCurrentCourseAlbum(
+  currentCourseCode: string,
+  collectionLabel: string,
+  levelCode: string | undefined,
+): boolean {
+  const normalizedCourse = normalizeToken(currentCourseCode);
+  if (!normalizedCourse) return false;
+
+  const normalizedLevelCode = normalizeToken(levelCode);
+  if (normalizedLevelCode && normalizedLevelCode === normalizedCourse) return true;
+
+  const normalizedLabel = normalizeToken(collectionLabel);
+  if (!normalizedLabel) return false;
+  return normalizedLabel === normalizedCourse || normalizedLabel.includes(normalizedCourse);
+}
+
+function resolveProfileTrackStage(stage: string | undefined): AlbumUnitEntry['stage'] {
+  const normalized = String(stage || '').toUpperCase();
+  if (normalized === 'A2' || normalized === 'B1' || normalized === 'B2') {
+    return normalized;
+  }
+  return 'A1';
+}
+
 function buildProfileAlbumCards({
   lessons,
-  downloadedUnitKeys,
+  bookmarkedUnitKeys,
+  bookmarkedAlbumKeys,
+  currentCourseCode,
   collectionFallbackPrefix,
   unitSingularLabel,
   unitPluralLabel,
   onOpenAlbumLesson,
 }: {
   lessons: LessonData[];
-  downloadedUnitKeys: Set<string>;
+  bookmarkedUnitKeys: Set<string>;
+  bookmarkedAlbumKeys: Set<string>;
+  currentCourseCode: string;
   collectionFallbackPrefix: string;
   unitSingularLabel: string;
   unitPluralLabel: string;
-  onOpenAlbumLesson: (albumKey: string, level: number, unit: number) => void;
+  onOpenAlbumLesson: (albumKey: string) => void;
 }): ProfileAlbumCard[] {
   const byCollection = new Map<string, ProfileAlbumAccumulator>();
 
@@ -189,7 +241,7 @@ function buildProfileAlbumCards({
         levelOrder,
         units: new Set<string>(),
         unitEntries: [],
-        downloadedUnitsCount: 0,
+        bookmarkedUnitsCount: 0,
       });
     }
 
@@ -197,8 +249,8 @@ function buildProfileAlbumCards({
     if (!collection.units.has(unitKey)) {
       collection.units.add(unitKey);
       collection.unitEntries.push({ level, unit });
-      if (downloadedUnitKeys.has(unitKey)) {
-        collection.downloadedUnitsCount += 1;
+      if (bookmarkedUnitKeys.has(unitKey)) {
+        collection.bookmarkedUnitsCount += 1;
       }
     }
   }
@@ -225,20 +277,91 @@ function buildProfileAlbumCards({
       const totalUnits = collection.units.size;
       const unitWord = totalUnits === 1 ? unitSingularLabel : unitPluralLabel;
       const rangeLabel = formatAlbumRange(collection.unitEntries);
-      const progressLabel = `${collection.downloadedUnitsCount}/${totalUnits} ${unitWord}`;
+      const progressLabel = `${collection.bookmarkedUnitsCount}/${totalUnits} ${unitWord}`;
       const meta = rangeLabel ? `${rangeLabel} · ${progressLabel}` : progressLabel;
-      const sortedEntries = [...collection.unitEntries].sort((a, b) => (a.level - b.level) || (a.unit - b.unit));
-      const firstEntry = sortedEntries[0] || { level: 1, unit: 1 };
       return {
         key: collection.key,
         title: collection.label,
         meta,
         coverUrl: getProfileAlbumCoverUrl(collection.label),
         totalUnitCount: totalUnits,
-        downloadedUnitCount: collection.downloadedUnitsCount,
-        onOpen: () => onOpenAlbumLesson(collection.key, firstEntry.level, firstEntry.unit),
+        bookmarkedUnitCount: collection.bookmarkedUnitsCount,
+        isCurrentCourse: isCurrentCourseAlbum(currentCourseCode, collection.label, collection.levelCode),
+        isBookmarked: bookmarkedAlbumKeys.has(collection.key),
+        onOpen: () => onOpenAlbumLesson(collection.key),
       };
     });
+}
+
+function buildProfileBookmarkedLessonRows({
+  lessons,
+  bookmarkedUnitKeys,
+  completedUnitKeys,
+  collectionFallbackPrefix,
+  onPlayUnit,
+  onOpenUnit,
+  onToggleBookmark,
+}: {
+  lessons: LessonData[];
+  bookmarkedUnitKeys: Set<string>;
+  completedUnitKeys: Set<string>;
+  collectionFallbackPrefix: string;
+  onPlayUnit: (level: number, unit: number, albumKey?: string | null) => void;
+  onOpenUnit: (level: number, unit: number, albumKey?: string | null) => void;
+  onToggleBookmark: (level: number, unit: number) => void;
+}): ProfileBookmarkedLessonRow[] {
+  const byUnitKey = new Map<
+    string,
+    {
+      level: number;
+      unit: number;
+      stage: AlbumUnitEntry['stage'];
+      topic: string;
+      albumKey: string | null;
+    }
+  >();
+
+  for (const lesson of lessons) {
+    const level = getLessonOrderIndex(lesson);
+    const unit = getLessonUnitId(lesson);
+    const unitKey = `${level}:${unit}`;
+    if (!bookmarkedUnitKeys.has(unitKey) || byUnitKey.has(unitKey)) continue;
+
+    const collectionLabel = (lesson.collectionLabel || '').trim() || `${collectionFallbackPrefix} ${level}`;
+    const levelScheme = String(lesson.levelScheme || '').trim().toLowerCase() || undefined;
+    const levelCode = String(lesson.levelCode || '').trim().toUpperCase() || undefined;
+
+    byUnitKey.set(unitKey, {
+      level,
+      unit,
+      stage: resolveProfileTrackStage(lesson.stage),
+      topic: lesson.topic,
+      albumKey: buildCollectionKey(levelScheme, levelCode, collectionLabel),
+    });
+  }
+
+  return Array.from(byUnitKey.entries())
+    .sort((a, b) => {
+      const [levelA, unitA] = a[0].split(':').map(Number);
+      const [levelB, unitB] = b[0].split(':').map(Number);
+      if (levelA !== levelB) return levelA - levelB;
+      return unitA - unitB;
+    })
+    .map(([unitKey, value]) => ({
+      key: unitKey,
+      albumKey: value.albumKey,
+      entry: {
+        stage: value.stage,
+        level: value.level,
+        unit: value.unit,
+        topic: value.topic,
+      },
+      isCompleted: completedUnitKeys.has(unitKey),
+      isBookmarked: true,
+      onPlay: () => onPlayUnit(value.level, value.unit, value.albumKey),
+      onOpen: () => onOpenUnit(value.level, value.unit, value.albumKey),
+      onToggleBookmark: () => onToggleBookmark(value.level, value.unit),
+    }));
 }
 
 export function buildAppViewProps({
@@ -269,8 +392,7 @@ export function buildAppViewProps({
   currentCourseCode,
   onProfileInputChange,
   onApplyProfileName,
-  onOpenCurrentCourse,
-  onOpenDownloadedLessons,
+  onOpenProfileAlbumLibrary,
   onOpenSettings,
   onRequestLogout,
   learnLanguage,
@@ -280,9 +402,13 @@ export function buildAppViewProps({
   libraryViewMode,
   onSelectedAlbumKeyChange,
   downloadedUnitKeys,
+  bookmarkedUnitKeys,
+  bookmarkedAlbumKeys,
   onDownloadUnit,
   onRemoveUnitDownload,
   isUnitDownloading,
+  onToggleUnitBookmark,
+  onToggleAlbumBookmark,
   isPronunciationEnabled,
   isBoldTextEnabled,
   isAutoScrollEnabled,
@@ -350,7 +476,8 @@ export function buildAppViewProps({
       ? lessons[activeSpeakingLessonIndex]
       : null
   ) || currentBatchEntries[0]?.lesson || lessons[currentIndex] || null;
-  const showLibraryMiniPlayer = isLibraryView && Boolean(activeOrCurrentLesson);
+  const showLibraryMiniPlayer = (isLibraryView && Boolean(activeOrCurrentLesson))
+    || (isProfileView && Boolean(activeOrCurrentLesson));
   const activeOrCurrentUnitCode = activeOrCurrentLesson
     ? `${Math.max(1, getLessonOrderIndex(activeOrCurrentLesson))}.${Math.max(1, getLessonUnitId(activeOrCurrentLesson))}`
     : '';
@@ -358,20 +485,39 @@ export function buildAppViewProps({
   const miniPlayerTrackMeta = activeOrCurrentLesson
     ? `${activeOrCurrentUnitCode} · ${localizeLibraryTopic(activeOrCurrentLesson.topic, defaultLanguage)}`
     : '';
-  const downloadedLessonsCount = lessons.reduce((count, lesson) => {
-    const unitKey = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
-    return downloadedUnitKeys.has(unitKey) ? count + 1 : count;
-  }, 0);
   const profileAlbumCards = buildProfileAlbumCards({
     lessons,
-    downloadedUnitKeys,
+    bookmarkedUnitKeys,
+    bookmarkedAlbumKeys,
+    currentCourseCode,
     collectionFallbackPrefix: appText.library.collectionFallbackPrefix,
     unitSingularLabel: appText.library.unitSingularLabel,
     unitPluralLabel: appText.library.unitPluralLabel,
-    onOpenAlbumLesson: (albumKey, level, unit) => {
-      onSelectUnit(level, unit, albumKey);
+    onOpenAlbumLesson: (albumKey) => {
+      onOpenProfileAlbumLibrary();
+      onSelectedAlbumKeyChange(albumKey);
     },
   });
+  const profileBookmarkedLessonRows = buildProfileBookmarkedLessonRows({
+    lessons,
+    bookmarkedUnitKeys,
+    completedUnitKeys: completedLibraryKeys,
+    collectionFallbackPrefix: appText.library.collectionFallbackPrefix,
+    onPlayUnit: (level, unit, albumKey) => {
+      onReadAlbum([{ level, unit }], albumKey);
+    },
+    onOpenUnit: (level, unit, albumKey) => {
+      onSelectUnit(level, unit, albumKey);
+    },
+    onToggleBookmark: (level, unit) => {
+      onToggleUnitBookmark(level, unit);
+    },
+  });
+  const bookmarkedAlbumsCount = profileAlbumCards.filter((card) => card.isBookmarked).length;
+  const bookmarkedLessonsCount = lessons.reduce((count, lesson) => {
+    const unitKey = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
+    return bookmarkedUnitKeys.has(unitKey) ? count + 1 : count;
+  }, 0);
   const isReadDisabled = mode !== 'learn' || orderedUnitIndexes.length === 0;
   const isPreviousDisabled = mode !== 'learn' || isNextDisabled;
   const computedIsNextDisabled = isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end);
@@ -411,10 +557,13 @@ export function buildAppViewProps({
       progressLabel: `${completedLessonsCount}/${totalLessonsCount}`,
       profileText: appText.profile,
       currentCourseCode: currentCourseCode || appText.profile.courseNotAvailableLabel,
-      downloadedLessonsCount,
+      bookmarkedAlbumsCount,
+      bookmarkedLessonsCount,
+      bookmarkedLessonRows: profileBookmarkedLessonRows,
+      defaultLanguage,
+      unitPrefixLabel: appText.lesson.unitPrefix,
+      activeUnitKey,
       albumCards: profileAlbumCards,
-      onOpenCurrentCourse,
-      onOpenDownloadedLessons,
       onOpenSettings,
     },
     libraryViewProps: {
@@ -429,9 +578,13 @@ export function buildAppViewProps({
       completedUnitKeys: completedLibraryKeys,
       activeUnitKey,
       downloadedUnitKeys,
+      bookmarkedUnitKeys,
+      bookmarkedAlbumKeys,
       onDownloadUnit,
       onRemoveUnitDownload,
       isUnitDownloading,
+      onToggleUnitBookmark,
+      onToggleAlbumBookmark,
     },
     settingsViewProps: {
       settingsText: appText.settings,

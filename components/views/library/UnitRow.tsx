@@ -16,8 +16,10 @@ type UnitRowProps = {
   badgeActiveClass: string;
   badgeCompletedClass: string;
   accentClass: string;
+  actionButtonMode?: 'open' | 'menu';
   onPlayUnit?: (level: number, unit: number, albumKey?: string | null) => void;
   onOpenUnit: (level: number, unit: number, albumKey?: string | null) => void;
+  onOpenActionMenu?: (level: number, unit: number, albumKey?: string | null) => void;
 };
 
 function formatUnitCode(level: number, unit: number): string {
@@ -35,8 +37,10 @@ export const UnitRow: React.FC<UnitRowProps> = ({
   badgeActiveClass,
   badgeCompletedClass,
   accentClass,
+  actionButtonMode = 'open',
   onPlayUnit,
   onOpenUnit,
+  onOpenActionMenu,
 }) => {
   const libraryText = getAppText(defaultLanguage).library;
   const unitKey = `${entry.level}:${entry.unit}`;
@@ -59,9 +63,9 @@ export const UnitRow: React.FC<UnitRowProps> = ({
       tabIndex={0}
       className={`${LIBRARY_UI_TOKENS.unitRowBase} ${isActive ? LIBRARY_UI_TOKENS.unitRowActive : ''}`}
     >
-      <div className="grid w-full grid-cols-[auto,1fr,20px] items-center gap-2">
+      <div className="grid w-full grid-cols-[auto,1fr,28px] items-center gap-1">
         <div
-          className={`inline-flex min-w-[46px] items-center justify-center px-0 text-[11px] font-bold ${badgeClass}`}
+          className={`inline-flex min-w-[34px] items-center justify-center px-0 text-[11px] font-bold ${badgeClass}`}
         >
           <span
             aria-label={
@@ -95,23 +99,44 @@ export const UnitRow: React.FC<UnitRowProps> = ({
           type="button"
           onClick={(event) => {
             event.stopPropagation();
+            if (actionButtonMode === 'menu') {
+              onOpenActionMenu?.(entry.level, entry.unit, albumKey);
+              return;
+            }
             onOpenUnit(entry.level, entry.unit, albumKey);
           }}
           className={`${LIBRARY_UI_TOKENS.unitOpenButton} ${isActive ? 'text-brand' : accentClass}`}
-          aria-label={`${libraryText.openLessonAriaPrefix} ${formatUnitCode(entry.level, entry.unit)}`}
-          title={libraryText.openLessonTitle}
+          aria-label={
+            actionButtonMode === 'menu'
+              ? `More actions ${formatUnitCode(entry.level, entry.unit)}`
+              : `${libraryText.openLessonAriaPrefix} ${formatUnitCode(entry.level, entry.unit)}`
+          }
+          title={actionButtonMode === 'menu' ? 'More actions' : libraryText.openLessonTitle}
         >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M9 6l6 6-6 6" />
-          </svg>
+          {actionButtonMode === 'menu' ? (
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <circle cx="6" cy="12" r="1.8" />
+              <circle cx="12" cy="12" r="1.8" />
+              <circle cx="18" cy="12" r="1.8" />
+            </svg>
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          )}
         </button>
       </div>
     </div>

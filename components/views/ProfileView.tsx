@@ -1,10 +1,69 @@
 import React from 'react';
+import type { DefaultLanguage } from '../../config/appConfig';
+import { getAppText } from '../../config/appI18n';
+import { localizeLibraryTopic } from '../../config/libraryI18n';
 import {
   VIEW_BODY_TEXT_CLASS,
   VIEW_PAGE_CLASS,
 } from './viewShared';
 import { BUTTON_UI } from '../../config/buttonUi';
 import { AppTextPack } from '../../config/appI18n';
+import type { AlbumUnitEntry } from './library/libraryTypes';
+import { LIBRARY_STATE_STYLE } from './library/libraryUiTokens';
+import { TrackActionSheet } from './library/TrackActionSheet';
+import { UnitRow } from './library/UnitRow';
+import { getMobileNavIconWrapClass } from '../../config/buttonUi';
+
+const PROFILE_CARD_ICON_CLASS = 'h-[22px] w-[22px]';
+const PROFILE_CARD_ICON_STROKE = 1.9;
+
+const CurrentCourseIcon: React.FC = () => (
+  <svg
+    viewBox="0 0 24 24"
+    className={PROFILE_CARD_ICON_CLASS}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={PROFILE_CARD_ICON_STROKE}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M13 2 5 13h6l-1 9 9-13h-6z" />
+  </svg>
+);
+
+const BookmarkedAlbumsIcon: React.FC = () => (
+  <svg
+    viewBox="0 0 24 24"
+    className={PROFILE_CARD_ICON_CLASS}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={PROFILE_CARD_ICON_STROKE}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M6 3h12v18l-6-4-6 4z" />
+  </svg>
+);
+
+const BookmarkedLessonsIcon: React.FC = () => (
+  <svg
+    viewBox="0 0 24 24"
+    className={PROFILE_CARD_ICON_CLASS}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={PROFILE_CARD_ICON_STROKE}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M6 3h12v18l-6-4-6 4z" />
+    <path d="M9 8.5h6" />
+    <path d="M9 11.5h5" />
+    <path d="M9 14.5h4" />
+  </svg>
+);
 
 type ProfileAlbumCard = {
   key: string;
@@ -12,8 +71,21 @@ type ProfileAlbumCard = {
   meta: string;
   coverUrl: string | null;
   totalUnitCount: number;
-  downloadedUnitCount: number;
+  bookmarkedUnitCount: number;
+  isCurrentCourse: boolean;
+  isBookmarked: boolean;
   onOpen: () => void;
+};
+
+type ProfileBookmarkedLessonRow = {
+  key: string;
+  albumKey: string | null;
+  entry: AlbumUnitEntry;
+  isCompleted: boolean;
+  isBookmarked: boolean;
+  onPlay: () => void;
+  onOpen: () => void;
+  onToggleBookmark: () => void;
 };
 
 type ProfileViewProps = {
@@ -21,11 +93,14 @@ type ProfileViewProps = {
   progressPercent: number;
   progressLabel: string;
   profileText: AppTextPack['profile'];
+  defaultLanguage: DefaultLanguage;
+  unitPrefixLabel: string;
+  activeUnitKey?: string;
   currentCourseCode: string;
-  downloadedLessonsCount?: number;
+  bookmarkedAlbumsCount?: number;
+  bookmarkedLessonsCount?: number;
+  bookmarkedLessonRows?: ProfileBookmarkedLessonRow[];
   albumCards?: ProfileAlbumCard[];
-  onOpenCurrentCourse: () => void;
-  onOpenDownloadedLessons?: () => void;
   onOpenSettings: () => void;
 };
 
@@ -34,21 +109,29 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   progressPercent,
   progressLabel,
   profileText,
+  defaultLanguage,
+  unitPrefixLabel,
+  activeUnitKey,
   currentCourseCode,
-  downloadedLessonsCount = 0,
+  bookmarkedAlbumsCount = 0,
+  bookmarkedLessonsCount = 0,
+  bookmarkedLessonRows = [],
   albumCards = [],
-  onOpenCurrentCourse,
-  onOpenDownloadedLessons,
   onOpenSettings,
 }) => {
-  const [bookShelf, setBookShelf] = React.useState<'all' | 'downloaded'>('all');
+  const libraryText = getAppText(defaultLanguage).library;
+  const [bookShelf, setBookShelf] = React.useState<'current_course' | 'bookmarked_albums' | 'bookmarked_lessons'>('current_course');
+  const [activeActionTrack, setActiveActionTrack] = React.useState<ProfileBookmarkedLessonRow | null>(null);
   const normalizedProgress = Number.isFinite(progressPercent)
     ? Math.min(100, Math.max(0, progressPercent))
     : 0;
   const visualProgress = normalizedProgress > 0 ? normalizedProgress : 2;
-  const visibleAlbumCards = bookShelf === 'downloaded'
-    ? albumCards.filter((card) => card.downloadedUnitCount > 0)
-    : albumCards;
+  const currentCourseAlbumCards = albumCards.filter((card) => card.isCurrentCourse);
+  const bookmarkedAlbumCards = albumCards.filter((card) => card.isBookmarked);
+  const visibleAlbumCards = bookShelf === 'current_course' ? currentCourseAlbumCards : bookmarkedAlbumCards;
+  const activeTrackUnitCode = activeActionTrack
+    ? `${Math.max(1, activeActionTrack.entry.level)}.${Math.max(1, activeActionTrack.entry.unit)}`
+    : '';
 
   const listDividerClass = 'border-t border-[var(--border-subtle)]';
 
@@ -111,39 +194,90 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
       <section>
         <div>
-          <div className="mb-3 grid grid-cols-2 gap-2">
+          <div className="mb-3 grid grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={() => setBookShelf('all')}
+              onClick={() => setBookShelf('current_course')}
+              aria-label={profileText.currentCourseLabel}
+              title={`${profileText.currentCourseLabel}: ${currentCourseCode}`}
               className={`rounded-lg border px-3 py-2 text-left transition-colors ${
-                bookShelf === 'all'
+                bookShelf === 'current_course'
                   ? 'border-[var(--border-strong)] bg-[var(--surface-active)]'
                   : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)]'
               }`}
             >
-              <p className="truncate text-[11px] font-extrabold uppercase tracking-wide text-[var(--text-muted)]">
-                {profileText.currentCourseLabel}
-              </p>
-              <p className="mt-1 truncate text-sm font-semibold text-ink">{currentCourseCode}</p>
+              <div className="flex items-center justify-center">
+                <span className={getMobileNavIconWrapClass(bookShelf === 'current_course')}>
+                  <CurrentCourseIcon />
+                </span>
+              </div>
             </button>
             <button
               type="button"
-              onClick={() => setBookShelf('downloaded')}
+              onClick={() => setBookShelf('bookmarked_albums')}
+              aria-label={profileText.downloadedLessonsLabel}
+              title={`${profileText.downloadedLessonsLabel}: ${Math.max(0, bookmarkedAlbumsCount).toLocaleString()}`}
               className={`rounded-lg border px-3 py-2 text-left transition-colors ${
-                bookShelf === 'downloaded'
+                bookShelf === 'bookmarked_albums'
                   ? 'border-[var(--border-strong)] bg-[var(--surface-active)]'
                   : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)]'
               }`}
             >
-              <p className="truncate text-[11px] font-extrabold uppercase tracking-wide text-[var(--text-muted)]">
-                {profileText.downloadedLessonsLabel}
-              </p>
-              <p className="mt-1 text-sm font-semibold text-ink">{Math.max(0, downloadedLessonsCount).toLocaleString()}</p>
+              <div className="flex items-center justify-center">
+                <span className={getMobileNavIconWrapClass(bookShelf === 'bookmarked_albums')}>
+                  <BookmarkedAlbumsIcon />
+                </span>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setBookShelf('bookmarked_lessons')}
+              aria-label={profileText.downloadedUnitsTracksLabel}
+              title={`${profileText.downloadedUnitsTracksLabel}: ${Math.max(0, bookmarkedLessonsCount).toLocaleString()}`}
+              className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                bookShelf === 'bookmarked_lessons'
+                  ? 'border-[var(--border-strong)] bg-[var(--surface-active)]'
+                  : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)]'
+              }`}
+            >
+              <div className="flex items-center justify-center">
+                <span className={getMobileNavIconWrapClass(bookShelf === 'bookmarked_lessons')}>
+                  <BookmarkedLessonsIcon />
+                </span>
+              </div>
             </button>
           </div>
 
-          {visibleAlbumCards.length > 0 ? (
-            <div className="grid grid-cols-3 gap-1 md:grid-cols-6 md:gap-2">
+          {bookShelf === 'bookmarked_lessons' ? (
+            bookmarkedLessonRows.length > 0 ? (
+              <div className="divide-y divide-[var(--border-subtle)]">
+                {bookmarkedLessonRows.map((track) => (
+                  <UnitRow
+                    key={track.key}
+                    entry={track.entry}
+                    albumKey={track.albumKey}
+                    unitPrefixLabel={unitPrefixLabel}
+                    defaultLanguage={defaultLanguage}
+                    activeUnitKey={activeUnitKey}
+                    isCompleted={track.isCompleted}
+                    badgeDefaultClass={LIBRARY_STATE_STYLE.badgeDefault}
+                    badgeActiveClass={LIBRARY_STATE_STYLE.badgeActive}
+                    badgeCompletedClass={LIBRARY_STATE_STYLE.badgeCompleted}
+                    accentClass="text-[var(--text-muted)]"
+                    actionButtonMode="menu"
+                    onPlayUnit={() => track.onPlay()}
+                    onOpenUnit={() => track.onOpen()}
+                    onOpenActionMenu={() => setActiveActionTrack(track)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="px-1 py-3 text-sm font-semibold text-[var(--text-muted)]">
+                {profileText.downloadedUnitsTracksLabel}: 0
+              </p>
+            )
+          ) : visibleAlbumCards.length > 0 ? (
+            <div className="grid grid-cols-3 gap-0 md:grid-cols-6 md:gap-2">
               {visibleAlbumCards.map((card) => (
                 <button
                   key={card.key}
@@ -178,11 +312,33 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </div>
           ) : (
             <p className="px-1 py-3 text-sm font-semibold text-[var(--text-muted)]">
-              {profileText.downloadedLessonsLabel}: 0
+              {bookShelf === 'bookmarked_albums'
+                ? `${profileText.downloadedLessonsLabel}: 0`
+                : `${profileText.currentCourseLabel}: 0`}
             </p>
           )}
         </div>
       </section>
+
+      <TrackActionSheet
+        isOpen={Boolean(activeActionTrack)}
+        closeAriaLabel={libraryText.backToAlbumsAriaLabel}
+        trackTitle={activeActionTrack ? localizeLibraryTopic(activeActionTrack.entry.topic, defaultLanguage) : ''}
+        trackUnitCode={activeTrackUnitCode}
+        openLessonLabel={libraryText.openLessonTitle}
+        onClose={() => setActiveActionTrack(null)}
+        onOpenLesson={() => {
+          if (!activeActionTrack) return;
+          activeActionTrack.onOpen();
+          setActiveActionTrack(null);
+        }}
+        onToggleBookmark={() => {
+          if (!activeActionTrack) return;
+          activeActionTrack.onToggleBookmark();
+          setActiveActionTrack(null);
+        }}
+        isBookmarked={activeActionTrack?.isBookmarked ?? false}
+      />
     </div>
   );
 };

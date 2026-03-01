@@ -52,8 +52,7 @@ function createArgs(
     currentCourseCode: 'HSK 1',
     onProfileInputChange: vi.fn(),
     onApplyProfileName: vi.fn(),
-    onOpenCurrentCourse: vi.fn(),
-    onOpenDownloadedLessons: vi.fn(),
+    onOpenProfileAlbumLibrary: vi.fn(),
     onOpenSettings: vi.fn(),
     onRequestLogout: vi.fn(),
     learnLanguage: 'hsk_chinese',
@@ -63,9 +62,13 @@ function createArgs(
     libraryViewMode: 'all',
     onSelectedAlbumKeyChange: vi.fn(),
     downloadedUnitKeys: new Set<string>(),
+    bookmarkedUnitKeys: new Set<string>(),
+    bookmarkedAlbumKeys: new Set<string>(),
     onDownloadUnit: vi.fn(),
     onRemoveUnitDownload: vi.fn(),
     isUnitDownloading: vi.fn(() => false),
+    onToggleUnitBookmark: vi.fn(),
+    onToggleAlbumBookmark: vi.fn(),
     isPronunciationEnabled: true,
     isBoldTextEnabled: false,
     isAutoScrollEnabled: true,
@@ -222,18 +225,78 @@ describe('buildAppViewProps feed routing', () => {
     expect(result.showLibraryMiniPlayer).toBe(true);
   });
 
-  it('shows downloaded lessons count in profile props', () => {
+  it('shows bookmark counts in profile props', () => {
     const lessonA = createLesson('A');
     const lessonB = { ...createLesson('B'), unit: 2 };
     const lessonC = { ...createLesson('C'), level: 2, unit: 1 };
     const result = buildAppViewProps(
       createArgs({
         lessons: [lessonA, lessonB, lessonC],
-        downloadedUnitKeys: new Set<string>(['1:1', '2:1']),
+        bookmarkedUnitKeys: new Set<string>(['1:1', '2:1']),
       }),
     );
 
-    expect(result.profileViewProps.downloadedLessonsCount).toBe(2);
+    expect(result.profileViewProps.bookmarkedAlbumsCount).toBe(0);
+    expect(result.profileViewProps.bookmarkedLessonsCount).toBe(2);
+    expect(result.profileViewProps.bookmarkedLessonRows).toHaveLength(2);
+    expect(result.profileViewProps.bookmarkedLessonRows?.map((row) => `${row.entry.level}:${row.entry.unit}`)).toEqual([
+      '1:1',
+      '2:1',
+    ]);
+  });
+
+  it('opens library album detail when profile bookmarked album card is tapped', () => {
+    const onOpenProfileAlbumLibrary = vi.fn();
+    const onSelectedAlbumKeyChange = vi.fn();
+    const onSelectUnit = vi.fn();
+
+    const result = buildAppViewProps(
+      createArgs({
+        onOpenProfileAlbumLibrary,
+        onSelectedAlbumKeyChange,
+        onSelectUnit,
+      }),
+    );
+
+    const firstAlbumCard = result.profileViewProps.albumCards?.[0];
+    expect(firstAlbumCard).toBeDefined();
+    firstAlbumCard?.onOpen();
+
+    expect(onOpenProfileAlbumLibrary).toHaveBeenCalled();
+    expect(onSelectedAlbumKeyChange).toHaveBeenCalledWith(firstAlbumCard?.key);
+    expect(onSelectUnit).not.toHaveBeenCalled();
+  });
+
+  it('keeps shared mini player visible on profile even when audio is stopped', () => {
+    const resultStopped = buildAppViewProps(
+      createArgs({
+        sidebarTab: 'profile',
+        isReading: false,
+        activeSpeakingLessonIndex: null,
+      }),
+    );
+    expect(resultStopped.showLibraryMiniPlayer).toBe(true);
+
+    const resultPlaying = buildAppViewProps(
+      createArgs({
+        sidebarTab: 'profile',
+        isReading: true,
+      }),
+    );
+    expect(resultPlaying.showLibraryMiniPlayer).toBe(true);
+  });
+
+  it('opens lesson when shared mini player card is tapped', () => {
+    const onMobileTabChange = vi.fn();
+    const result = buildAppViewProps(
+      createArgs({
+        sidebarTab: 'library',
+        onMobileTabChange,
+      }),
+    );
+
+    result.libraryMiniPlayerProps.onOpenPlayer();
+    expect(onMobileTabChange).toHaveBeenCalledWith('lesson');
   });
 
   it('keeps UI language and lesson translation language separate', () => {

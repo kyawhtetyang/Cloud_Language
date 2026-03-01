@@ -77,7 +77,7 @@ describe('LibraryView topic localization', () => {
     expect(screen.getByLabelText(libraryText.completedUnitAriaLabel)).toBeInTheDocument();
   });
 
-  it('plays unit when row is tapped, and opens lesson only when arrow is tapped', () => {
+  it('plays unit when row is tapped, and opens lesson from the row action menu', () => {
     const libraryText = getAppText('english').library;
     const onReadAlbum = vi.fn();
     const onSelectUnit = vi.fn();
@@ -97,7 +97,8 @@ describe('LibraryView topic localization', () => {
     expect(onReadAlbum).toHaveBeenCalledWith([{ level: 1, unit: 1 }], expect.any(String));
     expect(onSelectUnit).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: `${libraryText.openLessonAriaPrefix} 1.1` }));
+    fireEvent.click(screen.getByRole('button', { name: /More actions 1\.1/i }));
+    fireEvent.click(screen.getByRole('button', { name: libraryText.openLessonTitle }));
     expect(onSelectUnit).toHaveBeenCalledWith(1, 1, expect.any(String));
   });
 
@@ -116,5 +117,56 @@ describe('LibraryView topic localization', () => {
     swipeFromLeftEdge(getByTestId('album-detail-view'));
 
     expect(screen.getByRole('button', { name: `${libraryText.openGroupAriaPrefix} 1` })).toBeInTheDocument();
+  });
+
+  it('shows bookmark action when row menu is opened', () => {
+    const libraryText = getAppText('english').library;
+    render(
+      <LibraryView
+        lessons={lessons}
+        defaultLanguage="english"
+        learnLanguage="burmese"
+        onSelectUnit={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: `${libraryText.openGroupAriaPrefix} 1` }));
+    fireEvent.click(screen.getByRole('button', { name: /More actions 1\.1/i }));
+
+    expect(screen.getByRole('button', { name: /^Bookmark$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: libraryText.downloadedLabel })).not.toBeInTheDocument();
+  });
+
+  it('shows album bookmark button in album header controls', () => {
+    const libraryText = getAppText('english').library;
+    render(
+      <LibraryView
+        lessons={lessons}
+        defaultLanguage="english"
+        learnLanguage="burmese"
+        onSelectUnit={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: `${libraryText.openGroupAriaPrefix} 1` }));
+    expect(screen.getByRole('button', { name: /Bookmark album/i })).toBeInTheDocument();
+  });
+
+  it('supports section-key selected album and bookmarks that album key', () => {
+    const onToggleAlbumBookmark = vi.fn();
+    render(
+      <LibraryView
+        lessons={lessons}
+        defaultLanguage="english"
+        learnLanguage="burmese"
+        onSelectUnit={vi.fn()}
+        selectedAlbumKey="custom-collection-1"
+        onToggleAlbumBookmark={onToggleAlbumBookmark}
+      />,
+    );
+
+    expect(screen.getByTestId('album-detail-view')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Bookmark album/i }));
+    expect(onToggleAlbumBookmark).toHaveBeenCalledWith('custom-collection-1');
   });
 });

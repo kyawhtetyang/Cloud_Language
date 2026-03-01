@@ -51,6 +51,7 @@ describe('Swipe-back behavior', () => {
     const { container } = render(
       <SettingsView
         settingsText={getAppText('english').settings}
+        profileText={getAppText('english').profile}
         defaultLanguage="english"
         learnLanguage="burmese"
         isEnglishUiLocked={false}
@@ -62,6 +63,10 @@ describe('Swipe-back behavior', () => {
         canIncreaseTextSize
         appTheme="dark"
         voiceProvider="default"
+        profileInput="tester"
+        profileError={null}
+        hasProfileWhitespace={false}
+        isProfileInputValid
         onDefaultLanguageChange={vi.fn()}
         onToggleEnglishUiLock={vi.fn()}
         onLearnLanguageChange={vi.fn()}
@@ -72,6 +77,9 @@ describe('Swipe-back behavior', () => {
         onIncreaseTextSize={vi.fn()}
         onAppThemeChange={vi.fn()}
         onVoiceProviderChange={vi.fn()}
+        onProfileInputChange={vi.fn()}
+        onApplyProfileName={vi.fn()}
+        onRequestLogout={vi.fn()}
         onBackToProfile={vi.fn()}
       />,
     );
@@ -81,7 +89,7 @@ describe('Swipe-back behavior', () => {
 
     swipeFromLeftEdge(container.firstElementChild as HTMLElement);
     expect(screen.queryByLabelText(/back to settings/i)).not.toBeInTheDocument();
-    expect(screen.getByText('Preferences')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /default language/i })).toBeInTheDocument();
   });
 
   it('shows review and quiz toolbar tabs in revision view', () => {

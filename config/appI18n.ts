@@ -83,6 +83,7 @@ export type AppTextPack = {
     progressStatsSectionLabel: string;
     currentCourseLabel: string;
     downloadedLessonsLabel: string;
+    downloadedUnitsTracksLabel: string;
     courseNotAvailableLabel: string;
     changeDisplayNameSectionLabel: string;
     displayNamePlaceholder: string;
@@ -210,7 +211,8 @@ const APP_TEXT_ENGLISH: AppTextPack = {
     welcomeBackTitle: 'Welcome back',
     progressStatsSectionLabel: 'Progress Stats',
     currentCourseLabel: 'Current Course',
-    downloadedLessonsLabel: 'Downloaded Lessons',
+    downloadedLessonsLabel: 'Bookmark Album',
+    downloadedUnitsTracksLabel: 'Bookmark Lesson',
     courseNotAvailableLabel: 'Not available',
     changeDisplayNameSectionLabel: 'Change Display Name',
     displayNamePlaceholder: 'Display name (no spaces)',
@@ -356,7 +358,8 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       welcomeBackTitle: 'ပြန်လည်ကြိုဆိုပါတယ်',
       progressStatsSectionLabel: 'တိုးတက်မှု အချက်အလက်',
       currentCourseLabel: 'လက်ရှိသင်တန်း',
-      downloadedLessonsLabel: 'ဒေါင်းလုဒ်ပြီး သင်ခန်းစာများ',
+      downloadedLessonsLabel: 'မှတ်သားထားသော အယ်လ်ဘမ်',
+      downloadedUnitsTracksLabel: 'မှတ်သားထားသော သင်ခန်းစာ',
       courseNotAvailableLabel: 'မရရှိသေးပါ',
       changeDisplayNameSectionLabel: 'ဖော်ပြမည့်နာမည် ပြောင်းမယ်',
       displayNamePlaceholder: 'ဖော်ပြမည့်နာမည် (space မပါ)',
@@ -498,7 +501,8 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       welcomeBackTitle: 'Chào mừng quay lại',
       progressStatsSectionLabel: 'Thống kê tiến độ',
       currentCourseLabel: 'Khóa học hiện tại',
-      downloadedLessonsLabel: 'Bài học đã tải',
+      downloadedLessonsLabel: 'Album đã đánh dấu',
+      downloadedUnitsTracksLabel: 'Bài học đã đánh dấu',
       courseNotAvailableLabel: 'Chưa có',
       changeDisplayNameSectionLabel: 'Đổi tên hiển thị',
       displayNamePlaceholder: 'Tên hiển thị (không có khoảng trắng)',

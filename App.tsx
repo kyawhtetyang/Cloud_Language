@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useProfileProgress } from './hooks/useProfileProgress';
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { useAppPreferences } from './hooks/useAppPreferences';
@@ -9,6 +9,7 @@ import { useCourseNavigationState } from './hooks/useCourseNavigationState';
 import { useAppProfileSettingsSync } from './hooks/useAppProfileSettingsSync';
 import { useAppTheme } from './hooks/useAppTheme';
 import { useLessonHighlights } from './hooks/useLessonHighlights';
+import { useReviewEventLogger } from './hooks/useReviewEventLogger';
 import { useTrackPlayback } from './hooks/useTrackPlayback';
 import { useAppActions } from './hooks/useAppActions';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
@@ -100,7 +101,14 @@ const App: React.FC = () => {
 
   const [librarySelectedAlbumKey, setLibrarySelectedAlbumKey] = useState<string | null>(null);
   const [libraryViewMode, setLibraryViewMode] = useState<LibraryViewMode>(DEFAULT_LIBRARY_VIEW_MODE);
+  const [bookmarkedUnitKeys, setBookmarkedUnitKeys] = useState<Set<string>>(new Set());
+  const [bookmarkedAlbumKeys, setBookmarkedAlbumKeys] = useState<Set<string>>(new Set());
   const [randomOrderVersion, setRandomOrderVersion] = useState(0);
+
+  useEffect(() => {
+    setBookmarkedUnitKeys(new Set());
+    setBookmarkedAlbumKeys(new Set());
+  }, [profileStorageId]);
   const {
     apiBaseUrl,
     lessons,
@@ -120,10 +128,18 @@ const App: React.FC = () => {
     learnLanguage,
     defaultLanguage: effectiveDefaultLanguage,
   });
-  const { highlightPhrasesByLessonKey, saveHighlightSelection, clearHighlightSelection } = useLessonHighlights(
+  const { logReviewEvent } = useReviewEventLogger({
+    apiBaseUrl,
+    profileName,
+    learnLanguage,
+  });
+  const { highlightPhrasesByLessonKey, saveHighlightSelection, clearHighlightSelection } = useLessonHighlights({
+    apiBaseUrl,
+    profileName,
     profileStorageId,
     learnLanguage,
-  );
+    logReviewEvent,
+  });
   const { markHydrationStale } = useAppProfileSettingsSync({
     apiBaseUrl,
     lessons,
@@ -288,6 +304,7 @@ const App: React.FC = () => {
     setIsRandomLessonOrderEnabled,
     currentLevel,
     currentUnit,
+    logReviewEvent,
   });
   const {
     learnStepCount,
@@ -408,11 +425,37 @@ const App: React.FC = () => {
     selectTab(tab);
   };
 
-  const handleOpenDownloadedLessons = () => {
-    setLibraryViewMode('downloaded');
+  const handleOpenProfileAlbumLibrary = () => {
+    setLibraryViewMode(DEFAULT_LIBRARY_VIEW_MODE);
     setLibrarySelectedAlbumKey(null);
     setSidebarTab('library');
     setIsSidebarOpen(false);
+  };
+
+  const handleToggleUnitBookmark = (level: number, unit: number) => {
+    const unitKey = `${Math.max(1, level)}:${Math.max(1, unit)}`;
+    setBookmarkedUnitKeys((previous) => {
+      const next = new Set(previous);
+      if (next.has(unitKey)) {
+        next.delete(unitKey);
+      } else {
+        next.add(unitKey);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleAlbumBookmark = (albumKey: string) => {
+    if (!albumKey) return;
+    setBookmarkedAlbumKeys((previous) => {
+      const next = new Set(previous);
+      if (next.has(albumKey)) {
+        next.delete(albumKey);
+      } else {
+        next.add(albumKey);
+      }
+      return next;
+    });
   };
 
   const handleReadForActiveTab = async () => {
@@ -496,7 +539,7 @@ const App: React.FC = () => {
     currentCourseCode,
     setProfileInput,
     handleApplyProfileName,
-    handleOpenDownloadedLessons,
+    handleOpenProfileAlbumLibrary,
     setSidebarTab,
     setIsSidebarOpen,
     learnLanguage,
@@ -506,9 +549,13 @@ const App: React.FC = () => {
     libraryViewMode,
     setLibrarySelectedAlbumKey,
     downloadedUnitKeys,
+    bookmarkedUnitKeys,
+    bookmarkedAlbumKeys,
     downloadUnitPack,
     removeUnitPack,
     isUnitDownloading,
+    onToggleUnitBookmark: handleToggleUnitBookmark,
+    onToggleAlbumBookmark: handleToggleAlbumBookmark,
     isPronunciationEnabled,
     isBoldTextEnabled,
     isAutoScrollEnabled,

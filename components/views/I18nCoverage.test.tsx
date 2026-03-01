@@ -37,14 +37,15 @@ describe('i18n coverage', () => {
         progressPercent={10}
         progressLabel="1/10"
         profileText={text.profile}
+        defaultLanguage="vietnamese"
+        unitPrefixLabel={text.lesson.unitPrefix}
         currentCourseCode="HSK 1 Unit 1"
-        onOpenCurrentCourse={vi.fn()}
         onOpenSettings={vi.fn()}
       />,
     );
 
     expect(screen.getByText('Chào mừng quay lại')).toBeInTheDocument();
-    expect(screen.getByText('Khóa học hiện tại')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Khóa học hiện tại' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Lưu' })).not.toBeInTheDocument();
   });
 
@@ -86,7 +87,6 @@ describe('i18n coverage', () => {
       />,
     );
 
-    expect(screen.getByText('Tùy chọn')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Ngôn ngữ mặc định/i })).toBeInTheDocument();
   });
 
