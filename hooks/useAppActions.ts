@@ -4,6 +4,7 @@ import {
   DEFAULT_PROGRESS_INDEX,
   getLessonUnitId,
   getPlayableLessonText,
+  LearnLanguage,
   PROFILE_NAME_KEY,
   SidebarTab,
 } from '../config/appConfig';
@@ -14,6 +15,7 @@ import { RepeatMode } from './useUnitNavigation';
 
 type UseAppActionsArgs = {
   mode: AppMode;
+  learnLanguage: LearnLanguage;
   lessons: LessonData[];
   orderedUnitIndexes: number[];
   isReading: boolean;
@@ -57,6 +59,7 @@ type UseAppActionsResult = {
 
 export function useAppActions({
   mode,
+  learnLanguage,
   lessons,
   orderedUnitIndexes,
   isReading,
@@ -93,7 +96,7 @@ export function useAppActions({
       .map((lessonIndex) => {
         const lesson = lessons[lessonIndex];
         if (!lesson) return null;
-        const speakTextValue = getPlayableLessonText(lesson);
+        const speakTextValue = getPlayableLessonText(lesson, learnLanguage);
         if (!speakTextValue) return null;
         return {
           text: speakTextValue,
@@ -116,7 +119,7 @@ export function useAppActions({
   };
 
   const handlePlaySingleLesson = (lesson: LessonData, lessonIndex: number) => {
-    const speakValue = getPlayableLessonText(lesson);
+    const speakValue = getPlayableLessonText(lesson, learnLanguage);
     if (!speakValue) return;
     logReviewEvent?.('sentence_play', {
       lessonKey: buildLessonReferenceKey(lesson),

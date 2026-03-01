@@ -28,6 +28,7 @@ describe('useCourseNavigationState', () => {
     const { result } = renderHook(() =>
       useCourseNavigationState({
         lessons,
+        learnLanguage: 'english',
         currentIndex: 4,
         currentLevel: 4,
         sectionStart: 3,
@@ -44,6 +45,7 @@ describe('useCourseNavigationState', () => {
     const { result } = renderHook(() =>
       useCourseNavigationState({
         lessons: [],
+        learnLanguage: 'english',
         currentIndex: 0,
         currentLevel: 10,
         sectionStart: 0,

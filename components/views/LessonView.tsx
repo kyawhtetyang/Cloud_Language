@@ -2,8 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { LessonData } from '../../types';
 import {
   DefaultLanguage,
+  hasLessonLearningPronunciation,
   getPlayableLessonText,
   LearnLanguage,
+  resolveLessonLearningPronunciationText,
+  resolveLessonLearningSourceText,
   resolveLessonTranslationText,
 } from '../../config/appConfig';
 import {
@@ -221,6 +224,33 @@ export const LessonView: React.FC<LessonViewProps> = ({
     totalGroups > 0
       ? `${Math.min(activeGroup, totalGroups)}/${totalGroups}`
       : (progressLabel ?? '');
+  const visibleLessons: LessonData[] = allBatchGroups && allBatchGroups.length > 0
+    ? allBatchGroups.flatMap((entries) => entries.map((entry) => entry.lesson))
+    : currentBatchEntries.map((entry) => entry.lesson);
+  let pronunciationEligibleCount = 0;
+  let pronunciationMissingCount = 0;
+  for (const lesson of visibleLessons) {
+    const sourceText = resolveLessonLearningSourceText({
+      lessonEnglish: lesson.english,
+      lessonPronunciation: lesson.pronunciation,
+      lessonTranslations: lesson.translations,
+      learnLanguage,
+    });
+    if (!sourceText) continue;
+    pronunciationEligibleCount += 1;
+    const hasPronunciation = hasLessonLearningPronunciation({
+      lessonEnglish: lesson.english,
+      lessonPronunciation: lesson.pronunciation,
+      lessonTranslations: lesson.translations,
+      learnLanguage,
+    });
+    if (!hasPronunciation) pronunciationMissingCount += 1;
+  }
+  const pronunciationCoverageHint = !isPronunciationEnabled || pronunciationEligibleCount === 0 || pronunciationMissingCount === 0
+    ? ''
+    : (pronunciationMissingCount === pronunciationEligibleCount
+      ? appText.lesson.pronunciationAllMissingHint
+      : appText.lesson.pronunciationSomeMissingHint);
   const lessonTextScale = Number.isFinite(textScalePercent)
     ? Math.min(1.2, Math.max(0.9, textScalePercent / 100))
     : 1;
@@ -290,8 +320,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
     return tokenized.tokens.slice(from, to + 1).join(tokenized.joiner).trim();
   };
 
-  const saveDraftSelection = (lesson: LessonData) => {
-    const phrase = getDraftSelectionPhrase(lesson.english);
+  const saveDraftSelection = (lesson: LessonData, lessonText: string) => {
+    const phrase = getDraftSelectionPhrase(lessonText);
     if (!phrase) return;
     onSaveLessonHighlight?.(lesson, phrase);
     closeHighlightMode();
@@ -328,7 +358,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   };
 
   const playLesson = (lesson: LessonData, lessonIndex: number) => {
-    const speakValue = getPlayableLessonText(lesson);
+    const speakValue = getPlayableLessonText(lesson, learnLanguage);
     if (!speakValue) return;
     onPlayLesson?.(lesson, lessonIndex);
   };
@@ -399,8 +429,20 @@ export const LessonView: React.FC<LessonViewProps> = ({
     rowRef?: React.Ref<HTMLDivElement>,
   ) => {
     const lessonKey = buildLessonReferenceKey(lesson);
-    const translatedText = resolveLessonTranslationText({
+    const sourceText = resolveLessonLearningSourceText({
       lessonEnglish: lesson.english,
+      lessonPronunciation: lesson.pronunciation,
+      lessonTranslations: lesson.translations,
+      learnLanguage,
+    });
+    const pronunciationText = resolveLessonLearningPronunciationText({
+      lessonEnglish: lesson.english,
+      lessonPronunciation: lesson.pronunciation,
+      lessonTranslations: lesson.translations,
+      learnLanguage,
+    });
+    const translatedText = resolveLessonTranslationText({
+      lessonEnglish: sourceText,
       lessonBurmese: lesson.burmese,
       lessonTranslations: lesson.translations,
       defaultLanguage: translationLanguage,
@@ -410,9 +452,9 @@ export const LessonView: React.FC<LessonViewProps> = ({
     const savedPhrases = savedHighlightPhrasesByLessonKey?.get(lessonKey) ?? [];
     const isInteractiveSelecting = highlightModeRowKey === rowKey;
     const isActiveSpeaking = activeSpeakingLessonIndex === lessonIndex;
-    const selectedPhraseDraft = isInteractiveSelecting ? getDraftSelectionPhrase(lesson.english) : '';
+    const selectedPhraseDraft = isInteractiveSelecting ? getDraftSelectionPhrase(sourceText) : '';
     const hasSavedPhrases = savedPhrases.length > 0;
-    const canSelectWholeSentence = tokenizeLessonTextForHighlight(lesson.english).tokens.length > 0;
+    const canSelectWholeSentence = tokenizeLessonTextForHighlight(sourceText).tokens.length > 0;
     const setCombinedRowRef = (node: HTMLDivElement | null) => {
       if (node) {
         lessonRowRefs.current.set(lessonIndex, node);
@@ -488,16 +530,16 @@ export const LessonView: React.FC<LessonViewProps> = ({
           }}
           className="selection-hover w-full rounded-lg px-0 py-3 text-left transition-colors"
           style={LESSON_ROW_NO_SELECT_STYLE}
-          aria-label={`${appText.lesson.playAudioAriaPrefix} ${lesson.english}`}
+          aria-label={`${appText.lesson.playAudioAriaPrefix} ${sourceText}`}
           title={appText.lesson.highlightHintTitle}
         >
           <div className="text-left leading-tight" style={lessonTextScaleStyle}>
-            {isPronunciationEnabled && (
+            {isPronunciationEnabled && pronunciationText && (
               <p
                 className={`lesson-row-pronunciation text-[var(--text-secondary)] ${isBoldTextEnabled ? 'font-semibold' : 'font-normal'}`}
                 style={isActiveSpeaking ? ACTIVE_SPEAKING_TEXT_STYLE : undefined}
               >
-                {lesson.pronunciation}
+                {pronunciationText}
               </p>
             )}
             <p
@@ -505,8 +547,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
               style={isActiveSpeaking ? ACTIVE_SPEAKING_TEXT_STYLE : undefined}
             >
               {isInteractiveSelecting
-                ? renderInteractiveSelectionText(lesson.english, rowKey)
-                : renderHighlightedText(lesson.english, savedPhrases)}
+                ? renderInteractiveSelectionText(sourceText, rowKey)
+                : renderHighlightedText(sourceText, savedPhrases)}
             </p>
             <p
               className={`lesson-row-translation text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}
@@ -544,7 +586,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
-                  selectWholeSentence(lesson.english);
+                  selectWholeSentence(sourceText);
                 }}
                 disabled={!canSelectWholeSentence}
                 className={getPillButtonClass(canSelectWholeSentence ? 'selected' : 'muted')}
@@ -555,7 +597,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
-                  saveDraftSelection(lesson);
+                  saveDraftSelection(lesson, sourceText);
                 }}
                 disabled={!selectedPhraseDraft}
                 className={getPillButtonClass(selectedPhraseDraft ? 'selected' : 'muted')}
@@ -690,6 +732,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
             </p>
           </div>
         </div>
+      )}
+      {pronunciationCoverageHint && (
+        <p className="mb-2 rounded-md border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)]">
+          {pronunciationCoverageHint}
+        </p>
       )}
       <div className={lessonBodyClass}>
         {allBatchGroups && allBatchGroups.length > 0 ? (

@@ -1,9 +1,16 @@
 import { useMemo } from 'react';
-import { getLessonOrderIndex, getLessonUnitId, getPlayableLessonText, resolveStageCode } from '../config/appConfig';
+import {
+  getLessonOrderIndex,
+  getLessonUnitId,
+  getPlayableLessonText,
+  LearnLanguage,
+  resolveStageCode,
+} from '../config/appConfig';
 import { LessonData } from '../types';
 
 type UseCourseNavigationStateParams = {
   lessons: LessonData[];
+  learnLanguage: LearnLanguage;
   currentIndex: number;
   currentLevel: number;
   sectionStart: number;
@@ -18,6 +25,7 @@ type UseCourseNavigationStateResult = {
 
 export function useCourseNavigationState({
   lessons,
+  learnLanguage,
   currentIndex,
   currentLevel,
   sectionStart,
@@ -57,12 +65,12 @@ export function useCourseNavigationState({
   const playableCourseUnitKeys = useMemo(() => {
     const playable = new Set<string>();
     lessons.forEach((lesson) => {
-      const speakTextValue = getPlayableLessonText(lesson);
+      const speakTextValue = getPlayableLessonText(lesson, learnLanguage);
       if (!speakTextValue) return;
       playable.add(`${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`);
     });
     return playable;
-  }, [lessons]);
+  }, [learnLanguage, lessons]);
 
   return {
     currentStageCode,

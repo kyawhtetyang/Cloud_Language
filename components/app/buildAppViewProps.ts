@@ -7,6 +7,9 @@ import {
   getLessonUnitId,
   LibraryViewMode,
   LearnLanguage,
+  mapCourseFrameworkToLearnLanguage,
+  resolveLessonLearningSourceText,
+  resolveCourseFramework,
   SidebarTab,
   VoiceProvider,
 } from '../../config/appConfig';
@@ -481,7 +484,14 @@ export function buildAppViewProps({
   const activeOrCurrentUnitCode = activeOrCurrentLesson
     ? `${Math.max(1, getLessonOrderIndex(activeOrCurrentLesson))}.${Math.max(1, getLessonUnitId(activeOrCurrentLesson))}`
     : '';
-  const miniPlayerTrackTitle = (activeOrCurrentLesson?.english || '').trim();
+  const miniPlayerTrackTitle = activeOrCurrentLesson
+    ? resolveLessonLearningSourceText({
+      lessonEnglish: activeOrCurrentLesson.english,
+      lessonPronunciation: activeOrCurrentLesson.pronunciation,
+      lessonTranslations: activeOrCurrentLesson.translations,
+      learnLanguage,
+    })
+    : '';
   const miniPlayerTrackMeta = activeOrCurrentLesson
     ? `${activeOrCurrentUnitCode} · ${localizeLibraryTopic(activeOrCurrentLesson.topic, defaultLanguage)}`
     : '';
@@ -523,6 +533,7 @@ export function buildAppViewProps({
   const computedIsNextDisabled = isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end);
   const revisionBatchEntries = isFeedView ? currentBatchEntries.slice(0, 3) : currentBatchEntries;
   const lessonViewBatchGroups = isFeedView ? undefined : lessonBatchGroups;
+  const courseFramework = resolveCourseFramework(learnLanguage);
 
   return {
     isLibraryView,
@@ -591,6 +602,7 @@ export function buildAppViewProps({
       profileText: appText.profile,
       defaultLanguage: selectedDefaultLanguage,
       learnLanguage,
+      courseFramework,
       isEnglishUiLocked,
       isPronunciationEnabled,
       isBoldTextEnabled,
@@ -607,6 +619,9 @@ export function buildAppViewProps({
       onDefaultLanguageChange,
       onToggleEnglishUiLock,
       onLearnLanguageChange,
+      onCourseFrameworkChange: (framework) => {
+        onLearnLanguageChange(mapCourseFrameworkToLearnLanguage(framework, learnLanguage));
+      },
       onTogglePronunciation,
       onToggleBoldText,
       onToggleAutoScroll,

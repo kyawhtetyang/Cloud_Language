@@ -1,4 +1,4 @@
-import { AppTheme, DefaultLanguage, LearnLanguage, VoiceProvider } from './appConfig';
+import { AppTheme, CourseFramework, DefaultLanguage, LearnLanguage, VoiceProvider } from './appConfig';
 
 export type AppTextPack = {
   navigation: {
@@ -68,6 +68,8 @@ export type AppTextPack = {
     highlightClearLabel: string;
     highlightAllLabel: string;
     highlightSaveLabel: string;
+    pronunciationSomeMissingHint: string;
+    pronunciationAllMissingHint: string;
     backToLibraryAriaLabel: string;
   };
   welcome: {
@@ -102,6 +104,7 @@ export type AppTextPack = {
     keepEnglishUiLabel: string;
     defaultLanguageLabel: string;
     learnLanguageLabel: string;
+    courseFrameworkLabel: string;
     appearanceLabel: string;
     voiceProviderLabel: string;
     boldTextLabel: string;
@@ -116,6 +119,7 @@ export type AppTextPack = {
     offLabel: string;
     defaultLanguageOptions: Record<DefaultLanguage, string>;
     learnLanguageOptions: Record<LearnLanguage, string>;
+    courseFrameworkOptions: Record<CourseFramework, string>;
     appearanceOptions: Record<AppTheme, string>;
     voiceProviderOptions: Record<VoiceProvider, string>;
   };
@@ -197,6 +201,8 @@ const APP_TEXT_ENGLISH: AppTextPack = {
     highlightClearLabel: 'Clear',
     highlightAllLabel: 'All',
     highlightSaveLabel: 'Save',
+    pronunciationSomeMissingHint: 'Some pronunciation is coming soon.',
+    pronunciationAllMissingHint: 'Pronunciation coming soon.',
     backToLibraryAriaLabel: 'Back',
   },
   welcome: {
@@ -231,6 +237,7 @@ const APP_TEXT_ENGLISH: AppTextPack = {
     keepEnglishUiLabel: 'English UI',
     defaultLanguageLabel: 'Default Language',
     learnLanguageLabel: 'Learn Language',
+    courseFrameworkLabel: 'Course Framework',
     appearanceLabel: 'Appearance',
     voiceProviderLabel: 'Voice Provider',
     boldTextLabel: 'Bold Text',
@@ -252,7 +259,13 @@ const APP_TEXT_ENGLISH: AppTextPack = {
     learnLanguageOptions: {
       english: 'English',
       chinese: 'Chinese',
+      vietnamese: 'Vietnamese',
+      thai: 'Thai',
       hsk_chinese: 'HSK Chinese',
+    },
+    courseFrameworkOptions: {
+      cefr: 'CEFR',
+      hsk: 'HSK',
     },
     appearanceOptions: {
       light: 'Light Mode',
@@ -344,6 +357,8 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       highlightClearLabel: 'ဖျက်မယ်',
       highlightAllLabel: 'အားလုံး',
       highlightSaveLabel: 'သိမ်းမယ်',
+      pronunciationSomeMissingHint: 'အသံထွက်အချို့ကို မကြာမီ ထည့်ပေးပါမည်။',
+      pronunciationAllMissingHint: 'အသံထွက်ကို မကြာမီ ထည့်ပေးပါမည်။',
       backToLibraryAriaLabel: 'နောက်သို့',
     },
     welcome: {
@@ -378,6 +393,7 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       keepEnglishUiLabel: 'English UI',
       defaultLanguageLabel: 'မူလဘာသာစကား',
       learnLanguageLabel: 'လေ့လာမည့်ဘာသာစကား',
+      courseFrameworkLabel: 'သင်တန်းစံနစ်',
       appearanceLabel: 'မြင်ကွင်း',
       voiceProviderLabel: 'အသံပံ့ပိုးမှု',
       boldTextLabel: 'စာလုံးအထူ',
@@ -399,7 +415,13 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       learnLanguageOptions: {
         english: 'အင်္ဂလိပ်',
         chinese: 'တရုတ်',
+        vietnamese: 'ဗီယက်နမ်',
+        thai: 'ထိုင်း',
         hsk_chinese: 'HSK တရုတ်',
+      },
+      courseFrameworkOptions: {
+        cefr: 'CEFR',
+        hsk: 'HSK',
       },
       appearanceOptions: {
         light: 'အလင်း',
@@ -487,6 +509,8 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       highlightClearLabel: 'Xóa',
       highlightAllLabel: 'Tất cả',
       highlightSaveLabel: 'Lưu',
+      pronunciationSomeMissingHint: 'Một số phần phát âm sẽ sớm có.',
+      pronunciationAllMissingHint: 'Phát âm sẽ sớm có.',
       backToLibraryAriaLabel: 'Quay lại',
     },
     welcome: {
@@ -521,6 +545,7 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       keepEnglishUiLabel: 'English UI',
       defaultLanguageLabel: 'Ngôn ngữ mặc định',
       learnLanguageLabel: 'Ngôn ngữ học',
+      courseFrameworkLabel: 'Khung khóa học',
       appearanceLabel: 'Giao diện',
       voiceProviderLabel: 'Nhà cung cấp giọng nói',
       boldTextLabel: 'Chữ đậm',
@@ -542,7 +567,13 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       learnLanguageOptions: {
         english: 'Tiếng Anh',
         chinese: 'Tiếng Trung',
+        vietnamese: 'Tiếng Việt',
+        thai: 'Tiếng Thái',
         hsk_chinese: 'Tiếng Trung HSK',
+      },
+      courseFrameworkOptions: {
+        cefr: 'CEFR',
+        hsk: 'HSK',
       },
       appearanceOptions: {
         light: 'Sáng',

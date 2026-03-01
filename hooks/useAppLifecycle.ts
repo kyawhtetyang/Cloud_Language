@@ -6,6 +6,7 @@ import {
   getLessonOrderIndex,
   getLessonUnitId,
   getPlayableLessonText,
+  LearnLanguage,
   LESSONS_PER_BATCH,
   SidebarTab,
 } from '../config/appConfig';
@@ -19,6 +20,7 @@ type UnitTarget = {
 
 type UseAppLifecycleParams = {
   defaultLanguage: DefaultLanguage;
+  learnLanguage: LearnLanguage;
   mode: AppMode;
   sidebarTab: SidebarTab;
   currentLevel: number;
@@ -61,6 +63,7 @@ type UseAppLifecycleResult = {
 
 export function useAppLifecycle({
   defaultLanguage,
+  learnLanguage,
   mode,
   sidebarTab,
   currentLevel,
@@ -269,7 +272,7 @@ export function useAppLifecycle({
     const unitKeySet = new Set(units.map((item) => `${Math.max(1, item.level)}:${Math.max(1, item.unit)}`));
     const texts = lessons.flatMap((lesson, lessonIndex) => {
       const key = `${getLessonOrderIndex(lesson)}:${getLessonUnitId(lesson)}`;
-      const speakTextValue = getPlayableLessonText(lesson);
+      const speakTextValue = getPlayableLessonText(lesson, learnLanguage);
       if (!unitKeySet.has(key) || !speakTextValue) return [];
       return [{
         text: speakTextValue,

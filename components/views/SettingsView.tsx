@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import {
   APP_THEME_OPTIONS,
   AppTheme,
+  COURSE_FRAMEWORK_OPTIONS,
+  CourseFramework,
   DEFAULT_LANGUAGE_OPTIONS,
   DefaultLanguage,
   LEARN_LANGUAGE_OPTIONS,
@@ -28,6 +30,7 @@ type SettingsViewProps = {
   profileText: AppTextPack['profile'];
   defaultLanguage: DefaultLanguage;
   learnLanguage: LearnLanguage;
+  courseFramework: CourseFramework;
   isEnglishUiLocked: boolean;
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
@@ -44,6 +47,7 @@ type SettingsViewProps = {
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
   onToggleEnglishUiLock: () => void;
   onLearnLanguageChange: (value: LearnLanguage) => void;
+  onCourseFrameworkChange: (value: CourseFramework) => void;
   onTogglePronunciation: () => void;
   onToggleBoldText: () => void;
   onToggleAutoScroll: () => void;
@@ -57,7 +61,13 @@ type SettingsViewProps = {
   onBackToProfile: () => void;
 };
 
-type SettingsRoute = 'main' | 'defaultLanguage' | 'learnLanguage' | 'appearance' | 'voiceProvider';
+type SettingsRoute =
+  | 'main'
+  | 'defaultLanguage'
+  | 'learnLanguage'
+  | 'courseFramework'
+  | 'appearance'
+  | 'voiceProvider';
 
 function findOptionLabel<T extends string>(
   options: ReadonlyArray<{ code: T; label: string }>,
@@ -81,6 +91,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   profileText,
   defaultLanguage,
   learnLanguage,
+  courseFramework,
   isEnglishUiLocked,
   isPronunciationEnabled,
   isBoldTextEnabled,
@@ -97,6 +108,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onDefaultLanguageChange,
   onToggleEnglishUiLock,
   onLearnLanguageChange,
+  onCourseFrameworkChange,
   onTogglePronunciation,
   onToggleBoldText,
   onToggleAutoScroll,
@@ -122,6 +134,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     () => settingsText.learnLanguageOptions[learnLanguage] || findOptionLabel(LEARN_LANGUAGE_OPTIONS, learnLanguage),
     [learnLanguage, settingsText.learnLanguageOptions],
   );
+  const courseFrameworkLabel = useMemo(
+    () => settingsText.courseFrameworkOptions[courseFramework] || findOptionLabel(COURSE_FRAMEWORK_OPTIONS, courseFramework),
+    [courseFramework, settingsText.courseFrameworkOptions],
+  );
   const appThemeLabel = useMemo(
     () => settingsText.appearanceOptions[appTheme] || findOptionLabel(APP_THEME_OPTIONS, appTheme),
     [appTheme, settingsText.appearanceOptions],
@@ -144,6 +160,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     })),
     [settingsText.learnLanguageOptions],
   );
+  const courseFrameworkOptions = useMemo(
+    () => COURSE_FRAMEWORK_OPTIONS.map((option) => ({
+      code: option.code,
+      label: settingsText.courseFrameworkOptions[option.code] || option.label,
+    })),
+    [settingsText.courseFrameworkOptions],
+  );
   const appearanceOptions = useMemo(
     () => APP_THEME_OPTIONS.map((option) => ({
       code: option.code,
@@ -165,6 +188,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     },
     learnLanguage: {
       title: settingsText.learnLanguageLabel,
+    },
+    courseFramework: {
+      title: settingsText.courseFrameworkLabel,
     },
     appearance: {
       title: settingsText.appearanceLabel,
@@ -247,6 +273,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <p className={SETTINGS_UI.sectionTitle}>{settingsText.learnLanguageLabel}</p>
             <span className={SETTINGS_UI.rowValue}>
               {learnLanguageLabel}
+              <span aria-hidden="true">›</span>
+            </span>
+          </button>
+          <div className={SETTINGS_UI.listDivider} />
+          <button type="button" onClick={() => setRoute('courseFramework')} className={SETTINGS_UI.listRow}>
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.courseFrameworkLabel}</p>
+            <span className={SETTINGS_UI.rowValue}>
+              {courseFrameworkLabel}
               <span aria-hidden="true">›</span>
             </span>
           </button>
@@ -410,6 +444,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           renderOptionPage(defaultLanguageOptions, defaultLanguage, onDefaultLanguageChange)}
         {route === 'learnLanguage' &&
           renderOptionPage(learnLanguageOptions, learnLanguage, onLearnLanguageChange)}
+        {route === 'courseFramework' &&
+          renderOptionPage(courseFrameworkOptions, courseFramework, onCourseFrameworkChange)}
         {route === 'appearance' &&
           renderOptionPage(appearanceOptions, appTheme, onAppThemeChange)}
         {route === 'voiceProvider' &&

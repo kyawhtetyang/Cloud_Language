@@ -19,6 +19,14 @@ export const SPEECH_LANGUAGE_PROFILES: Record<LearnLanguage, SpeechLanguageProfi
     locale: 'zh-CN',
     prefix: 'zh-',
   },
+  vietnamese: {
+    locale: 'vi-VN',
+    prefix: 'vi-',
+  },
+  thai: {
+    locale: 'th-TH',
+    prefix: 'th-',
+  },
   hsk_chinese: {
     locale: 'zh-CN',
     prefix: 'zh-',

@@ -201,6 +201,7 @@ const App: React.FC = () => {
     playableCourseUnitKeys,
   } = useCourseNavigationState({
     lessons,
+    learnLanguage,
     currentIndex,
     currentLevel,
     sectionStart,
@@ -275,6 +276,7 @@ const App: React.FC = () => {
     handleToggleRepeat,
   } = useAppActions({
     mode,
+    learnLanguage,
     lessons,
     orderedUnitIndexes,
     isReading,
@@ -315,6 +317,7 @@ const App: React.FC = () => {
     handleRestartCourse,
   } = useAppLifecycle({
     defaultLanguage: effectiveDefaultLanguage,
+    learnLanguage,
     mode,
     sidebarTab,
     currentLevel,
@@ -494,7 +497,7 @@ const App: React.FC = () => {
     const revisionEntries = currentBatchEntries
       .slice(0, 3)
       .map(({ lesson, lessonIndex }) => {
-        const speakTextValue = getPlayableLessonText(lesson);
+        const speakTextValue = getPlayableLessonText(lesson, learnLanguage);
         if (!speakTextValue) return null;
         return {
           text: speakTextValue,
