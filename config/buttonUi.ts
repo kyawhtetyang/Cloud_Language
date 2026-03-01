@@ -1,11 +1,17 @@
+export const INTERACTIVE_SIZE = {
+  touchTarget: 'h-11 w-11',
+  touchTargetLarge: 'h-12 w-12',
+  mobileNavButtonHeight: 'h-14',
+} as const;
+
 export const BUTTON_UI = {
   iconNavButton:
-    'inline-flex h-9 w-9 items-center justify-center rounded-full border-2 btn-unselected text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]',
+    `inline-flex ${INTERACTIVE_SIZE.touchTarget} items-center justify-center rounded-full border-2 btn-unselected text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]`,
   iconNavGlyph: 'text-lg font-black leading-none',
   footerRoundBase:
     'flex items-center justify-center rounded-full border-2 transition-all duration-300 ease-out',
-  footerRoundSmall: 'h-10 w-10',
-  footerRoundLarge: 'h-12 w-12',
+  footerRoundSmall: INTERACTIVE_SIZE.touchTarget,
+  footerRoundLarge: INTERACTIVE_SIZE.touchTargetLarge,
   footerSelected: 'btn-selected',
   footerUnselected: 'btn-unselected',
   footerDisabledSmall: 'btn-unselected cursor-not-allowed opacity-50',
@@ -34,14 +40,14 @@ export const BUTTON_UI = {
   dialogDismissOverlay: 'absolute inset-0 bg-black/40',
   sidebarDismissOverlay: 'fixed inset-0 bg-black/30 z-30 md:hidden',
   iconCircleButtonBase:
-    'inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors',
+    `inline-flex ${INTERACTIVE_SIZE.touchTarget} items-center justify-center rounded-full border transition-colors`,
   iconCircleButtonDefault:
     'border-[var(--border-subtle)] bg-[var(--surface-default)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]',
   iconCircleButtonActive:
     'border-[var(--border-strong)] bg-[var(--surface-active)] text-[var(--text-secondary)]',
   iconCircleButtonLoading:
     'border-[var(--border-strong)] bg-[var(--surface-active)] text-[var(--text-muted)] cursor-wait',
-  mobileNavButtonBase: 'h-16 flex flex-col items-center justify-center gap-1 rounded-xl transition-all',
+  mobileNavButtonBase: `${INTERACTIVE_SIZE.mobileNavButtonHeight} flex flex-col items-center justify-center gap-1 rounded-xl transition-all`,
   mobileNavButtonActive: 'bg-transparent text-brand',
   mobileNavButtonInactive: 'bg-transparent text-[var(--text-secondary)]',
   mobileNavIconWrapBase: 'flex items-center justify-center transition-all',
@@ -59,7 +65,7 @@ export const BUTTON_UI = {
   bottomBarCardInteractive:
     'transition-transform duration-300 md:hover:translate-y-[-1px]',
   bottomBarMobileAnchor:
-    'bottom-[calc(78px+env(safe-area-inset-bottom))]',
+    'bottom-[calc(64px+env(safe-area-inset-bottom))]',
   bottomBarDesktopAnchor:
     'md:bottom-4 md:left-72 md:right-0 md:w-auto md:max-w-none md:translate-x-0 md:px-6 md:pb-0',
   bottomBarContentFrame: 'mx-auto w-full max-w-3xl',

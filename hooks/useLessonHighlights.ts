@@ -14,6 +14,14 @@ function normalizeSelectionText(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+function getHighlightPhraseKey(selectedText: string): string {
+  return normalizeSelectionText(selectedText).toLocaleLowerCase();
+}
+
+function getHighlightMergeKey(lessonKey: string, selectedText: string): string {
+  return `${lessonKey}::${getHighlightPhraseKey(selectedText)}`;
+}
+
 function getCreatedAtTimestamp(value: string): number {
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -69,7 +77,7 @@ function normalizeRemoteHighlight(
   if (!lessonKey || !selectedText) return null;
   const id = typeof raw.id === 'string' && raw.id.trim()
     ? raw.id
-    : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    : `${profileId}:${learnLanguage}:${getHighlightMergeKey(lessonKey, selectedText)}`;
   return {
     id,
     profileStorageId: profileId,
@@ -82,20 +90,21 @@ function normalizeRemoteHighlight(
 }
 
 function mergeHighlights(localHighlights: LessonHighlight[], remoteHighlights: LessonHighlight[]): LessonHighlight[] {
-  const mergedByLessonKey = new Map<string, LessonHighlight>();
+  const mergedByKey = new Map<string, LessonHighlight>();
   for (const item of [...localHighlights, ...remoteHighlights]) {
-    const current = mergedByLessonKey.get(item.lessonKey);
+    const mergeKey = getHighlightMergeKey(item.lessonKey, item.selectedText);
+    const current = mergedByKey.get(mergeKey);
     if (!current) {
-      mergedByLessonKey.set(item.lessonKey, item);
+      mergedByKey.set(mergeKey, item);
       continue;
     }
     const currentCreatedAt = getCreatedAtTimestamp(current.createdAt);
     const nextCreatedAt = getCreatedAtTimestamp(item.createdAt);
     if (nextCreatedAt >= currentCreatedAt) {
-      mergedByLessonKey.set(item.lessonKey, item);
+      mergedByKey.set(mergeKey, item);
     }
   }
-  return Array.from(mergedByLessonKey.values()).sort(
+  return Array.from(mergedByKey.values()).sort(
     (a, b) => getCreatedAtTimestamp(b.createdAt) - getCreatedAtTimestamp(a.createdAt),
   );
 }
@@ -166,6 +175,7 @@ export function useLessonHighlights({
 
     const lessonKey = buildLessonReferenceKey(lesson);
     const profileId = profileStorageId?.trim() || GUEST_PROFILE_STORAGE_ID;
+    const mergeKey = getHighlightMergeKey(lessonKey, selectedText);
     const nextEntry: LessonHighlight = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       profileStorageId: profileId,
@@ -180,7 +190,7 @@ export function useLessonHighlights({
     setHighlights((prev) => {
       const next = [
         nextEntry,
-        ...prev.filter((entry) => entry.lessonKey !== lessonKey),
+        ...prev.filter((entry) => getHighlightMergeKey(entry.lessonKey, entry.selectedText) !== mergeKey),
       ];
       writeHighlightsToStorage(storageKey, next);
       return next;

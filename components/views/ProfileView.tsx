@@ -13,6 +13,7 @@ import { LIBRARY_STATE_STYLE } from './library/libraryUiTokens';
 import { TrackActionSheet } from './library/TrackActionSheet';
 import { UnitRow } from './library/UnitRow';
 import { getMobileNavIconWrapClass } from '../../config/buttonUi';
+import { useAnchoredMenu } from './library/useAnchoredMenu';
 
 const PROFILE_CARD_ICON_CLASS = 'h-[22px] w-[22px]';
 const PROFILE_CARD_ICON_STROKE = 1.9;
@@ -121,7 +122,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 }) => {
   const libraryText = getAppText(defaultLanguage).library;
   const [bookShelf, setBookShelf] = React.useState<'current_course' | 'bookmarked_albums' | 'bookmarked_lessons'>('current_course');
-  const [activeActionTrack, setActiveActionTrack] = React.useState<ProfileBookmarkedLessonRow | null>(null);
+  const {
+    activeItem: activeActionTrack,
+    isOpen: isTrackActionMenuOpen,
+    openMenu: openTrackActionMenu,
+    closeMenu: closeTrackActionMenu,
+  } = useAnchoredMenu<ProfileBookmarkedLessonRow>();
   const normalizedProgress = Number.isFinite(progressPercent)
     ? Math.min(100, Math.max(0, progressPercent))
     : 0;
@@ -200,7 +206,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               onClick={() => setBookShelf('current_course')}
               aria-label={profileText.currentCourseLabel}
               title={`${profileText.currentCourseLabel}: ${currentCourseCode}`}
-              className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+              className={`h-12 rounded-xl border px-3 text-left transition-colors ${
                 bookShelf === 'current_course'
                   ? 'border-[var(--border-strong)] bg-[var(--surface-active)]'
                   : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)]'
@@ -217,7 +223,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               onClick={() => setBookShelf('bookmarked_albums')}
               aria-label={profileText.downloadedLessonsLabel}
               title={`${profileText.downloadedLessonsLabel}: ${Math.max(0, bookmarkedAlbumsCount).toLocaleString()}`}
-              className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+              className={`h-12 rounded-xl border px-3 text-left transition-colors ${
                 bookShelf === 'bookmarked_albums'
                   ? 'border-[var(--border-strong)] bg-[var(--surface-active)]'
                   : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)]'
@@ -234,7 +240,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               onClick={() => setBookShelf('bookmarked_lessons')}
               aria-label={profileText.downloadedUnitsTracksLabel}
               title={`${profileText.downloadedUnitsTracksLabel}: ${Math.max(0, bookmarkedLessonsCount).toLocaleString()}`}
-              className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+              className={`h-12 rounded-xl border px-3 text-left transition-colors ${
                 bookShelf === 'bookmarked_lessons'
                   ? 'border-[var(--border-strong)] bg-[var(--surface-active)]'
                   : 'border-[var(--border-subtle)] bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)]'
@@ -267,7 +273,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     actionButtonMode="menu"
                     onPlayUnit={() => track.onPlay()}
                     onOpenUnit={() => track.onOpen()}
-                    onOpenActionMenu={() => setActiveActionTrack(track)}
+                    onOpenActionMenu={() => openTrackActionMenu(track)}
                   />
                 ))}
               </div>
@@ -321,21 +327,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       </section>
 
       <TrackActionSheet
-        isOpen={Boolean(activeActionTrack)}
+        isOpen={isTrackActionMenuOpen}
         closeAriaLabel={libraryText.backToAlbumsAriaLabel}
         trackTitle={activeActionTrack ? localizeLibraryTopic(activeActionTrack.entry.topic, defaultLanguage) : ''}
         trackUnitCode={activeTrackUnitCode}
         openLessonLabel={libraryText.openLessonTitle}
-        onClose={() => setActiveActionTrack(null)}
+        onClose={closeTrackActionMenu}
         onOpenLesson={() => {
           if (!activeActionTrack) return;
           activeActionTrack.onOpen();
-          setActiveActionTrack(null);
+          closeTrackActionMenu();
         }}
         onToggleBookmark={() => {
           if (!activeActionTrack) return;
           activeActionTrack.onToggleBookmark();
-          setActiveActionTrack(null);
+          closeTrackActionMenu();
         }}
         isBookmarked={activeActionTrack?.isBookmarked ?? false}
       />

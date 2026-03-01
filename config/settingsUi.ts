@@ -1,4 +1,4 @@
-import { BUTTON_UI } from './buttonUi';
+import { BUTTON_UI, INTERACTIVE_SIZE } from './buttonUi';
 
 const SETTINGS_ROW_HEIGHT_CLASS = 'h-14';
 
@@ -17,7 +17,7 @@ export const SETTINGS_UI = {
   textSizeRow: 'w-full flex items-center justify-between gap-4',
   textSizeControlSlot: 'ml-auto flex items-center justify-end',
   textSizeControlGroup: 'flex items-center gap-2',
-  textSizeButtonBase: 'h-8 w-8 rounded-lg border-2 text-base font-extrabold transition-all',
+  textSizeButtonBase: `${INTERACTIVE_SIZE.touchTarget} rounded-lg border-2 text-base font-extrabold transition-all`,
   textSizeButtonDisabled:
     'border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-muted)] cursor-not-allowed',
   textSizeValue: 'min-w-12 text-center text-xs font-normal text-[var(--text-secondary)]',

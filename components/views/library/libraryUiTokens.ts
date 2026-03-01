@@ -1,4 +1,4 @@
-import { BUTTON_UI } from '../../../config/buttonUi';
+import { BUTTON_UI, INTERACTIVE_SIZE } from '../../../config/buttonUi';
 
 export const LIBRARY_UI_TOKENS = {
   searchWrap: 'mb-3 w-full border-b border-[var(--border-subtle)] pb-2',
@@ -17,8 +17,10 @@ export const LIBRARY_UI_TOKENS = {
   groupCardButton: 'selection-hover w-full min-h-[84px] px-0 py-3 text-left transition-colors',
   unitRowBase:
     'selection-hover flex w-full min-h-[64px] items-center px-0 text-left transition-colors',
+  unitRowGrid: 'grid w-full grid-cols-[auto,1fr,44px] items-center gap-1',
   unitRowActive: 'text-brand',
-  unitOpenButton: 'flex h-5 w-5 items-center justify-center rounded transition-colors hover:bg-[var(--surface-hover)]',
+  unitOpenButton:
+    `flex ${INTERACTIVE_SIZE.touchTarget} items-center justify-center rounded-full transition-colors hover:bg-[var(--surface-hover)]`,
 } as const;
 
 export const LIBRARY_STATE_STYLE = {

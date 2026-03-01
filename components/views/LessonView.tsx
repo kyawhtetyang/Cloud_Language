@@ -106,12 +106,18 @@ function findHighlightRanges(text: string, phrases: string[]): TextMatchRange[] 
     const trimmedPhrase = String(phrase || '').trim();
     if (!trimmedPhrase) continue;
     const lowerPhrase = trimmedPhrase.toLocaleLowerCase();
+    const isShortSymbolOnlyPhrase =
+      trimmedPhrase.length <= 2
+      && !/[a-z0-9\u4e00-\u9fff\u1000-\u109f]/i.test(trimmedPhrase);
 
     let fromIndex = 0;
     while (fromIndex < lowerText.length) {
       const foundAt = lowerText.indexOf(lowerPhrase, fromIndex);
       if (foundAt < 0) break;
       candidateRanges.push({ start: foundAt, end: foundAt + lowerPhrase.length });
+      if (isShortSymbolOnlyPhrase) {
+        break;
+      }
       fromIndex = foundAt + Math.max(1, lowerPhrase.length);
     }
   }

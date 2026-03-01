@@ -20,7 +20,7 @@ export const NAV_ICON_UI = {
 } as const;
 
 export const NAV_LAYOUT_UI = {
-  mobileGridClass: 'grid gap-1 px-2 pb-2 pt-1.5',
+  mobileGridClass: 'grid gap-1 px-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1',
   sidebarItemContentClass: 'flex items-center gap-2',
   sidebarLabelClass: 'truncate',
 } as const;

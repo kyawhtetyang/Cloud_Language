@@ -458,6 +458,26 @@ const App: React.FC = () => {
     });
   };
 
+  const stopPlaybackForVoiceSettingChange = () => {
+    setTrackPlaybackEnabled(false);
+    resetUnitPlaybackAnchor();
+    if (isReading || activeSpeakingLessonIndex !== null) {
+      void stopActivePlayback();
+    }
+  };
+
+  const handleLearnLanguageChangeWithStop = (value: typeof learnLanguage) => {
+    if (value === learnLanguage) return;
+    stopPlaybackForVoiceSettingChange();
+    setLearnLanguage(value);
+  };
+
+  const handleVoiceProviderChangeWithStop = (value: typeof voiceProvider) => {
+    if (value === voiceProvider) return;
+    stopPlaybackForVoiceSettingChange();
+    setVoiceProvider(value);
+  };
+
   const handleReadForActiveTab = async () => {
     const isRevisionTab = sidebarTab === 'feed' && mode === 'learn';
     if (!isRevisionTab) {
@@ -565,13 +585,13 @@ const App: React.FC = () => {
     setDefaultLanguage,
     isEnglishUiLocked,
     setIsEnglishUiLocked,
-    setLearnLanguage,
+    setLearnLanguage: handleLearnLanguageChangeWithStop,
     setIsPronunciationEnabled,
     setIsBoldTextEnabled,
     setIsAutoScrollEnabled,
     setTextScalePercent,
     setAppTheme,
-    setVoiceProvider,
+    setVoiceProvider: handleVoiceProviderChangeWithStop,
     learnStepCount,
     currentBatchEntries,
     lessonBatchGroups,

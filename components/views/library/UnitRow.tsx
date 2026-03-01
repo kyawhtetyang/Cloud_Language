@@ -19,7 +19,12 @@ type UnitRowProps = {
   actionButtonMode?: 'open' | 'menu';
   onPlayUnit?: (level: number, unit: number, albumKey?: string | null) => void;
   onOpenUnit: (level: number, unit: number, albumKey?: string | null) => void;
-  onOpenActionMenu?: (level: number, unit: number, albumKey?: string | null) => void;
+  onOpenActionMenu?: (
+    level: number,
+    unit: number,
+    albumKey?: string | null,
+    anchorRect?: DOMRect | null,
+  ) => void;
 };
 
 function formatUnitCode(level: number, unit: number): string {
@@ -63,7 +68,7 @@ export const UnitRow: React.FC<UnitRowProps> = ({
       tabIndex={0}
       className={`${LIBRARY_UI_TOKENS.unitRowBase} ${isActive ? LIBRARY_UI_TOKENS.unitRowActive : ''}`}
     >
-      <div className="grid w-full grid-cols-[auto,1fr,28px] items-center gap-1">
+      <div className={LIBRARY_UI_TOKENS.unitRowGrid}>
         <div
           className={`inline-flex min-w-[34px] items-center justify-center px-0 text-[11px] font-bold ${badgeClass}`}
         >
@@ -100,7 +105,12 @@ export const UnitRow: React.FC<UnitRowProps> = ({
           onClick={(event) => {
             event.stopPropagation();
             if (actionButtonMode === 'menu') {
-              onOpenActionMenu?.(entry.level, entry.unit, albumKey);
+              onOpenActionMenu?.(
+                entry.level,
+                entry.unit,
+                albumKey,
+                event.currentTarget.getBoundingClientRect(),
+              );
               return;
             }
             onOpenUnit(entry.level, entry.unit, albumKey);

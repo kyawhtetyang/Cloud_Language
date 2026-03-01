@@ -8,6 +8,7 @@ import { LIBRARY_UI_TOKENS } from './libraryUiTokens';
 import { TrackActionSheet } from './TrackActionSheet';
 import { UnitRow } from './UnitRow';
 import { BUTTON_UI } from '../../../config/buttonUi';
+import { useAnchoredMenu } from './useAnchoredMenu';
 
 type AlbumDetailProps = {
   album: AlbumGroup;
@@ -65,17 +66,30 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
   onTouchCancel,
 }) => {
   const libraryText = getAppText(defaultLanguage).library;
-  const [activeActionUnit, setActiveActionUnit] = React.useState<AlbumUnitEntry | null>(null);
+  const {
+    activeItem: activeActionUnit,
+    anchorRect: activeActionAnchorRect,
+    isOpen: isActionMenuOpen,
+    openMenu: openActionMenu,
+    closeMenu: closeActionMenu,
+  } = useAnchoredMenu<AlbumUnitEntry>();
   const activeUnitCode = activeActionUnit ? `${Math.max(1, activeActionUnit.level)}.${Math.max(1, activeActionUnit.unit)}` : '';
   const isActionUnitBookmarked = activeActionUnit
     ? Boolean(isUnitBookmarked?.(activeActionUnit.level, activeActionUnit.unit))
     : false;
 
-  const closeActionMenu = () => setActiveActionUnit(null);
-
-  const handleOpenActionMenu = (level: number, unit: number) => {
+  const handleOpenActionMenu = (
+    level: number,
+    unit: number,
+    _albumKey?: string | null,
+    anchorRect?: DOMRect | null,
+  ) => {
     const target = album.units.find((entry) => entry.level === level && entry.unit === unit) || null;
-    setActiveActionUnit(target);
+    if (!target) {
+      closeActionMenu();
+      return;
+    }
+    openActionMenu(target, anchorRect);
   };
 
   const handleToggleBookmark = () => {
@@ -205,7 +219,7 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
       </div>
 
       <TrackActionSheet
-        isOpen={Boolean(activeActionUnit)}
+        isOpen={isActionMenuOpen}
         closeAriaLabel={libraryText.backToAlbumsAriaLabel}
         trackTitle={activeActionUnit ? localizeLibraryTopic(activeActionUnit.topic, defaultLanguage) : ''}
         trackUnitCode={activeUnitCode}
@@ -214,6 +228,8 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
         onOpenLesson={handleOpenLesson}
         onToggleBookmark={handleToggleBookmark}
         isBookmarked={isActionUnitBookmarked}
+        desktopMode="popover"
+        anchorRect={activeActionAnchorRect}
       />
     </div>
   );
