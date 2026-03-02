@@ -37,7 +37,7 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
   appStateText,
   onCompletedRestart,
 }) => (
-  <main className={`flex-1 flex justify-center p-4 pt-6 md:p-6 md:pt-5 ${isFeedView ? 'items-stretch' : 'items-start'}`}>
+  <main className={`flex-1 min-h-0 flex justify-center p-4 pt-6 md:p-6 md:pt-5 ${isFeedView ? 'h-full items-stretch overflow-hidden' : 'items-start'}`}>
     {isProfileView ? (
       <ProfileView {...profileViewProps} />
     ) : isLibraryView ? (

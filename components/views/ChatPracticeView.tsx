@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { DefaultLanguage } from '../../config/appConfig';
 import { getAppText } from '../../config/appI18n';
 import { VIEW_PAGE_CLASS } from './viewShared';
-import { getActionButtonClass } from '../../config/buttonUi';
+import { BUTTON_UI, getActionButtonClass } from '../../config/buttonUi';
 
 type ChatMessage = {
   role: 'assistant' | 'user';
@@ -22,10 +22,10 @@ function normalizePhrase(value: string): string {
 
 function normalizeForCompare(value: string): string {
   return normalizePhrase(value)
+    .normalize('NFKC')
+    .replace(/[’`´]/g, '\'')
     .toLocaleLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/\s+/g, ' ');
 }
 
 function buildRankedHighlightPhrases(highlightPhrasesByLessonKey: Map<string, string[]>): string[] {
@@ -47,6 +47,16 @@ function buildRankedHighlightPhrases(highlightPhrasesByLessonKey: Map<string, st
     .map(([phrase]) => phrase);
 }
 
+function pickRandomPhraseIndex(phrases: string[], excludeIndex?: number): number {
+  if (phrases.length <= 1) return 0;
+  const selectableIndexes = phrases
+    .map((_, index) => index)
+    .filter((index) => index !== excludeIndex);
+  if (selectableIndexes.length === 0) return 0;
+  const randomIndex = Math.floor(Math.random() * selectableIndexes.length);
+  return selectableIndexes[randomIndex] ?? selectableIndexes[0];
+}
+
 export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
   defaultLanguage,
   highlightPhrasesByLessonKey,
@@ -61,7 +71,8 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
   const [draft, setDraft] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isComposerFocused, setIsComposerFocused] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const messagesScrollRef = useRef<HTMLDivElement | null>(null);
   const messagesBottomRef = useRef<HTMLDivElement | null>(null);
 
   const activePhrase = rankedPhrases[activePhraseIndex] || '';
@@ -73,27 +84,32 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
       setMessages([]);
       return;
     }
-    setActivePhraseIndex(0);
+    const initialPhraseIndex = pickRandomPhraseIndex(rankedPhrases);
+    setActivePhraseIndex(initialPhraseIndex);
     setMessages([
       {
         role: 'assistant',
-        text: rankedPhrases[0],
+        text: rankedPhrases[initialPhraseIndex],
         status: 'none',
       },
     ]);
   }, [hasPhrasePool, rankedPhrases]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const timer = window.setTimeout(() => {
-      inputRef.current?.focus();
-    }, 60);
-    return () => window.clearTimeout(timer);
-  }, [hasPhrasePool]);
-
   useEffect(() => () => onComposerFocusChange?.(false), [onComposerFocusChange]);
 
   useEffect(() => {
+    const container = messagesScrollRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+      if (typeof window !== 'undefined') {
+        window.requestAnimationFrame(() => {
+          const activeContainer = messagesScrollRef.current;
+          if (!activeContainer) return;
+          activeContainer.scrollTop = activeContainer.scrollHeight;
+        });
+      }
+      return;
+    }
     const anchor = messagesBottomRef.current;
     if (!anchor || typeof anchor.scrollIntoView !== 'function') return;
     anchor.scrollIntoView({ block: 'end' });
@@ -122,7 +138,7 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
 
     const isMatch = normalizeForCompare(normalizedDraft) === normalizeForCompare(activePhrase);
     const nextPhraseIndex = isMatch && rankedPhrases.length > 0
-      ? (activePhraseIndex + 1) % rankedPhrases.length
+      ? pickRandomPhraseIndex(rankedPhrases, activePhraseIndex)
       : activePhraseIndex;
     const nextPhrase = rankedPhrases[nextPhraseIndex] || activePhrase;
 
@@ -131,12 +147,12 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
       {
         role: 'user',
         text: normalizedDraft,
-        status: 'none',
+        status: isMatch ? 'match' : 'retry',
       },
       {
         role: 'assistant',
         text: nextPhrase,
-        status: isMatch ? 'match' : 'retry',
+        status: 'none',
       },
     ]);
     setDraft('');
@@ -149,21 +165,22 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
       setDraft('');
       return;
     }
+    const initialPhraseIndex = pickRandomPhraseIndex(rankedPhrases);
     setMessages([
       {
         role: 'assistant',
-        text: rankedPhrases[0],
+        text: rankedPhrases[initialPhraseIndex],
         status: 'none',
       },
     ]);
     setDraft('');
-    setActivePhraseIndex(0);
+    setActivePhraseIndex(initialPhraseIndex);
   };
 
   return (
-    <div className={`${VIEW_PAGE_CLASS} h-full min-h-0`}>
+    <div className={`${VIEW_PAGE_CLASS} h-full min-h-0 overflow-hidden`}>
       <section className="flex h-full min-h-0 flex-col overflow-hidden">
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-4 py-3">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-0 py-3">
           <h3 className="text-base font-extrabold text-[var(--text-primary)]">
             {appText.navigation.feedLabel}
           </h3>
@@ -176,18 +193,7 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-3 pb-32 md:pb-3">
-          <div className="mb-3 flex flex-wrap gap-2">
-            {rankedPhrases.slice(0, 6).map((phrase) => (
-              <span
-                key={phrase}
-                className="inline-flex items-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-1 text-xs font-semibold text-[var(--text-secondary)]"
-              >
-                {phrase}
-              </span>
-            ))}
-          </div>
-
+        <div ref={messagesScrollRef} className="min-h-0 flex-1 overflow-y-auto px-0 py-3 pb-32 md:pb-44">
           <div className="space-y-2">
             {messages.map((message, index) => {
               const isAssistant = message.role === 'assistant';
@@ -219,7 +225,7 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
         </div>
 
         <div
-          className={`fixed left-0 right-0 z-20 px-3 md:static md:z-auto md:px-0 ${
+          className={`fixed left-0 right-0 z-20 px-3 ${BUTTON_UI.bottomBarDesktopAnchor} ${
             isComposerFocused
               ? 'bottom-[calc(env(safe-area-inset-bottom)+8px)]'
               : 'bottom-[calc(64px+env(safe-area-inset-bottom)+8px)]'
@@ -227,7 +233,7 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
         >
           <div className="mx-auto w-full max-w-3xl px-0 py-0">
             <div className="flex items-center gap-2">
-              <input
+              <textarea
                 ref={inputRef}
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
@@ -240,7 +246,7 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
                   onComposerFocusChange?.(false);
                 }}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
+                  if (event.key === 'Enter' && !event.shiftKey) {
                     event.preventDefault();
                     submitDraft();
                   }
@@ -251,7 +257,8 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
                 autoComplete="off"
                 spellCheck={false}
                 name="chat_message"
-                className="min-w-0 flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-2 text-base font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--border-strong)] disabled:opacity-60 md:text-sm"
+                rows={1}
+                className="min-h-11 max-h-28 min-w-0 flex-1 resize-none rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-2 text-base font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--border-strong)] disabled:opacity-60 md:text-sm"
               />
               <button
                 type="button"
