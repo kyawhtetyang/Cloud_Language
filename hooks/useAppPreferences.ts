@@ -12,6 +12,10 @@ import { readSyncedSettingsFromStorage } from '../config/settingsSync';
 type UseAppPreferencesResult = {
   isPronunciationEnabled: boolean;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
+  isLearningLanguageVisible: boolean;
+  setIsLearningLanguageVisible: Dispatch<SetStateAction<boolean>>;
+  isTranslationVisible: boolean;
+  setIsTranslationVisible: Dispatch<SetStateAction<boolean>>;
   learnLanguage: LearnLanguage;
   setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
   defaultLanguage: DefaultLanguage;
@@ -42,6 +46,8 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
   const initialSettings = initialSettingsRef.current;
   const [hasHydratedSettings, setHasHydratedSettings] = useState(false);
   const [isPronunciationEnabled, setIsPronunciationEnabled] = useState<boolean>(initialSettings.isPronunciationEnabled);
+  const [isLearningLanguageVisible, setIsLearningLanguageVisible] = useState<boolean>(initialSettings.isLearningLanguageVisible);
+  const [isTranslationVisible, setIsTranslationVisible] = useState<boolean>(initialSettings.isTranslationVisible);
   const [learnLanguage, setLearnLanguage] = useState<LearnLanguage>(initialSettings.learnLanguage);
   const [defaultLanguage, setDefaultLanguage] = useState<DefaultLanguage>(initialSettings.defaultLanguage);
   const [uiLockLanguage, setUiLockLanguage] = useState<UiLockLanguage>(initialSettings.uiLockLanguage);
@@ -65,6 +71,8 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setUiLockLanguage(next.uiLockLanguage);
     setCourseFramework(next.courseFramework);
     setIsPronunciationEnabled(next.isPronunciationEnabled);
+    setIsLearningLanguageVisible(next.isLearningLanguageVisible);
+    setIsTranslationVisible(next.isTranslationVisible);
     setTextScalePercent(next.textScalePercent);
     setIsBoldTextEnabled(next.isBoldTextEnabled);
     setIsAutoScrollEnabled(next.isAutoScrollEnabled);
@@ -78,6 +86,10 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
   return {
     isPronunciationEnabled,
     setIsPronunciationEnabled,
+    isLearningLanguageVisible,
+    setIsLearningLanguageVisible,
+    isTranslationVisible,
+    setIsTranslationVisible,
     learnLanguage,
     setLearnLanguage,
     defaultLanguage,

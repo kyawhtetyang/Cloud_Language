@@ -50,6 +50,8 @@ type LessonViewProps = {
   defaultLanguage: DefaultLanguage;
   translationLanguage?: DefaultLanguage;
   isPronunciationEnabled: boolean;
+  isLearningLanguageVisible?: boolean;
+  isTranslationVisible?: boolean;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled?: boolean;
   textScalePercent?: number;
@@ -183,6 +185,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
   defaultLanguage,
   translationLanguage = defaultLanguage,
   isPronunciationEnabled,
+  isLearningLanguageVisible = true,
+  isTranslationVisible = true,
   isBoldTextEnabled,
   isAutoScrollEnabled = true,
   textScalePercent = 100,
@@ -450,11 +454,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
       englishReferenceText: englishReferenceByKey.get(lessonKey),
     });
     const savedPhrases = savedHighlightPhrasesByLessonKey?.get(lessonKey) ?? [];
-    const isInteractiveSelecting = highlightModeRowKey === rowKey;
+    const canShowPronunciation = isPronunciationEnabled && Boolean(pronunciationText);
+    const canShowLearningLanguage = isLearningLanguageVisible && Boolean(sourceText);
+    const canShowTranslation = isTranslationVisible && Boolean(translatedText);
+    const isInteractiveSelecting = canShowLearningLanguage && highlightModeRowKey === rowKey;
     const isActiveSpeaking = activeSpeakingLessonIndex === lessonIndex;
     const selectedPhraseDraft = isInteractiveSelecting ? getDraftSelectionPhrase(sourceText) : '';
     const hasSavedPhrases = savedPhrases.length > 0;
-    const canSelectWholeSentence = tokenizeLessonTextForHighlight(sourceText).tokens.length > 0;
+    const canSelectWholeSentence = canShowLearningLanguage && tokenizeLessonTextForHighlight(sourceText).tokens.length > 0;
+    const lessonRowLineClass = `text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-medium'}`;
     const setCombinedRowRef = (node: HTMLDivElement | null) => {
       if (node) {
         lessonRowRefs.current.set(lessonIndex, node);
@@ -476,6 +484,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         <button
           type="button"
           onMouseDown={(event) => {
+            if (!canShowLearningLanguage) return;
             if (highlightModeRowKey === rowKey) {
               updateDragSelectionByPoint(rowKey, event.clientX, event.clientY);
               return;
@@ -497,6 +506,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
             }
           }}
           onTouchStart={(event) => {
+            if (!canShowLearningLanguage) return;
             const touch = event.touches[0];
             if (!touch) return;
             if (highlightModeRowKey === rowKey) {
@@ -531,31 +541,35 @@ export const LessonView: React.FC<LessonViewProps> = ({
           className="selection-hover w-full rounded-lg px-0 py-3 text-left transition-colors"
           style={LESSON_ROW_NO_SELECT_STYLE}
           aria-label={`${appText.lesson.playAudioAriaPrefix} ${sourceText}`}
-          title={appText.lesson.highlightHintTitle}
+          title={canShowLearningLanguage ? appText.lesson.highlightHintTitle : undefined}
         >
           <div className="text-left leading-tight" style={lessonTextScaleStyle}>
-            {isPronunciationEnabled && pronunciationText && (
+            {canShowPronunciation && (
               <p
-                className={`lesson-row-pronunciation text-[var(--text-secondary)] ${isBoldTextEnabled ? 'font-semibold' : 'font-normal'}`}
+                className={`lesson-row-pronunciation ${lessonRowLineClass}`}
                 style={isActiveSpeaking ? ACTIVE_SPEAKING_TEXT_STYLE : undefined}
               >
                 {pronunciationText}
               </p>
             )}
-            <p
-              className={`lesson-row-source text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-medium'}`}
-              style={isActiveSpeaking ? ACTIVE_SPEAKING_TEXT_STYLE : undefined}
-            >
-              {isInteractiveSelecting
-                ? renderInteractiveSelectionText(sourceText, rowKey)
-                : renderHighlightedText(sourceText, savedPhrases)}
-            </p>
-            <p
-              className={`lesson-row-translation text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`}
-              style={isActiveSpeaking ? ACTIVE_SPEAKING_TEXT_STYLE : undefined}
-            >
-              {translatedText}
-            </p>
+            {canShowLearningLanguage && (
+              <p
+                className={`lesson-row-source ${lessonRowLineClass}`}
+                style={isActiveSpeaking ? ACTIVE_SPEAKING_TEXT_STYLE : undefined}
+              >
+                {isInteractiveSelecting
+                  ? renderInteractiveSelectionText(sourceText, rowKey)
+                  : renderHighlightedText(sourceText, savedPhrases)}
+              </p>
+            )}
+            {canShowTranslation && (
+              <p
+                className={`lesson-row-translation ${lessonRowLineClass}`}
+                style={isActiveSpeaking ? ACTIVE_SPEAKING_TEXT_STYLE : undefined}
+              >
+                {translatedText}
+              </p>
+            )}
           </div>
         </button>
         {isInteractiveSelecting && (

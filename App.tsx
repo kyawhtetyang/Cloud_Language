@@ -21,6 +21,7 @@ import { AppMainContent } from './components/app/AppMainContent';
 import { AppBottomBars } from './components/app/AppBottomBars';
 import {
   AppMode,
+  coerceLessonLineVisibility,
   coerceFrameworkForLearnLanguage,
   DEFAULT_LIBRARY_VIEW_MODE,
   DEFAULT_PROGRESS_INDEX,
@@ -70,6 +71,10 @@ const App: React.FC = () => {
   const {
     isPronunciationEnabled,
     setIsPronunciationEnabled,
+    isLearningLanguageVisible,
+    setIsLearningLanguageVisible,
+    isTranslationVisible,
+    setIsTranslationVisible,
     learnLanguage,
     setLearnLanguage,
     defaultLanguage,
@@ -119,6 +124,21 @@ const App: React.FC = () => {
     }
   }, [courseFramework, learnLanguage, setCourseFramework]);
 
+  useEffect(() => {
+    const normalized = coerceLessonLineVisibility(isPronunciationEnabled, isLearningLanguageVisible);
+    if (normalized.isPronunciationEnabled !== isPronunciationEnabled) {
+      setIsPronunciationEnabled(normalized.isPronunciationEnabled);
+    }
+    if (normalized.isLearningLanguageVisible !== isLearningLanguageVisible) {
+      setIsLearningLanguageVisible(normalized.isLearningLanguageVisible);
+    }
+  }, [
+    isPronunciationEnabled,
+    isLearningLanguageVisible,
+    setIsPronunciationEnabled,
+    setIsLearningLanguageVisible,
+  ]);
+
   const {
     apiBaseUrl,
     lessons,
@@ -167,6 +187,8 @@ const App: React.FC = () => {
     uiLockLanguage,
     courseFramework,
     isPronunciationEnabled,
+    isLearningLanguageVisible,
+    isTranslationVisible,
     textScalePercent,
     isBoldTextEnabled,
     isAutoScrollEnabled,
@@ -182,6 +204,8 @@ const App: React.FC = () => {
     setUiLockLanguage,
     setCourseFramework,
     setIsPronunciationEnabled,
+    setIsLearningLanguageVisible,
+    setIsTranslationVisible,
     setTextScalePercent,
     setIsBoldTextEnabled,
     setIsAutoScrollEnabled,
@@ -600,6 +624,8 @@ const App: React.FC = () => {
     onToggleUnitBookmark: handleToggleUnitBookmark,
     onToggleAlbumBookmark: handleToggleAlbumBookmark,
     isPronunciationEnabled,
+    isLearningLanguageVisible,
+    isTranslationVisible,
     isBoldTextEnabled,
     isAutoScrollEnabled,
     textScalePercent,
@@ -611,6 +637,8 @@ const App: React.FC = () => {
     setLearnLanguage: handleLearnLanguageChangeWithStop,
     setCourseFramework: handleCourseFrameworkChangeWithStop,
     setIsPronunciationEnabled,
+    setIsLearningLanguageVisible,
+    setIsTranslationVisible,
     setIsBoldTextEnabled,
     setIsAutoScrollEnabled,
     setTextScalePercent,

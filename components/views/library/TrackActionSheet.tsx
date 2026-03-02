@@ -6,6 +6,7 @@ type TrackActionSheetProps = {
   trackTitle: string;
   trackUnitCode: string;
   openLessonLabel: string;
+  bookmarkTrackLabel: string;
   onClose: () => void;
   onOpenLesson: () => void;
   onToggleBookmark: () => void;
@@ -20,6 +21,7 @@ export const TrackActionSheet: React.FC<TrackActionSheetProps> = ({
   trackTitle,
   trackUnitCode,
   openLessonLabel,
+  bookmarkTrackLabel,
   onClose,
   onOpenLesson,
   onToggleBookmark,
@@ -93,7 +95,7 @@ export const TrackActionSheet: React.FC<TrackActionSheetProps> = ({
             onClick={onToggleBookmark}
             className="flex w-full items-center justify-between px-4 py-3 text-left text-base font-semibold text-ink transition-colors hover:bg-[var(--surface-hover)]"
           >
-            <span>Bookmark</span>
+            <span>{bookmarkTrackLabel}</span>
             {isBookmarked ? (
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
                 <path d="M6 3h12v18l-6-4-6 4z" />

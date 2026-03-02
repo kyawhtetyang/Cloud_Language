@@ -6,6 +6,7 @@ import {
   AppTheme,
   BOLD_TEXT_ENABLED_KEY,
   clampTextScale,
+  coerceLessonLineVisibility,
   COURSE_FRAMEWORK_KEY,
   CourseFramework,
   DEFAULT_LANGUAGE_KEY,
@@ -16,10 +17,12 @@ import {
   isLearnLanguage,
   LEARN_LANGUAGE_KEY,
   LearnLanguage,
+  LEARNING_LANGUAGE_VISIBLE_KEY,
   PRONUNCIATION_ENABLED_KEY,
   RANDOM_LESSON_ORDER_ENABLED_KEY,
   REMOVE_REVIEW_QUESTIONS_ENABLED_KEY,
   TEXT_SCALE_PERCENT_KEY,
+  TRANSLATION_VISIBLE_KEY,
   VOICE_PROVIDER_KEY,
   VoiceProvider,
   UI_LOCK_LANGUAGE_KEY,
@@ -33,6 +36,8 @@ export type SyncedAppSettings = {
   uiLockLanguage: UiLockLanguage;
   courseFramework: CourseFramework;
   isPronunciationEnabled: boolean;
+  isLearningLanguageVisible: boolean;
+  isTranslationVisible: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled: boolean;
@@ -48,6 +53,8 @@ export type SyncedAppSettingsSetters = {
   setUiLockLanguage: Dispatch<SetStateAction<UiLockLanguage>>;
   setCourseFramework: Dispatch<SetStateAction<CourseFramework>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
+  setIsLearningLanguageVisible: Dispatch<SetStateAction<boolean>>;
+  setIsTranslationVisible: Dispatch<SetStateAction<boolean>>;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
   setIsAutoScrollEnabled: Dispatch<SetStateAction<boolean>>;
@@ -111,10 +118,8 @@ function parseTextScale(value: string | null): number {
 }
 
 function coerceAppTheme(value: unknown): AppTheme | null {
+  if (value === 'light') return 'light';
   if (value === 'dark') return 'dark';
-  if (value === 'light' || value === 'apple_notes' || value === 'duolingo' || value === 'system') {
-    return 'light';
-  }
   return null;
 }
 
@@ -138,12 +143,27 @@ function readWithFallback(baseKey: string, profileStorageId?: string): string | 
 }
 
 export function readSyncedSettingsFromStorage(profileStorageId?: string): SyncedAppSettings {
+  const isPronunciationEnabled = parseBooleanWithFallback(
+    readWithFallback(PRONUNCIATION_ENABLED_KEY, profileStorageId),
+    APP_DEFAULTS.isPronunciationEnabled,
+  );
+  const isLearningLanguageVisible = parseBooleanWithFallback(
+    readWithFallback(LEARNING_LANGUAGE_VISIBLE_KEY, profileStorageId),
+    APP_DEFAULTS.isLearningLanguageVisible,
+  );
+  const { isPronunciationEnabled: normalizedPronunciation, isLearningLanguageVisible: normalizedLearningLanguage } =
+    coerceLessonLineVisibility(isPronunciationEnabled, isLearningLanguageVisible);
   return {
     learnLanguage: parseLearnLanguage(readWithFallback(LEARN_LANGUAGE_KEY, profileStorageId)),
     defaultLanguage: parseDefaultLanguage(readWithFallback(DEFAULT_LANGUAGE_KEY, profileStorageId)),
     uiLockLanguage: parseUiLockLanguage(readWithFallback(UI_LOCK_LANGUAGE_KEY, profileStorageId)),
     courseFramework: parseCourseFramework(readWithFallback(COURSE_FRAMEWORK_KEY, profileStorageId)),
-    isPronunciationEnabled: parseBoolean(readWithFallback(PRONUNCIATION_ENABLED_KEY, profileStorageId)),
+    isPronunciationEnabled: normalizedPronunciation,
+    isLearningLanguageVisible: normalizedLearningLanguage,
+    isTranslationVisible: parseBooleanWithFallback(
+      readWithFallback(TRANSLATION_VISIBLE_KEY, profileStorageId),
+      APP_DEFAULTS.isTranslationVisible,
+    ),
     textScalePercent: parseTextScale(readWithFallback(TEXT_SCALE_PERCENT_KEY, profileStorageId)),
     isBoldTextEnabled: parseBoolean(readWithFallback(BOLD_TEXT_ENABLED_KEY, profileStorageId)),
     isAutoScrollEnabled: parseBooleanWithFallback(
@@ -168,6 +188,8 @@ export function persistSyncedSettingsToStorage(
   safeWrite(resolveKey(UI_LOCK_LANGUAGE_KEY), settings.uiLockLanguage);
   safeWrite(resolveKey(COURSE_FRAMEWORK_KEY), settings.courseFramework);
   safeWrite(resolveKey(PRONUNCIATION_ENABLED_KEY), String(settings.isPronunciationEnabled));
+  safeWrite(resolveKey(LEARNING_LANGUAGE_VISIBLE_KEY), String(settings.isLearningLanguageVisible));
+  safeWrite(resolveKey(TRANSLATION_VISIBLE_KEY), String(settings.isTranslationVisible));
   safeWrite(resolveKey(TEXT_SCALE_PERCENT_KEY), String(settings.textScalePercent));
   safeWrite(resolveKey(BOLD_TEXT_ENABLED_KEY), String(settings.isBoldTextEnabled));
   safeWrite(resolveKey(AUTO_SCROLL_ENABLED_KEY), String(settings.isAutoScrollEnabled));
@@ -184,6 +206,8 @@ export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedA
     uiLockLanguage: settings.uiLockLanguage,
     courseFramework: settings.courseFramework,
     isPronunciationEnabled: settings.isPronunciationEnabled,
+    isLearningLanguageVisible: settings.isLearningLanguageVisible,
+    isTranslationVisible: settings.isTranslationVisible,
     textScalePercent: settings.textScalePercent,
     isBoldTextEnabled: settings.isBoldTextEnabled,
     isAutoScrollEnabled: settings.isAutoScrollEnabled,
@@ -212,6 +236,12 @@ export function applyRemoteSyncedSettings(
   }
   if (typeof remote.isPronunciationEnabled === 'boolean') {
     setters.setIsPronunciationEnabled(remote.isPronunciationEnabled);
+  }
+  if (typeof remote.isLearningLanguageVisible === 'boolean') {
+    setters.setIsLearningLanguageVisible(remote.isLearningLanguageVisible);
+  }
+  if (typeof remote.isTranslationVisible === 'boolean') {
+    setters.setIsTranslationVisible(remote.isTranslationVisible);
   }
   if (typeof remote.textScalePercent === 'number') {
     setters.setTextScalePercent(clampTextScale(remote.textScalePercent));

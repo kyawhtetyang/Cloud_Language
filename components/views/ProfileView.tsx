@@ -332,6 +332,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         trackTitle={activeActionTrack ? localizeLibraryTopic(activeActionTrack.entry.topic, defaultLanguage) : ''}
         trackUnitCode={activeTrackUnitCode}
         openLessonLabel={libraryText.openLessonTitle}
+        bookmarkTrackLabel={libraryText.bookmarkTrackLabel}
         onClose={closeTrackActionMenu}
         onOpenLesson={() => {
           if (!activeActionTrack) return;

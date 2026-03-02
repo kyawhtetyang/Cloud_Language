@@ -17,6 +17,8 @@ type UseSettingsPersistenceParams = {
   uiLockLanguage: UiLockLanguage;
   courseFramework: CourseFramework;
   isPronunciationEnabled: boolean;
+  isLearningLanguageVisible: boolean;
+  isTranslationVisible: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled: boolean;
@@ -34,6 +36,8 @@ export function useSettingsPersistence({
   uiLockLanguage,
   courseFramework,
   isPronunciationEnabled,
+  isLearningLanguageVisible,
+  isTranslationVisible,
   textScalePercent,
   isBoldTextEnabled,
   isAutoScrollEnabled,
@@ -50,6 +54,8 @@ export function useSettingsPersistence({
       uiLockLanguage,
       courseFramework,
       isPronunciationEnabled,
+      isLearningLanguageVisible,
+      isTranslationVisible,
       textScalePercent,
       isBoldTextEnabled,
       isAutoScrollEnabled,
@@ -66,6 +72,8 @@ export function useSettingsPersistence({
     uiLockLanguage,
     courseFramework,
     isPronunciationEnabled,
+    isLearningLanguageVisible,
+    isTranslationVisible,
     textScalePercent,
     isBoldTextEnabled,
     isAutoScrollEnabled,

@@ -51,6 +51,8 @@ export type AppTextPack = {
     openLessonAriaPrefix: string;
     openLessonTitle: string;
     backToAlbumsAriaLabel: string;
+    bookmarkAlbumLabel: string;
+    bookmarkTrackLabel: string;
     unitSingularLabel: string;
     unitPluralLabel: string;
     collectionFallbackPrefix: string;
@@ -118,6 +120,8 @@ export type AppTextPack = {
     autoScrollLabel: string;
     textSizeLabel: string;
     pronunciationLabel: string;
+    learningLanguageVisibilityLabel: string;
+    translationVisibilityLabel: string;
     backToProfileAriaLabel: string;
     backToSettingsAriaLabel: string;
     decreaseTextSizeAriaLabel: string;
@@ -185,6 +189,8 @@ const APP_TEXT_ENGLISH: AppTextPack = {
     openLessonAriaPrefix: 'Open lesson',
     openLessonTitle: 'Open lesson',
     backToAlbumsAriaLabel: 'Back',
+    bookmarkAlbumLabel: 'Bookmark album',
+    bookmarkTrackLabel: 'Bookmark',
     unitSingularLabel: 'unit',
     unitPluralLabel: 'units',
     collectionFallbackPrefix: 'Collection',
@@ -252,6 +258,8 @@ const APP_TEXT_ENGLISH: AppTextPack = {
     autoScrollLabel: 'Auto Scroll',
     textSizeLabel: 'Text Size',
     pronunciationLabel: 'Pronunciation',
+    learningLanguageVisibilityLabel: 'Show Learning Language',
+    translationVisibilityLabel: 'Translation',
     backToProfileAriaLabel: 'Back to profile',
     backToSettingsAriaLabel: 'Back to settings',
     decreaseTextSizeAriaLabel: 'Decrease text size',
@@ -352,6 +360,8 @@ const APP_TEXT_CHINESE: AppTextPack = {
     openLessonAriaPrefix: '打开课程',
     openLessonTitle: '打开课程',
     backToAlbumsAriaLabel: '返回',
+    bookmarkAlbumLabel: '收藏专辑',
+    bookmarkTrackLabel: '收藏',
     unitSingularLabel: '单元',
     unitPluralLabel: '单元',
     collectionFallbackPrefix: '合集',
@@ -423,6 +433,8 @@ const APP_TEXT_CHINESE: AppTextPack = {
     autoScrollLabel: '自动滚动',
     textSizeLabel: '文字大小',
     pronunciationLabel: '发音',
+    learningLanguageVisibilityLabel: '显示学习语言',
+    translationVisibilityLabel: '翻译',
     backToProfileAriaLabel: '返回个人页',
     backToSettingsAriaLabel: '返回设置',
     decreaseTextSizeAriaLabel: '减小文字',
@@ -524,6 +536,8 @@ const APP_TEXT_THAI: AppTextPack = {
     openLessonAriaPrefix: 'เปิดบทเรียน',
     openLessonTitle: 'เปิดบทเรียน',
     backToAlbumsAriaLabel: 'กลับ',
+    bookmarkAlbumLabel: 'บุ๊กมาร์กอัลบั้ม',
+    bookmarkTrackLabel: 'บุ๊กมาร์ก',
     unitSingularLabel: 'ยูนิต',
     unitPluralLabel: 'ยูนิต',
     collectionFallbackPrefix: 'ชุด',
@@ -595,6 +609,8 @@ const APP_TEXT_THAI: AppTextPack = {
     autoScrollLabel: 'เลื่อนอัตโนมัติ',
     textSizeLabel: 'ขนาดตัวอักษร',
     pronunciationLabel: 'การออกเสียง',
+    learningLanguageVisibilityLabel: 'แสดงภาษาเรียน',
+    translationVisibilityLabel: 'คำแปล',
     backToProfileAriaLabel: 'กลับไปโปรไฟล์',
     backToSettingsAriaLabel: 'กลับไปตั้งค่า',
     decreaseTextSizeAriaLabel: 'ลดขนาดตัวอักษร',
@@ -695,6 +711,8 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       openLessonAriaPrefix: 'Lesson ဖွင့်မယ်',
       openLessonTitle: 'Lesson ဖွင့်မယ်',
       backToAlbumsAriaLabel: 'နောက်သို့',
+      bookmarkAlbumLabel: 'အယ်လ်ဘမ် မှတ်သားမယ်',
+      bookmarkTrackLabel: 'မှတ်သားမယ်',
       unitSingularLabel: 'unit',
       unitPluralLabel: 'units',
       collectionFallbackPrefix: 'စုစည်းမှု',
@@ -762,6 +780,8 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       autoScrollLabel: 'Auto Scroll',
       textSizeLabel: 'စာလုံးအရွယ်အစား',
       pronunciationLabel: 'အသံထွက်',
+      learningLanguageVisibilityLabel: 'လေ့လာဘာသာပြ',
+      translationVisibilityLabel: 'ဘာသာပြန်',
       backToProfileAriaLabel: 'Profile သို့ ပြန်မယ်',
       backToSettingsAriaLabel: 'Settings သို့ ပြန်မယ်',
       decreaseTextSizeAriaLabel: 'စာလုံးအရွယ်အစား လျှော့မယ်',
@@ -856,6 +876,8 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       openLessonAriaPrefix: 'Mở bài',
       openLessonTitle: 'Mở bài',
       backToAlbumsAriaLabel: 'Quay lại',
+      bookmarkAlbumLabel: 'Đánh dấu album',
+      bookmarkTrackLabel: 'Đánh dấu',
       unitSingularLabel: 'bài',
       unitPluralLabel: 'bài',
       collectionFallbackPrefix: 'Bộ',
@@ -923,6 +945,8 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
       autoScrollLabel: 'Tự cuộn',
       textSizeLabel: 'Cỡ chữ',
       pronunciationLabel: 'Phát âm',
+      learningLanguageVisibilityLabel: 'Hiện ngôn ngữ học',
+      translationVisibilityLabel: 'Bản dịch',
       backToProfileAriaLabel: 'Quay lại hồ sơ',
       backToSettingsAriaLabel: 'Quay lại cài đặt',
       decreaseTextSizeAriaLabel: 'Giảm cỡ chữ',

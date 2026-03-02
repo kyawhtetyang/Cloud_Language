@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { LessonData } from '../../../types';
 import {
   DefaultLanguage,
+  getLibrarySchemeSortPriority,
   getLessonOrderIndex,
   getLessonUnitId,
   LibraryViewMode,
@@ -181,14 +182,9 @@ export function useLibraryCollections({
       }
     }
 
-    const schemePriority = (scheme: string | undefined): number => {
-      if (scheme === 'cefr') return 10;
-      if (scheme === 'jlpt') return 20;
-      return 30;
-    };
-
     const collectionEntries = Array.from(byCollection.entries()).sort(([labelA, metaA], [labelB, metaB]) => {
-      const priorityDiff = schemePriority(metaA.levelScheme) - schemePriority(metaB.levelScheme);
+      const priorityDiff =
+        getLibrarySchemeSortPriority(metaA.levelScheme) - getLibrarySchemeSortPriority(metaB.levelScheme);
       if (priorityDiff !== 0) return priorityDiff;
 
       const orderA = typeof metaA.levelOrder === 'number' ? metaA.levelOrder : Number.POSITIVE_INFINITY;

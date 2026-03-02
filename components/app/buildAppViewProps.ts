@@ -4,6 +4,7 @@ import {
   buildStageUnitsFromLessons,
   CourseFramework,
   DefaultLanguage,
+  getLibrarySchemeSortPriority,
   getLessonOrderIndex,
   getLessonUnitId,
   LibraryViewMode,
@@ -103,6 +104,8 @@ type BuildAppViewPropsArgs = {
   onToggleUnitBookmark: (level: number, unit: number) => void;
   onToggleAlbumBookmark: (albumKey: string) => void;
   isPronunciationEnabled: boolean;
+  isLearningLanguageVisible: boolean;
+  isTranslationVisible: boolean;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled: boolean;
   textScalePercent: number;
@@ -115,6 +118,8 @@ type BuildAppViewPropsArgs = {
   onLearnLanguageChange: (value: LearnLanguage) => void;
   onCourseFrameworkChange: (value: CourseFramework) => void;
   onTogglePronunciation: () => void;
+  onToggleLearningLanguageVisibility: () => void;
+  onToggleTranslationVisibility: () => void;
   onToggleBoldText: () => void;
   onToggleAutoScroll: () => void;
   onDecreaseTextSize: () => void;
@@ -259,16 +264,10 @@ function buildProfileAlbumCards({
     }
   }
 
-  const schemePriority = (scheme: string | undefined): number => {
-    if (scheme === 'cefr') return 10;
-    if (scheme === 'hsk') return 20;
-    if (scheme === 'jlpt') return 30;
-    return 40;
-  };
-
   return Array.from(byCollection.values())
     .sort((a, b) => {
-      const priorityDiff = schemePriority(a.levelScheme) - schemePriority(b.levelScheme);
+      const priorityDiff =
+        getLibrarySchemeSortPriority(a.levelScheme) - getLibrarySchemeSortPriority(b.levelScheme);
       if (priorityDiff !== 0) return priorityDiff;
 
       const orderA = typeof a.levelOrder === 'number' ? a.levelOrder : Number.POSITIVE_INFINITY;
@@ -414,6 +413,8 @@ export function buildAppViewProps({
   onToggleUnitBookmark,
   onToggleAlbumBookmark,
   isPronunciationEnabled,
+  isLearningLanguageVisible,
+  isTranslationVisible,
   isBoldTextEnabled,
   isAutoScrollEnabled,
   textScalePercent,
@@ -426,6 +427,8 @@ export function buildAppViewProps({
   onLearnLanguageChange,
   onCourseFrameworkChange,
   onTogglePronunciation,
+  onToggleLearningLanguageVisibility,
+  onToggleTranslationVisibility,
   onToggleBoldText,
   onToggleAutoScroll,
   onDecreaseTextSize,
@@ -606,6 +609,8 @@ export function buildAppViewProps({
       uiLockLanguage,
       courseFramework,
       isPronunciationEnabled,
+      isLearningLanguageVisible,
+      isTranslationVisible,
       isBoldTextEnabled,
       isAutoScrollEnabled,
       textScalePercent,
@@ -622,6 +627,8 @@ export function buildAppViewProps({
       onLearnLanguageChange,
       onCourseFrameworkChange,
       onTogglePronunciation,
+      onToggleLearningLanguageVisibility,
+      onToggleTranslationVisibility,
       onToggleBoldText,
       onToggleAutoScroll,
       onDecreaseTextSize,
@@ -647,6 +654,8 @@ export function buildAppViewProps({
       defaultLanguage,
       translationLanguage: selectedDefaultLanguage,
       isPronunciationEnabled,
+      isLearningLanguageVisible,
+      isTranslationVisible,
       isBoldTextEnabled,
       isAutoScrollEnabled,
       textScalePercent,

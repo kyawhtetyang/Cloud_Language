@@ -18,6 +18,8 @@ describe('settingsSync', () => {
       uiLockLanguage: 'english',
       courseFramework: 'cefr',
       isPronunciationEnabled: false,
+      isLearningLanguageVisible: true,
+      isTranslationVisible: true,
       textScalePercent: 100,
       isBoldTextEnabled: false,
       isAutoScrollEnabled: true,
@@ -35,6 +37,8 @@ describe('settingsSync', () => {
       uiLockLanguage: 'english' as const,
       courseFramework: 'hsk' as const,
       isPronunciationEnabled: true,
+      isLearningLanguageVisible: true,
+      isTranslationVisible: true,
       textScalePercent: 115,
       isBoldTextEnabled: true,
       isAutoScrollEnabled: false,
@@ -56,6 +60,8 @@ describe('settingsSync', () => {
       uiLockLanguage: 'off' as const,
       courseFramework: 'cefr' as const,
       isPronunciationEnabled: false,
+      isLearningLanguageVisible: true,
+      isTranslationVisible: true,
       textScalePercent: 100,
       isBoldTextEnabled: false,
       isAutoScrollEnabled: true,
@@ -70,6 +76,8 @@ describe('settingsSync', () => {
       uiLockLanguage: 'english' as const,
       courseFramework: 'hsk' as const,
       isPronunciationEnabled: true,
+      isLearningLanguageVisible: true,
+      isTranslationVisible: true,
       textScalePercent: 115,
       isBoldTextEnabled: true,
       isAutoScrollEnabled: false,
@@ -94,6 +102,8 @@ describe('settingsSync', () => {
       setUiLockLanguage: vi.fn(),
       setCourseFramework: vi.fn(),
       setIsPronunciationEnabled: vi.fn(),
+      setIsLearningLanguageVisible: vi.fn(),
+      setIsTranslationVisible: vi.fn(),
       setTextScalePercent: vi.fn(),
       setIsBoldTextEnabled: vi.fn(),
       setIsAutoScrollEnabled: vi.fn(),
@@ -110,12 +120,14 @@ describe('settingsSync', () => {
         uiLockLanguage: 'thai',
         courseFramework: 'hsk',
         isPronunciationEnabled: true,
+        isLearningLanguageVisible: true,
+        isTranslationVisible: false,
         textScalePercent: 999,
         isBoldTextEnabled: true,
         isAutoScrollEnabled: false,
         isRandomLessonOrderEnabled: true,
         isReviewQuestionsRemoved: true,
-        appTheme: 'duolingo',
+        appTheme: 'legacy_theme',
         voiceProvider: 'google',
       },
       setters,
@@ -126,12 +138,23 @@ describe('settingsSync', () => {
     expect(setters.setUiLockLanguage).toHaveBeenCalledWith('thai');
     expect(setters.setCourseFramework).toHaveBeenCalledWith('hsk');
     expect(setters.setIsPronunciationEnabled).toHaveBeenCalledWith(true);
+    expect(setters.setIsLearningLanguageVisible).toHaveBeenCalledWith(true);
+    expect(setters.setIsTranslationVisible).toHaveBeenCalledWith(false);
     expect(setters.setTextScalePercent).toHaveBeenCalledWith(120);
     expect(setters.setIsBoldTextEnabled).toHaveBeenCalledWith(true);
     expect(setters.setIsAutoScrollEnabled).toHaveBeenCalledWith(false);
     expect(setters.setIsRandomLessonOrderEnabled).toHaveBeenCalledWith(true);
     expect(setters.setIsReviewQuestionsRemoved).toHaveBeenCalledWith(true);
-    expect(setters.setAppTheme).toHaveBeenCalledWith('light');
+    expect(setters.setAppTheme).not.toHaveBeenCalled();
     expect(setters.setVoiceProvider).toHaveBeenCalledWith('apple_siri');
+  });
+
+  it('coerces storage settings so learning language stays visible if pronunciation is off', () => {
+    localStorage.setItem('lingo_burmese_pronunciation_enabled', 'false');
+    localStorage.setItem('lingo_burmese_learning_language_visible', 'false');
+
+    const settings = readSyncedSettingsFromStorage();
+    expect(settings.isPronunciationEnabled).toBe(false);
+    expect(settings.isLearningLanguageVisible).toBe(true);
   });
 });

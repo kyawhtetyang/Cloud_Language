@@ -9,6 +9,8 @@ export const PROGRESS_KEY = 'lingo_burmese_progress';
 export const UNLOCKED_LEVEL_KEY = 'lingo_burmese_unlocked_level';
 export const STREAK_KEY = 'lingo_burmese_streak';
 export const PRONUNCIATION_ENABLED_KEY = 'lingo_burmese_pronunciation_enabled';
+export const LEARNING_LANGUAGE_VISIBLE_KEY = 'lingo_burmese_learning_language_visible';
+export const TRANSLATION_VISIBLE_KEY = 'lingo_burmese_translation_visible';
 export const LEARN_LANGUAGE_KEY = 'lingo_burmese_learn_language';
 export const DEFAULT_LANGUAGE_KEY = 'lingo_burmese_default_language';
 export const UI_LOCK_LANGUAGE_KEY = 'lingo_burmese_ui_lock_language';
@@ -146,6 +148,18 @@ export const COURSE_FRAMEWORK_OPTIONS = [
 ] as const;
 export type CourseFramework = (typeof COURSE_FRAMEWORK_OPTIONS)[number]['code'];
 
+export const LIBRARY_SCHEME_SORT_PRIORITY: Record<string, number> = {
+  cefr: 10,
+  hsk: 20,
+  jlpt: 30,
+  custom: 40,
+};
+
+export function getLibrarySchemeSortPriority(levelScheme: string | undefined): number {
+  const normalizedScheme = String(levelScheme || '').trim().toLowerCase();
+  return LIBRARY_SCHEME_SORT_PRIORITY[normalizedScheme] ?? 50;
+}
+
 export const FRAMEWORK_LANGUAGE_ALLOWLIST: Record<CourseFramework, ReadonlyArray<LearnLanguage>> = {
   cefr: ['burmese', 'english', 'chinese', 'vietnamese', 'thai'],
   hsk: ['burmese', 'english', 'chinese', 'vietnamese', 'thai'],
@@ -191,6 +205,8 @@ export const APP_DEFAULTS = {
   uiLockLanguage: 'english' as UiLockLanguage,
   courseFramework: 'cefr' as CourseFramework,
   isPronunciationEnabled: false,
+  isLearningLanguageVisible: true,
+  isTranslationVisible: true,
   textScalePercent: DEFAULT_TEXT_SCALE_PERCENT,
   isBoldTextEnabled: false,
   isAutoScrollEnabled: true,
@@ -261,6 +277,19 @@ export function resolveNonConflictingLearnLanguage(
   if (currentLearnLanguage !== defaultLanguage) return currentLearnLanguage;
   const fallback = LEARN_LANGUAGE_OPTIONS.find((option) => option.code !== defaultLanguage);
   return fallback ? fallback.code : currentLearnLanguage;
+}
+
+export function coerceLessonLineVisibility(
+  isPronunciationEnabled: boolean,
+  isLearningLanguageVisible: boolean,
+): { isPronunciationEnabled: boolean; isLearningLanguageVisible: boolean } {
+  if (!isPronunciationEnabled && !isLearningLanguageVisible) {
+    return {
+      isPronunciationEnabled,
+      isLearningLanguageVisible: true,
+    };
+  }
+  return { isPronunciationEnabled, isLearningLanguageVisible };
 }
 
 export function isDefaultLanguage(value: unknown): value is DefaultLanguage {
@@ -364,6 +393,34 @@ type LearningTextInput = {
   learnLanguage: LearnLanguage;
 };
 
+type LessonLanguageTextConfig = {
+  sourceKeys: string[];
+  pronunciationKeys: string[];
+};
+
+const LESSON_LANGUAGE_TEXT_CONFIG: Record<LearnLanguage, LessonLanguageTextConfig> = {
+  english: {
+    sourceKeys: ['english'],
+    pronunciationKeys: ['en_py', 'english_py'],
+  },
+  chinese: {
+    sourceKeys: ['ch', 'zh'],
+    pronunciationKeys: ['ch_py', 'zh_py', 'pinyin'],
+  },
+  vietnamese: {
+    sourceKeys: ['vietnamese', 'vi'],
+    pronunciationKeys: ['vi_py', 'vietnamese_py'],
+  },
+  thai: {
+    sourceKeys: ['thai', 'th'],
+    pronunciationKeys: ['th_py', 'thai_py'],
+  },
+  burmese: {
+    sourceKeys: ['burmese', 'my'],
+    pronunciationKeys: ['my_py', 'burmese_py'],
+  },
+};
+
 function firstNonEmpty(...values: Array<string | null | undefined>): string {
   for (const rawValue of values) {
     const text = String(rawValue || '').trim();
@@ -372,43 +429,22 @@ function firstNonEmpty(...values: Array<string | null | undefined>): string {
   return '';
 }
 
+function resolveMappedTranslationByKeys(
+  translations: Record<string, string> | null | undefined,
+  keys: string[],
+): string {
+  return firstNonEmpty(...keys.map((key) => resolveMappedTranslation(translations, key)));
+}
+
 export function resolveLessonLearningSourceText({
   lessonEnglish,
   lessonTranslations,
   learnLanguage,
 }: LearningTextInput): string {
   const sourceFallback = String(lessonEnglish || '').trim();
-  if (learnLanguage === 'english') {
-    return firstNonEmpty(resolveMappedTranslation(lessonTranslations, 'english'), sourceFallback);
-  }
-  if (learnLanguage === 'chinese') {
-    return firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'ch'),
-      resolveMappedTranslation(lessonTranslations, 'zh'),
-      sourceFallback,
-    );
-  }
-  if (learnLanguage === 'vietnamese') {
-    return firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'vietnamese'),
-      resolveMappedTranslation(lessonTranslations, 'vi'),
-      sourceFallback,
-    );
-  }
-  if (learnLanguage === 'thai') {
-    return firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'thai'),
-      resolveMappedTranslation(lessonTranslations, 'th'),
-      sourceFallback,
-    );
-  }
-  if (learnLanguage === 'burmese') {
-    return firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'burmese'),
-      resolveMappedTranslation(lessonTranslations, 'my'),
-      sourceFallback,
-    );
-  }
+  const config = LESSON_LANGUAGE_TEXT_CONFIG[learnLanguage];
+  const mappedSource = resolveMappedTranslationByKeys(lessonTranslations, config.sourceKeys);
+  if (mappedSource) return mappedSource;
   return sourceFallback;
 }
 
@@ -418,42 +454,9 @@ export function resolveLessonLearningPronunciationText({
   learnLanguage,
 }: LearningTextInput): string {
   const pronunciationFallback = String(lessonPronunciation || '').trim();
-  if (learnLanguage === 'english') {
-    return firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'en_py'),
-      resolveMappedTranslation(lessonTranslations, 'english_py'),
-      pronunciationFallback,
-    );
-  }
-  if (learnLanguage === 'chinese') {
-    return firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'ch_py'),
-      resolveMappedTranslation(lessonTranslations, 'zh_py'),
-      resolveMappedTranslation(lessonTranslations, 'pinyin'),
-      pronunciationFallback,
-    );
-  }
-  if (learnLanguage === 'vietnamese') {
-    return firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'vi_py'),
-      resolveMappedTranslation(lessonTranslations, 'vietnamese_py'),
-      pronunciationFallback,
-    );
-  }
-  if (learnLanguage === 'thai') {
-    return firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'th_py'),
-      resolveMappedTranslation(lessonTranslations, 'thai_py'),
-      pronunciationFallback,
-    );
-  }
-  if (learnLanguage === 'burmese') {
-    return firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'my_py'),
-      resolveMappedTranslation(lessonTranslations, 'burmese_py'),
-      pronunciationFallback,
-    );
-  }
+  const config = LESSON_LANGUAGE_TEXT_CONFIG[learnLanguage];
+  const mappedPronunciation = resolveMappedTranslationByKeys(lessonTranslations, config.pronunciationKeys);
+  if (mappedPronunciation) return mappedPronunciation;
   return pronunciationFallback;
 }
 
@@ -465,84 +468,15 @@ export function hasLessonLearningPronunciation({
 }: LearningTextInput): boolean {
   const pronunciationFallback = String(lessonPronunciation || '').trim();
   const sourceFallback = String(lessonEnglish || '').trim();
-
-  if (learnLanguage === 'english') {
-    const mappedPronunciation = firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'en_py'),
-      resolveMappedTranslation(lessonTranslations, 'english_py'),
-    );
-    if (mappedPronunciation) return true;
-    const englishSource = firstNonEmpty(resolveMappedTranslation(lessonTranslations, 'english'), sourceFallback);
-    if (!pronunciationFallback) return false;
-    if (!englishSource) return true;
-    return pronunciationFallback.toLocaleLowerCase() !== englishSource.toLocaleLowerCase();
-  }
-
-  if (learnLanguage === 'chinese') {
-    const mappedPronunciation = firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'ch_py'),
-      resolveMappedTranslation(lessonTranslations, 'zh_py'),
-      resolveMappedTranslation(lessonTranslations, 'pinyin'),
-    );
-    if (mappedPronunciation) return true;
-    const chineseSource = firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'ch'),
-      resolveMappedTranslation(lessonTranslations, 'zh'),
-      sourceFallback,
-    );
-    if (!pronunciationFallback) return false;
-    if (!chineseSource) return true;
-    return pronunciationFallback.toLocaleLowerCase() !== chineseSource.toLocaleLowerCase();
-  }
-  if (learnLanguage === 'vietnamese') {
-    const mappedPronunciation = firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'vi_py'),
-      resolveMappedTranslation(lessonTranslations, 'vietnamese_py'),
-    );
-    if (mappedPronunciation) return true;
-    const vietnameseSource = firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'vietnamese'),
-      resolveMappedTranslation(lessonTranslations, 'vi'),
-      sourceFallback,
-    );
-    if (!pronunciationFallback) return false;
-    if (!vietnameseSource) return true;
-    return pronunciationFallback.toLocaleLowerCase() !== vietnameseSource.toLocaleLowerCase();
-  }
-  if (learnLanguage === 'thai') {
-    const mappedPronunciation = firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'th_py'),
-      resolveMappedTranslation(lessonTranslations, 'thai_py'),
-    );
-    if (mappedPronunciation) return true;
-    const thaiSource = firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'thai'),
-      resolveMappedTranslation(lessonTranslations, 'th'),
-      sourceFallback,
-    );
-    if (!pronunciationFallback) return false;
-    if (!thaiSource) return true;
-    return pronunciationFallback.toLocaleLowerCase() !== thaiSource.toLocaleLowerCase();
-  }
-  if (learnLanguage === 'burmese') {
-    const mappedPronunciation = firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'my_py'),
-      resolveMappedTranslation(lessonTranslations, 'burmese_py'),
-    );
-    if (mappedPronunciation) return true;
-    const burmeseSource = firstNonEmpty(
-      resolveMappedTranslation(lessonTranslations, 'burmese'),
-      resolveMappedTranslation(lessonTranslations, 'my'),
-      sourceFallback,
-    );
-    if (!pronunciationFallback) return false;
-    if (!burmeseSource) return true;
-    return pronunciationFallback.toLocaleLowerCase() !== burmeseSource.toLocaleLowerCase();
-  }
+  const config = LESSON_LANGUAGE_TEXT_CONFIG[learnLanguage];
+  const mappedPronunciation = resolveMappedTranslationByKeys(lessonTranslations, config.pronunciationKeys);
+  if (mappedPronunciation) return true;
 
   if (!pronunciationFallback) return false;
-  if (!sourceFallback) return true;
-  return pronunciationFallback.toLocaleLowerCase() !== sourceFallback.toLocaleLowerCase();
+  const mappedSource = resolveMappedTranslationByKeys(lessonTranslations, config.sourceKeys);
+  const compareSource = firstNonEmpty(mappedSource, sourceFallback);
+  if (!compareSource) return true;
+  return pronunciationFallback.toLocaleLowerCase() !== compareSource.toLocaleLowerCase();
 }
 
 export function resolveLessonTranslationText({

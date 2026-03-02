@@ -36,6 +36,8 @@ type SettingsViewProps = {
   uiLockLanguage: UiLockLanguage;
   courseFramework: CourseFramework;
   isPronunciationEnabled: boolean;
+  isLearningLanguageVisible: boolean;
+  isTranslationVisible: boolean;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled: boolean;
   textScalePercent: number;
@@ -52,6 +54,8 @@ type SettingsViewProps = {
   onLearnLanguageChange: (value: LearnLanguage) => void;
   onCourseFrameworkChange: (value: CourseFramework) => void;
   onTogglePronunciation: () => void;
+  onToggleLearningLanguageVisibility: () => void;
+  onToggleTranslationVisibility: () => void;
   onToggleBoldText: () => void;
   onToggleAutoScroll: () => void;
   onDecreaseTextSize: () => void;
@@ -98,6 +102,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   uiLockLanguage,
   courseFramework,
   isPronunciationEnabled,
+  isLearningLanguageVisible,
+  isTranslationVisible,
   isBoldTextEnabled,
   isAutoScrollEnabled,
   textScalePercent,
@@ -114,6 +120,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onLearnLanguageChange,
   onCourseFrameworkChange,
   onTogglePronunciation,
+  onToggleLearningLanguageVisibility,
+  onToggleTranslationVisibility,
   onToggleBoldText,
   onToggleAutoScroll,
   onDecreaseTextSize,
@@ -382,11 +390,51 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       <section className={`mb-4 border-t pt-4 ${VIEW_DIVIDER_CLASS}`}>
         <div className={SETTINGS_UI.listCard}>
-          <button type="button" onClick={onTogglePronunciation} className={SETTINGS_UI.listRow}>
+          <button
+            type="button"
+            onClick={onTogglePronunciation}
+            disabled={isPronunciationEnabled && !isLearningLanguageVisible}
+            className={`${SETTINGS_UI.listRow}${
+              isPronunciationEnabled && !isLearningLanguageVisible
+                ? ' cursor-not-allowed opacity-60 hover:bg-transparent'
+                : ''
+            }`}
+          >
             <p className={SETTINGS_UI.sectionTitle}>{settingsText.pronunciationLabel}</p>
             <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
               <ToggleStateBadge
                 isOn={isPronunciationEnabled}
+                onLabel={settingsText.onLabel}
+                offLabel={settingsText.offLabel}
+              />
+            </span>
+          </button>
+          <div className={SETTINGS_UI.listDivider} />
+          <button
+            type="button"
+            onClick={onToggleLearningLanguageVisibility}
+            disabled={isLearningLanguageVisible && !isPronunciationEnabled}
+            className={`${SETTINGS_UI.listRow}${
+              isLearningLanguageVisible && !isPronunciationEnabled
+                ? ' cursor-not-allowed opacity-60 hover:bg-transparent'
+                : ''
+            }`}
+          >
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.learningLanguageVisibilityLabel}</p>
+            <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
+              <ToggleStateBadge
+                isOn={isLearningLanguageVisible}
+                onLabel={settingsText.onLabel}
+                offLabel={settingsText.offLabel}
+              />
+            </span>
+          </button>
+          <div className={SETTINGS_UI.listDivider} />
+          <button type="button" onClick={onToggleTranslationVisibility} className={SETTINGS_UI.listRow}>
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.translationVisibilityLabel}</p>
+            <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
+              <ToggleStateBadge
+                isOn={isTranslationVisible}
                 onLabel={settingsText.onLabel}
                 offLabel={settingsText.offLabel}
               />

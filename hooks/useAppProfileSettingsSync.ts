@@ -31,6 +31,8 @@ type UseAppProfileSettingsSyncParams = {
   uiLockLanguage: UiLockLanguage;
   courseFramework: CourseFramework;
   isPronunciationEnabled: boolean;
+  isLearningLanguageVisible: boolean;
+  isTranslationVisible: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled: boolean;
@@ -46,6 +48,8 @@ type UseAppProfileSettingsSyncParams = {
   setUiLockLanguage: Dispatch<SetStateAction<UiLockLanguage>>;
   setCourseFramework: Dispatch<SetStateAction<CourseFramework>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
+  setIsLearningLanguageVisible: Dispatch<SetStateAction<boolean>>;
+  setIsTranslationVisible: Dispatch<SetStateAction<boolean>>;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
   setIsAutoScrollEnabled: Dispatch<SetStateAction<boolean>>;
@@ -75,6 +79,8 @@ export function useAppProfileSettingsSync({
   uiLockLanguage,
   courseFramework,
   isPronunciationEnabled,
+  isLearningLanguageVisible,
+  isTranslationVisible,
   textScalePercent,
   isBoldTextEnabled,
   isAutoScrollEnabled,
@@ -90,6 +96,8 @@ export function useAppProfileSettingsSync({
   setUiLockLanguage,
   setCourseFramework,
   setIsPronunciationEnabled,
+  setIsLearningLanguageVisible,
+  setIsTranslationVisible,
   setTextScalePercent,
   setIsBoldTextEnabled,
   setIsAutoScrollEnabled,
@@ -115,6 +123,8 @@ export function useAppProfileSettingsSync({
     uiLockLanguage,
     courseFramework,
     isPronunciationEnabled,
+    isLearningLanguageVisible,
+    isTranslationVisible,
     textScalePercent,
     isBoldTextEnabled,
     isAutoScrollEnabled,
@@ -134,6 +144,8 @@ export function useAppProfileSettingsSync({
     setUiLockLanguage,
     setCourseFramework,
     setIsPronunciationEnabled,
+    setIsLearningLanguageVisible,
+    setIsTranslationVisible,
     setTextScalePercent,
     setIsBoldTextEnabled,
     setIsAutoScrollEnabled,
@@ -151,6 +163,8 @@ export function useAppProfileSettingsSync({
     uiLockLanguage,
     courseFramework,
     isPronunciationEnabled,
+    isLearningLanguageVisible,
+    isTranslationVisible,
     textScalePercent,
     isBoldTextEnabled,
     isAutoScrollEnabled,

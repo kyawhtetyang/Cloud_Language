@@ -68,6 +68,8 @@ type UseAppViewPropsArgs = {
   onToggleUnitBookmark: (level: number, unit: number) => void;
   onToggleAlbumBookmark: (albumKey: string) => void;
   isPronunciationEnabled: boolean;
+  isLearningLanguageVisible: boolean;
+  isTranslationVisible: boolean;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled: boolean;
   textScalePercent: number;
@@ -79,6 +81,8 @@ type UseAppViewPropsArgs = {
   setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
   setCourseFramework: Dispatch<SetStateAction<CourseFramework>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
+  setIsLearningLanguageVisible: Dispatch<SetStateAction<boolean>>;
+  setIsTranslationVisible: Dispatch<SetStateAction<boolean>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
   setIsAutoScrollEnabled: Dispatch<SetStateAction<boolean>>;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
@@ -158,6 +162,8 @@ export function useAppViewProps({
   onToggleUnitBookmark,
   onToggleAlbumBookmark,
   isPronunciationEnabled,
+  isLearningLanguageVisible,
+  isTranslationVisible,
   isBoldTextEnabled,
   isAutoScrollEnabled,
   textScalePercent,
@@ -169,6 +175,8 @@ export function useAppViewProps({
   setLearnLanguage,
   setCourseFramework,
   setIsPronunciationEnabled,
+  setIsLearningLanguageVisible,
+  setIsTranslationVisible,
   setIsBoldTextEnabled,
   setIsAutoScrollEnabled,
   setTextScalePercent,
@@ -251,6 +259,8 @@ export function useAppViewProps({
     onToggleUnitBookmark,
     onToggleAlbumBookmark,
     isPronunciationEnabled,
+    isLearningLanguageVisible,
+    isTranslationVisible,
     isBoldTextEnabled,
     isAutoScrollEnabled,
     textScalePercent,
@@ -272,7 +282,21 @@ export function useAppViewProps({
     onCourseFrameworkChange: (nextFramework) => {
       setCourseFramework(coerceFrameworkForLearnLanguage(nextFramework, learnLanguage));
     },
-    onTogglePronunciation: () => setIsPronunciationEnabled((prev) => !prev),
+    onTogglePronunciation: () => {
+      setIsPronunciationEnabled((prev) => {
+        const nextPronunciation = !prev;
+        if (!nextPronunciation && !isLearningLanguageVisible) return prev;
+        return nextPronunciation;
+      });
+    },
+    onToggleLearningLanguageVisibility: () => {
+      setIsLearningLanguageVisible((prev) => {
+        const nextLearningLanguage = !prev;
+        if (!nextLearningLanguage && !isPronunciationEnabled) return prev;
+        return nextLearningLanguage;
+      });
+    },
+    onToggleTranslationVisibility: () => setIsTranslationVisible((prev) => !prev),
     onToggleBoldText: () => setIsBoldTextEnabled((prev) => !prev),
     onToggleAutoScroll: () => setIsAutoScrollEnabled((prev) => !prev),
     onDecreaseTextSize: () => setTextScalePercent((prev) => clampTextScale(prev - 5)),

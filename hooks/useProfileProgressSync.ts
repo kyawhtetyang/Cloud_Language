@@ -38,6 +38,8 @@ type UseProfileProgressSyncParams = {
   uiLockLanguage: UiLockLanguage;
   courseFramework: CourseFramework;
   isPronunciationEnabled: boolean;
+  isLearningLanguageVisible: boolean;
+  isTranslationVisible: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled: boolean;
@@ -57,6 +59,8 @@ type UseProfileProgressSyncParams = {
   setUiLockLanguage: Dispatch<SetStateAction<UiLockLanguage>>;
   setCourseFramework: Dispatch<SetStateAction<CourseFramework>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
+  setIsLearningLanguageVisible: Dispatch<SetStateAction<boolean>>;
+  setIsTranslationVisible: Dispatch<SetStateAction<boolean>>;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
   setIsAutoScrollEnabled: Dispatch<SetStateAction<boolean>>;
@@ -79,6 +83,8 @@ export function useProfileProgressSync({
   uiLockLanguage,
   courseFramework,
   isPronunciationEnabled,
+  isLearningLanguageVisible,
+  isTranslationVisible,
   textScalePercent,
   isBoldTextEnabled,
   isAutoScrollEnabled,
@@ -98,6 +104,8 @@ export function useProfileProgressSync({
   setUiLockLanguage,
   setCourseFramework,
   setIsPronunciationEnabled,
+  setIsLearningLanguageVisible,
+  setIsTranslationVisible,
   setTextScalePercent,
   setIsBoldTextEnabled,
   setIsAutoScrollEnabled,
@@ -184,6 +192,8 @@ export function useProfileProgressSync({
             setUiLockLanguage,
             setCourseFramework,
             setIsPronunciationEnabled,
+            setIsLearningLanguageVisible,
+            setIsTranslationVisible,
             setTextScalePercent,
             setIsBoldTextEnabled,
             setIsAutoScrollEnabled,
@@ -215,6 +225,8 @@ export function useProfileProgressSync({
     setUiLockLanguage,
     setCourseFramework,
     setIsPronunciationEnabled,
+    setIsLearningLanguageVisible,
+    setIsTranslationVisible,
     setTextScalePercent,
     setIsBoldTextEnabled,
     setIsAutoScrollEnabled,
@@ -286,6 +298,8 @@ export function useProfileProgressSync({
         uiLockLanguage,
         courseFramework,
         isPronunciationEnabled,
+        isLearningLanguageVisible,
+        isTranslationVisible,
         textScalePercent,
         isBoldTextEnabled,
         isAutoScrollEnabled,
@@ -328,6 +342,8 @@ export function useProfileProgressSync({
     courseFramework,
     hasHydratedProfile,
     isPronunciationEnabled,
+    isLearningLanguageVisible,
+    isTranslationVisible,
     textScalePercent,
     isBoldTextEnabled,
     isAutoScrollEnabled,

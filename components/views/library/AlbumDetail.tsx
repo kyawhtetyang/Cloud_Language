@@ -177,8 +177,8 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
                   className={isAlbumBookmarked
                     ? `${BUTTON_UI.iconCircleButtonBase} ${BUTTON_UI.iconCircleButtonActive}`
                     : LIBRARY_UI_TOKENS.iconButton}
-                  aria-label="Bookmark album"
-                  title="Bookmark album"
+                  aria-label={libraryText.bookmarkAlbumLabel}
+                  title={libraryText.bookmarkAlbumLabel}
                 >
                   {isAlbumBookmarked ? (
                     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
@@ -224,6 +224,7 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
         trackTitle={activeActionUnit ? localizeLibraryTopic(activeActionUnit.topic, defaultLanguage) : ''}
         trackUnitCode={activeUnitCode}
         openLessonLabel={libraryText.openLessonTitle}
+        bookmarkTrackLabel={libraryText.bookmarkTrackLabel}
         onClose={closeActionMenu}
         onOpenLesson={handleOpenLesson}
         onToggleBookmark={handleToggleBookmark}

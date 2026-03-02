@@ -60,6 +60,8 @@ describe('i18n coverage', () => {
         uiLockLanguage="off"
         courseFramework="cefr"
         isPronunciationEnabled
+        isLearningLanguageVisible
+        isTranslationVisible
         isBoldTextEnabled={false}
         isAutoScrollEnabled
         textScalePercent={100}
@@ -76,6 +78,8 @@ describe('i18n coverage', () => {
         onLearnLanguageChange={vi.fn()}
         onCourseFrameworkChange={vi.fn()}
         onTogglePronunciation={vi.fn()}
+        onToggleLearningLanguageVisibility={vi.fn()}
+        onToggleTranslationVisibility={vi.fn()}
         onToggleBoldText={vi.fn()}
         onToggleAutoScroll={vi.fn()}
         onDecreaseTextSize={vi.fn()}
@@ -135,6 +139,8 @@ describe('i18n coverage', () => {
         uiLockLanguage="off"
         courseFramework="cefr"
         isPronunciationEnabled
+        isLearningLanguageVisible
+        isTranslationVisible
         isBoldTextEnabled={false}
         isAutoScrollEnabled
         textScalePercent={100}
@@ -151,6 +157,8 @@ describe('i18n coverage', () => {
         onLearnLanguageChange={vi.fn()}
         onCourseFrameworkChange={vi.fn()}
         onTogglePronunciation={vi.fn()}
+        onToggleLearningLanguageVisibility={vi.fn()}
+        onToggleTranslationVisibility={vi.fn()}
         onToggleBoldText={vi.fn()}
         onToggleAutoScroll={vi.fn()}
         onDecreaseTextSize={vi.fn()}
