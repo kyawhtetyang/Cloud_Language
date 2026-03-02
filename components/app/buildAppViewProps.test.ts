@@ -112,12 +112,14 @@ function createArgs(
     orderedUnitIndexes: [0],
     isRandomLessonOrderEnabled: false,
     isMobileBottomBarsVisible: true,
+    isChatComposerFocused: false,
     onToggleShuffle: vi.fn(),
     onToggleRepeat: vi.fn(),
     onPrevious: vi.fn(),
     onReadCurrentBatch: vi.fn(),
     onNext: vi.fn(),
     onMobileTabChange: vi.fn(),
+    onChatComposerFocusChange: vi.fn(),
     ...overrides,
   };
 }
@@ -143,17 +145,32 @@ describe('buildAppViewProps feed routing', () => {
     );
 
     expect(result.isFeedView).toBe(true);
-    expect(result.showLessonActions).toBe(true);
+    expect(result.showLessonActions).toBe(false);
     expect(result.showLibraryMiniPlayer).toBe(false);
     expect(result.mobileBottomNavProps.isVisible).toBe(true);
-    expect(result.lessonViewProps.isRevisionView).toBe(true);
+    expect(result.chatViewProps.defaultLanguage).toBe('english');
   });
 
-  it('limits revision lesson view to three sentences', () => {
+  it('hides mobile nav in feed when chat composer is focused', () => {
+    const result = buildAppViewProps(
+      createArgs({
+        sidebarTab: 'feed',
+        isChatComposerFocused: true,
+      }),
+    );
+
+    expect(result.mobileBottomNavProps.isVisible).toBe(false);
+  });
+
+  it('passes highlight phrases to chat feed props', () => {
     const lessonA = createLesson('A');
     const lessonB = createLesson('B');
     const lessonC = createLesson('C');
     const lessonD = createLesson('D');
+    const highlights = new Map<string, string[]>([
+      ['k1', ['你好', '谢谢']],
+      ['k2', ['你好']],
+    ]);
     const result = buildAppViewProps(
       createArgs({
         sidebarTab: 'feed',
@@ -173,16 +190,11 @@ describe('buildAppViewProps feed routing', () => {
             { lesson: lessonD, lessonIndex: 3 },
           ],
         ],
+        savedHighlightPhrasesByLessonKey: highlights,
       }),
     );
 
-    expect(result.lessonViewProps.currentBatchEntries).toHaveLength(3);
-    expect(result.lessonViewProps.currentBatchEntries.map((entry) => entry.lesson.english)).toEqual([
-      'A',
-      'B',
-      'C',
-    ]);
-    expect(result.lessonViewProps.allBatchGroups).toBeUndefined();
+    expect(result.chatViewProps.highlightPhrasesByLessonKey).toBe(highlights);
   });
 
   it('keeps full sentence groups on lesson tab', () => {

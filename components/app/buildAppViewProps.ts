@@ -146,12 +146,14 @@ type BuildAppViewPropsArgs = {
   orderedUnitIndexes: number[];
   isRandomLessonOrderEnabled: boolean;
   isMobileBottomBarsVisible: boolean;
+  isChatComposerFocused: boolean;
   onToggleShuffle: () => void;
   onToggleRepeat: () => void;
   onPrevious: () => void;
   onReadCurrentBatch: () => void;
   onNext: () => void;
   onMobileTabChange: (tab: SidebarTab) => void;
+  onChatComposerFocusChange: (isFocused: boolean) => void;
 };
 
 function buildCollectionKey(levelScheme: string | undefined, levelCode: string | undefined, collectionLabel: string): string {
@@ -455,12 +457,14 @@ export function buildAppViewProps({
   orderedUnitIndexes,
   isRandomLessonOrderEnabled,
   isMobileBottomBarsVisible,
+  isChatComposerFocused,
   onToggleShuffle,
   onToggleRepeat,
   onPrevious,
   onReadCurrentBatch,
   onNext,
   onMobileTabChange,
+  onChatComposerFocusChange,
 }: BuildAppViewPropsArgs) {
   const appText = getAppText(defaultLanguage);
   const totalLessonsCount = lessons.length;
@@ -479,7 +483,8 @@ export function buildAppViewProps({
   const isLessonView = sidebarTab === 'lesson';
   const isFeedView = sidebarTab === 'feed' && mode === 'learn';
   const isSettingsView = sidebarTab === 'settings';
-  const showLessonActions = isLessonView || isFeedView;
+  const showLessonActions = isLessonView;
+  const hideMobileNavForChatInput = isFeedView && isChatComposerFocused;
   const activeOrCurrentLesson = (
     typeof activeSpeakingLessonIndex === 'number'
       ? lessons[activeSpeakingLessonIndex]
@@ -537,8 +542,6 @@ export function buildAppViewProps({
   const isReadDisabled = mode !== 'learn' || orderedUnitIndexes.length === 0;
   const isPreviousDisabled = mode !== 'learn' || isNextDisabled;
   const computedIsNextDisabled = isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end);
-  const revisionBatchEntries = isFeedView ? currentBatchEntries.slice(0, 3) : currentBatchEntries;
-  const lessonViewBatchGroups = isFeedView ? undefined : lessonBatchGroups;
   return {
     isLibraryView,
     isProfileView,
@@ -640,13 +643,18 @@ export function buildAppViewProps({
       onRequestLogout,
       onBackToProfile,
     },
+    chatViewProps: {
+      defaultLanguage,
+      highlightPhrasesByLessonKey: savedHighlightPhrasesByLessonKey,
+      onComposerFocusChange: onChatComposerFocusChange,
+    },
     lessonViewProps: {
       onBackToLibrary: () => onMobileTabChange('library'),
       progressLabel: `${Math.min(learnStepCount, learnStep + 1)}/${learnStepCount}`,
       currentIndex,
-      currentBatchEntries: revisionBatchEntries,
-      allBatchGroups: lessonViewBatchGroups,
-      isRevisionView: isFeedView,
+      currentBatchEntries,
+      allBatchGroups: lessonBatchGroups,
+      isRevisionView: false,
       currentStep: learnStep,
       isReading,
       onSelectStep: onSelectLessonStep,
@@ -699,7 +707,7 @@ export function buildAppViewProps({
     mobileBottomNavProps: {
       navText: appText.navigation,
       activeTab: sidebarTab === 'settings' ? 'profile' : sidebarTab,
-      isVisible: isMobileBottomBarsVisible,
+      isVisible: isMobileBottomBarsVisible && !hideMobileNavForChatInput,
       onTabChange: onMobileTabChange,
     },
     appStateText: appText.appState,

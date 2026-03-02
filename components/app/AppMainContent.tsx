@@ -4,6 +4,7 @@ import { LibraryView } from '../views/LibraryView';
 import { LessonView } from '../views/LessonView';
 import { ProfileView } from '../views/ProfileView';
 import { SettingsView } from '../views/SettingsView';
+import { ChatPracticeView } from '../views/ChatPracticeView';
 import { CompletedView } from '../views/AppStateViews';
 import { AppTextPack } from '../../config/appI18n';
 
@@ -16,6 +17,7 @@ type AppMainContentProps = {
   profileViewProps: React.ComponentProps<typeof ProfileView>;
   libraryViewProps: React.ComponentProps<typeof LibraryView>;
   settingsViewProps: React.ComponentProps<typeof SettingsView>;
+  chatViewProps: React.ComponentProps<typeof ChatPracticeView>;
   lessonViewProps: React.ComponentProps<typeof LessonView>;
   appStateText: AppTextPack['appState'];
   onCompletedRestart: () => void;
@@ -30,11 +32,12 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
   profileViewProps,
   libraryViewProps,
   settingsViewProps,
+  chatViewProps,
   lessonViewProps,
   appStateText,
   onCompletedRestart,
 }) => (
-  <main className="flex-1 flex items-start justify-center p-4 pt-6 md:p-6 md:pt-5">
+  <main className={`flex-1 flex justify-center p-4 pt-6 md:p-6 md:pt-5 ${isFeedView ? 'items-stretch' : 'items-start'}`}>
     {isProfileView ? (
       <ProfileView {...profileViewProps} />
     ) : isLibraryView ? (
@@ -42,7 +45,7 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
     ) : isSettingsView ? (
       <SettingsView {...settingsViewProps} />
     ) : isFeedView ? (
-      <LessonView {...lessonViewProps} />
+      <ChatPracticeView {...chatViewProps} />
     ) : mode === 'completed' ? (
       <CompletedView onRestart={onCompletedRestart} appStateText={appStateText} />
     ) : (

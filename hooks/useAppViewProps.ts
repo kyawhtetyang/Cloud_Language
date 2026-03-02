@@ -107,12 +107,14 @@ type UseAppViewPropsArgs = {
   orderedUnitIndexes: number[];
   isRandomLessonOrderEnabled: boolean;
   isMobileBottomBarsVisible: boolean;
+  isChatComposerFocused: boolean;
   handleToggleShuffle: () => void;
   handleToggleRepeat: () => void;
   handlePrevious: () => Promise<void>;
   handleReadCurrentBatch: () => Promise<void>;
   handleNext: () => Promise<void>;
   selectTab: (tab: SidebarTab) => void;
+  setIsChatComposerFocused: Dispatch<SetStateAction<boolean>>;
 };
 
 export function useAppViewProps({
@@ -201,12 +203,14 @@ export function useAppViewProps({
   orderedUnitIndexes,
   isRandomLessonOrderEnabled,
   isMobileBottomBarsVisible,
+  isChatComposerFocused,
   handleToggleShuffle,
   handleToggleRepeat,
   handlePrevious,
   handleReadCurrentBatch,
   handleNext,
   selectTab,
+  setIsChatComposerFocused,
 }: UseAppViewPropsArgs) {
   return buildAppViewProps({
     defaultLanguage,
@@ -326,11 +330,13 @@ export function useAppViewProps({
     orderedUnitIndexes,
     isRandomLessonOrderEnabled,
     isMobileBottomBarsVisible,
+    isChatComposerFocused,
     onToggleShuffle: handleToggleShuffle,
     onToggleRepeat: handleToggleRepeat,
     onPrevious: handlePrevious,
     onReadCurrentBatch: () => { void handleReadCurrentBatch(); },
     onNext: handleNext,
     onMobileTabChange: selectTab,
+    onChatComposerFocusChange: setIsChatComposerFocused,
   });
 }

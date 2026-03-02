@@ -103,6 +103,7 @@ const App: React.FC = () => {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   const [pendingAutoPlayUnitKey, setPendingAutoPlayUnitKey] = useState<string | null>(null);
+  const [isChatComposerFocused, setIsChatComposerFocused] = useState(false);
 
   const [librarySelectedAlbumKey, setLibrarySelectedAlbumKey] = useState<string | null>(null);
   const [libraryViewMode, setLibraryViewMode] = useState<LibraryViewMode>(DEFAULT_LIBRARY_VIEW_MODE);
@@ -114,6 +115,12 @@ const App: React.FC = () => {
     setBookmarkedUnitKeys(new Set());
     setBookmarkedAlbumKeys(new Set());
   }, [profileStorageId]);
+
+  useEffect(() => {
+    if (sidebarTab !== 'feed' && isChatComposerFocused) {
+      setIsChatComposerFocused(false);
+    }
+  }, [sidebarTab, isChatComposerFocused]);
 
   useEffect(() => {
     const normalizedFramework = coerceFrameworkForLearnLanguage(courseFramework, learnLanguage);
@@ -478,6 +485,7 @@ const App: React.FC = () => {
     profileViewProps,
     libraryViewProps,
     settingsViewProps,
+    chatViewProps,
     lessonViewProps,
     lessonActionFooterProps,
     libraryMiniPlayerProps,
@@ -569,14 +577,16 @@ const App: React.FC = () => {
     orderedUnitIndexes,
     isRandomLessonOrderEnabled,
     isMobileBottomBarsVisible,
+    isChatComposerFocused,
     handleToggleShuffle,
     handleToggleRepeat,
     handlePrevious,
     handleReadCurrentBatch: handleReadForActiveTab,
     handleNext,
     selectTab: handleMobileTabChange,
+    setIsChatComposerFocused,
   });
-  const mobileBottomPaddingClass = isFeedView ? 'pb-0' : (showLibraryMiniPlayer ? 'pb-56' : 'pb-36');
+  const mobileBottomPaddingClass = showLibraryMiniPlayer ? 'pb-56' : 'pb-36';
   const desktopBottomPaddingClass = isFeedView ? 'md:pb-0' : 'md:pb-32';
 
   return (
@@ -608,6 +618,7 @@ const App: React.FC = () => {
           profileViewProps={profileViewProps}
           libraryViewProps={libraryViewProps}
           settingsViewProps={settingsViewProps}
+          chatViewProps={chatViewProps}
           lessonViewProps={lessonViewProps}
           appStateText={appStateText}
           onCompletedRestart={handleRestartCourse}

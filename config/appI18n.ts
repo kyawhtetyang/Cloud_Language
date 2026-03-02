@@ -147,7 +147,7 @@ export type AppTextPack = {
 
 const APP_TEXT_ENGLISH: AppTextPack = {
   navigation: {
-    feedLabel: 'Revision',
+    feedLabel: 'Chat',
     libraryLabel: 'Library',
     lessonLabel: 'Lesson',
     profileLabel: 'Profile',
@@ -315,7 +315,7 @@ const APP_TEXT_CHINESE: AppTextPack = {
   ...APP_TEXT_ENGLISH,
   navigation: {
     ...APP_TEXT_ENGLISH.navigation,
-    feedLabel: '复习',
+    feedLabel: '聊天',
     libraryLabel: '课程库',
     lessonLabel: '课程',
     profileLabel: '个人',
@@ -491,7 +491,7 @@ const APP_TEXT_THAI: AppTextPack = {
   ...APP_TEXT_ENGLISH,
   navigation: {
     ...APP_TEXT_ENGLISH.navigation,
-    feedLabel: 'ทบทวน',
+    feedLabel: 'แชต',
     libraryLabel: 'คลังบทเรียน',
     lessonLabel: 'บทเรียน',
     profileLabel: 'โปรไฟล์',
@@ -669,7 +669,7 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
   thai: APP_TEXT_THAI,
   burmese: {
     navigation: {
-      feedLabel: 'ပြန်လေ့ကျင့်',
+      feedLabel: 'ချက်',
       libraryLabel: 'စာကြည့်တိုက်',
       lessonLabel: 'သင်ခန်းစာ',
       profileLabel: 'ပရိုဖိုင်',
@@ -834,7 +834,7 @@ const APP_TEXT_BY_LANGUAGE: Record<DefaultLanguage, AppTextPack> = {
   },
   vietnamese: {
     navigation: {
-      feedLabel: 'Ôn tập',
+      feedLabel: 'Trò chuyện',
       libraryLabel: 'Thư viện',
       lessonLabel: 'Bài học',
       profileLabel: 'Hồ sơ',

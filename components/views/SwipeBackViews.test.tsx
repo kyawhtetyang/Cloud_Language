@@ -237,32 +237,4 @@ describe('Swipe-back behavior', () => {
     expect(onCourseFrameworkChange).toHaveBeenCalledWith('hsk');
   });
 
-  it('shows review and quiz toolbar tabs in revision view', () => {
-    const lesson: LessonData = {
-      level: 1,
-      unit: 1,
-      stage: 'A1',
-      topic: 'Greetings',
-      english: 'Hello',
-      burmese: 'မင်္ဂလာပါ',
-      pronunciation: 'mingalaba',
-    };
-
-    render(
-      <LessonView
-        onBackToLibrary={vi.fn()}
-        currentIndex={0}
-        currentBatchEntries={[{ lesson, lessonIndex: 0 }]}
-        isRevisionView
-        englishReferenceByKey={new Map()}
-        defaultLanguage="english"
-        isPronunciationEnabled
-        isBoldTextEnabled={false}
-        learnLanguage="burmese"
-      />,
-    );
-
-    expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Quiz' })).toBeInTheDocument();
-  });
 });
