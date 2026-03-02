@@ -462,7 +462,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
     const selectedPhraseDraft = isInteractiveSelecting ? getDraftSelectionPhrase(sourceText) : '';
     const hasSavedPhrases = savedPhrases.length > 0;
     const canSelectWholeSentence = canShowLearningLanguage && tokenizeLessonTextForHighlight(sourceText).tokens.length > 0;
-    const lessonRowLineClass = `text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-medium'}`;
+    const lessonRowLineClass = `text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`;
     const setCombinedRowRef = (node: HTMLDivElement | null) => {
       if (node) {
         lessonRowRefs.current.set(lessonIndex, node);

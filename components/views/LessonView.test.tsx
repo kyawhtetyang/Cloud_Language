@@ -90,4 +90,39 @@ describe('LessonView', () => {
 
     expect(screen.getByText('Pronunciation coming soon.')).toBeInTheDocument();
   });
+
+  it('uses bold class only when bold setting is enabled', () => {
+    const { rerender } = render(
+      <LessonView
+        currentIndex={0}
+        currentBatchEntries={[{ lesson, lessonIndex: 0 }]}
+        englishReferenceByKey={new Map()}
+        defaultLanguage="english"
+        isPronunciationEnabled
+        isBoldTextEnabled={false}
+        learnLanguage="english"
+      />,
+    );
+
+    const sourceLine = document.querySelector('.lesson-row-source');
+    expect(sourceLine).not.toBeNull();
+    expect(sourceLine?.className).toContain('font-normal');
+    expect(sourceLine?.className).not.toContain('font-bold');
+
+    rerender(
+      <LessonView
+        currentIndex={0}
+        currentBatchEntries={[{ lesson, lessonIndex: 0 }]}
+        englishReferenceByKey={new Map()}
+        defaultLanguage="english"
+        isPronunciationEnabled
+        isBoldTextEnabled
+        learnLanguage="english"
+      />,
+    );
+
+    const boldSourceLine = document.querySelector('.lesson-row-source');
+    expect(boldSourceLine).not.toBeNull();
+    expect(boldSourceLine?.className).toContain('font-bold');
+  });
 });
