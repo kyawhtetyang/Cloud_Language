@@ -16,6 +16,7 @@ import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { useAppViewProps } from './hooks/useAppViewProps';
 import { useUnitLeaveGuards } from './hooks/useUnitLeaveGuards';
 import { RepeatMode, useUnitNavigation } from './hooks/useUnitNavigation';
+import { useAppInteractionHandlers } from './hooks/useAppInteractionHandlers';
 import { AppDialogs } from './components/app/AppDialogs';
 import { AppMainContent } from './components/app/AppMainContent';
 import { AppBottomBars } from './components/app/AppBottomBars';
@@ -28,9 +29,6 @@ import {
   DEFAULT_STREAK,
   DEFAULT_UNLOCKED_LEVEL,
   LibraryViewMode,
-  SidebarTab,
-  getLessonUnitId,
-  getPlayableLessonText,
   PROFILE_NAME_KEY,
   toProfileStorageId,
 } from './config/appConfig';
@@ -404,6 +402,41 @@ const App: React.FC = () => {
   });
   const appText = getAppText(effectiveUiLanguage);
   const welcomeText = getAppText(effectiveUiLanguage).welcome;
+  const {
+    handleMobileTabChange,
+    handleOpenProfileAlbumLibrary,
+    handleToggleUnitBookmark,
+    handleToggleAlbumBookmark,
+    handleLearnLanguageChangeWithStop,
+    handleVoiceProviderChangeWithStop,
+    handleCourseFrameworkChangeWithStop,
+    handleReadForActiveTab,
+  } = useAppInteractionHandlers({
+    lastLibraryTabTapAtRef,
+    sidebarTab,
+    mode,
+    isReading,
+    activeSpeakingLessonIndex,
+    setLibraryViewMode,
+    setLibrarySelectedAlbumKey,
+    setSidebarTab,
+    setIsSidebarOpen,
+    setBookmarkedUnitKeys,
+    setBookmarkedAlbumKeys,
+    setTrackPlaybackEnabled,
+    resetUnitPlaybackAnchor,
+    stopActivePlayback,
+    selectTab,
+    learnLanguage,
+    setLearnLanguage,
+    voiceProvider,
+    setVoiceProvider,
+    courseFramework,
+    setCourseFramework,
+    handleReadCurrentBatch,
+    currentBatchEntries,
+    playEntriesSequentially,
+  });
 
   if (loading) {
     return <LoadingView label={appText.appState.loadingLessonsLabel} />;
@@ -432,133 +465,6 @@ const App: React.FC = () => {
       />
     );
   }
-
-  const handleMobileTabChange = (tab: SidebarTab) => {
-    if (tab === 'library' && sidebarTab === 'library') {
-      const now = Date.now();
-      const isDoubleTap = (now - lastLibraryTabTapAtRef.current) <= 450;
-      lastLibraryTabTapAtRef.current = now;
-      if (isDoubleTap) {
-        setLibraryViewMode(DEFAULT_LIBRARY_VIEW_MODE);
-        setLibrarySelectedAlbumKey(null);
-        if (typeof window !== 'undefined') {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      }
-      return;
-    }
-    lastLibraryTabTapAtRef.current = 0;
-    if (tab === 'library') {
-      setLibraryViewMode(DEFAULT_LIBRARY_VIEW_MODE);
-    }
-    const isLessonRevisionSwitch = (
-      (sidebarTab === 'lesson' && tab === 'feed')
-      || (sidebarTab === 'feed' && tab === 'lesson')
-    );
-    if (isLessonRevisionSwitch) {
-      setTrackPlaybackEnabled(false);
-      resetUnitPlaybackAnchor();
-      if (isReading || activeSpeakingLessonIndex !== null) {
-        void stopActivePlayback();
-      }
-    }
-    selectTab(tab);
-  };
-
-  const handleOpenProfileAlbumLibrary = () => {
-    setLibraryViewMode(DEFAULT_LIBRARY_VIEW_MODE);
-    setLibrarySelectedAlbumKey(null);
-    setSidebarTab('library');
-    setIsSidebarOpen(false);
-  };
-
-  const handleToggleUnitBookmark = (level: number, unit: number) => {
-    const unitKey = `${Math.max(1, level)}:${Math.max(1, unit)}`;
-    setBookmarkedUnitKeys((previous) => {
-      const next = new Set(previous);
-      if (next.has(unitKey)) {
-        next.delete(unitKey);
-      } else {
-        next.add(unitKey);
-      }
-      return next;
-    });
-  };
-
-  const handleToggleAlbumBookmark = (albumKey: string) => {
-    if (!albumKey) return;
-    setBookmarkedAlbumKeys((previous) => {
-      const next = new Set(previous);
-      if (next.has(albumKey)) {
-        next.delete(albumKey);
-      } else {
-        next.add(albumKey);
-      }
-      return next;
-    });
-  };
-
-  const stopPlaybackForVoiceSettingChange = () => {
-    setTrackPlaybackEnabled(false);
-    resetUnitPlaybackAnchor();
-    if (isReading || activeSpeakingLessonIndex !== null) {
-      void stopActivePlayback();
-    }
-  };
-
-  const handleLearnLanguageChangeWithStop = (value: typeof learnLanguage) => {
-    if (value === learnLanguage) return;
-    stopPlaybackForVoiceSettingChange();
-    setLearnLanguage(value);
-  };
-
-  const handleVoiceProviderChangeWithStop = (value: typeof voiceProvider) => {
-    if (value === voiceProvider) return;
-    stopPlaybackForVoiceSettingChange();
-    setVoiceProvider(value);
-  };
-
-  const handleCourseFrameworkChangeWithStop = (value: typeof courseFramework) => {
-    if (value === courseFramework) return;
-    stopPlaybackForVoiceSettingChange();
-    setCourseFramework(value);
-  };
-
-  const handleReadForActiveTab = async () => {
-    const isRevisionTab = sidebarTab === 'feed' && mode === 'learn';
-    if (!isRevisionTab) {
-      await handleReadCurrentBatch();
-      return;
-    }
-
-    if (isReading || activeSpeakingLessonIndex !== null) {
-      await stopActivePlayback();
-      return;
-    }
-
-    setTrackPlaybackEnabled(false);
-    const revisionEntries = currentBatchEntries
-      .slice(0, 3)
-      .map(({ lesson, lessonIndex }) => {
-        const speakTextValue = getPlayableLessonText(lesson, learnLanguage);
-        if (!speakTextValue) return null;
-        return {
-          text: speakTextValue,
-          unitId: getLessonUnitId(lesson),
-          audioUrl: lesson.audioPath,
-          lessonIndex,
-        };
-      })
-      .filter((entry): entry is {
-        text: string;
-        unitId: number;
-        audioUrl: string | undefined;
-        lessonIndex: number;
-      } => entry !== null);
-
-    if (revisionEntries.length === 0) return;
-    await playEntriesSequentially(revisionEntries);
-  };
 
   const {
     isLibraryView,
