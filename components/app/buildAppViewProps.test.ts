@@ -149,6 +149,7 @@ describe('buildAppViewProps feed routing', () => {
     expect(result.showLibraryMiniPlayer).toBe(false);
     expect(result.mobileBottomNavProps.isVisible).toBe(true);
     expect(result.chatViewProps.defaultLanguage).toBe('english');
+    expect(result.chatViewProps.textScalePercent).toBe(100);
   });
 
   it('hides mobile nav in feed when chat composer is focused', () => {

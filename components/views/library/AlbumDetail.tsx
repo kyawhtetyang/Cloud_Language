@@ -8,6 +8,7 @@ import { LIBRARY_UI_TOKENS } from './libraryUiTokens';
 import { TrackActionSheet } from './TrackActionSheet';
 import { UnitRow } from './UnitRow';
 import { BUTTON_UI } from '../../../config/buttonUi';
+import { TOP_TOOLBAR_UI } from '../../../config/topToolbarUi';
 import { useAnchoredMenu } from './useAnchoredMenu';
 
 type AlbumDetailProps = {
@@ -114,7 +115,7 @@ export const AlbumDetail: React.FC<AlbumDetailProps> = ({
       onTouchCancel={onTouchCancel}
     >
       <div className={LIBRARY_UI_TOKENS.searchWrap}>
-        <div className="top-toolbar-row flex items-center justify-between gap-3">
+        <div className={TOP_TOOLBAR_UI.rowBetweenWide}>
           <div className="flex min-w-0 items-center gap-2.5">
             <button
               type="button"

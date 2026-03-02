@@ -20,6 +20,8 @@ import { buildLessonReferenceKey } from '../../utils/lessonReference';
 import { localizeLibraryTopic } from '../../config/libraryI18n';
 import { getAppText } from '../../config/appI18n';
 import { BUTTON_UI, getPillButtonClass } from '../../config/buttonUi';
+import { buildSentenceScaleStyle, getSentenceWeightClass } from '../../config/sentenceUi';
+import { TOP_TOOLBAR_UI } from '../../config/topToolbarUi';
 
 type LessonEntry = {
   lesson: LessonData;
@@ -255,10 +257,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
     : (pronunciationMissingCount === pronunciationEligibleCount
       ? appText.lesson.pronunciationAllMissingHint
       : appText.lesson.pronunciationSomeMissingHint);
-  const lessonTextScale = Number.isFinite(textScalePercent)
-    ? Math.min(1.2, Math.max(0.9, textScalePercent / 100))
-    : 1;
-  const lessonTextScaleStyle = { '--lesson-text-scale': String(lessonTextScale) } as React.CSSProperties;
+  const lessonTextScaleStyle = buildSentenceScaleStyle(textScalePercent) as React.CSSProperties;
   const shouldCenterRevisionRows = isRevisionView && (!allBatchGroups || allBatchGroups.length === 0);
   const revisionTabBaseClass =
     'inline-flex min-w-24 items-center justify-center rounded-full border-2 px-4 py-1.5 text-xs font-extrabold uppercase tracking-wide transition-all';
@@ -462,7 +461,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
     const selectedPhraseDraft = isInteractiveSelecting ? getDraftSelectionPhrase(sourceText) : '';
     const hasSavedPhrases = savedPhrases.length > 0;
     const canSelectWholeSentence = canShowLearningLanguage && tokenizeLessonTextForHighlight(sourceText).tokens.length > 0;
-    const lessonRowLineClass = `text-ink ${isBoldTextEnabled ? 'font-bold' : 'font-normal'}`;
+    const lessonRowLineClass = `text-ink ${getSentenceWeightClass(isBoldTextEnabled)}`;
     const setCombinedRowRef = (node: HTMLDivElement | null) => {
       if (node) {
         lessonRowRefs.current.set(lessonIndex, node);
@@ -701,8 +700,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
   return (
     <div className="w-full max-w-3xl" {...swipeBackHandlers}>
       {isRevisionView ? (
-        <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
-          <div className="top-toolbar-row flex items-center justify-center gap-2">
+        <div className={TOP_TOOLBAR_UI.wrapWithMargin}>
+          <div className={TOP_TOOLBAR_UI.rowCenter}>
             <button
               type="button"
               className={`${revisionTabBaseClass} btn-selected`}
@@ -721,8 +720,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
           </div>
         </div>
       ) : (
-        <div className="mb-3 w-full border-b border-[var(--border-subtle)] pb-2">
-          <div className="top-toolbar-row flex items-center justify-between gap-2">
+        <div className={TOP_TOOLBAR_UI.wrapWithMargin}>
+          <div className={TOP_TOOLBAR_UI.rowBetween}>
             <div className="flex min-w-0 items-center gap-2.5">
               {onBackToLibrary && (
                 <button

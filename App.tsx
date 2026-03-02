@@ -588,7 +588,6 @@ const App: React.FC = () => {
   });
   const mobileBottomPaddingClass = showLibraryMiniPlayer ? 'pb-56' : 'pb-36';
   const desktopBottomPaddingClass = isFeedView ? 'md:pb-0' : 'md:pb-32';
-  const desktopContentHeightClass = isFeedView ? 'md:h-screen md:min-h-0' : 'md:min-h-screen';
 
   return (
     <div className="min-h-screen bg-app-radial md:flex">
@@ -609,7 +608,7 @@ const App: React.FC = () => {
         onReload={reloadApp}
       />
 
-      <div className={`flex-1 flex flex-col min-h-screen ${mobileBottomPaddingClass} md:ml-72 ${desktopBottomPaddingClass} ${desktopContentHeightClass}`}>
+      <div className={`flex-1 flex flex-col min-h-screen ${mobileBottomPaddingClass} md:ml-72 ${desktopBottomPaddingClass}`}>
         <AppMainContent
           isProfileView={isProfileView}
           isLibraryView={isLibraryView}

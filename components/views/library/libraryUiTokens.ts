@@ -1,8 +1,9 @@
 import { BUTTON_UI, INTERACTIVE_SIZE } from '../../../config/buttonUi';
+import { TOP_TOOLBAR_UI } from '../../../config/topToolbarUi';
 
 export const LIBRARY_UI_TOKENS = {
-  searchWrap: 'mb-3 w-full border-b border-[var(--border-subtle)] pb-2',
-  searchRow: 'top-toolbar-row relative flex items-center',
+  searchWrap: TOP_TOOLBAR_UI.wrapWithMargin,
+  searchRow: `${TOP_TOOLBAR_UI.rowBase} relative`,
   searchIcon:
     'pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]',
   searchInput:

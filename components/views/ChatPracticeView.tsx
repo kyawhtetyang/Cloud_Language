@@ -2,7 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { DefaultLanguage } from '../../config/appConfig';
 import { getAppText } from '../../config/appI18n';
 import { VIEW_PAGE_CLASS } from './viewShared';
-import { BUTTON_UI, getActionButtonClass } from '../../config/buttonUi';
+import { getActionButtonClass } from '../../config/buttonUi';
+import {
+  CHAT_UI_CONFIG,
+  CHAT_UI_TOKENS,
+  shouldUseChatContainerScroll,
+} from '../../config/chatUi';
+import { buildSentenceScaleStyle, getSentenceWeightClass } from '../../config/sentenceUi';
 
 type ChatMessage = {
   role: 'assistant' | 'user';
@@ -13,6 +19,8 @@ type ChatMessage = {
 type ChatPracticeViewProps = {
   defaultLanguage: DefaultLanguage;
   highlightPhrasesByLessonKey: Map<string, string[]>;
+  textScalePercent?: number;
+  isBoldTextEnabled?: boolean;
   onComposerFocusChange?: (isFocused: boolean) => void;
 };
 
@@ -60,6 +68,8 @@ function pickRandomPhraseIndex(phrases: string[], excludeIndex?: number): number
 export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
   defaultLanguage,
   highlightPhrasesByLessonKey,
+  textScalePercent = 100,
+  isBoldTextEnabled = false,
   onComposerFocusChange,
 }) => {
   const appText = getAppText(defaultLanguage);
@@ -77,6 +87,8 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
 
   const activePhrase = rankedPhrases[activePhraseIndex] || '';
   const hasPhrasePool = rankedPhrases.length > 0;
+  const lessonTextScaleStyle = buildSentenceScaleStyle(textScalePercent) as React.CSSProperties;
+  const sentenceWeightClass = getSentenceWeightClass(isBoldTextEnabled);
 
   useEffect(() => {
     if (!hasPhrasePool) {
@@ -99,12 +111,12 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
 
   useEffect(() => {
     const container = messagesScrollRef.current;
-    if (container) {
+    if (shouldUseChatContainerScroll(container)) {
       container.scrollTop = container.scrollHeight;
       if (typeof window !== 'undefined') {
         window.requestAnimationFrame(() => {
           const activeContainer = messagesScrollRef.current;
-          if (!activeContainer) return;
+          if (!shouldUseChatContainerScroll(activeContainer)) return;
           activeContainer.scrollTop = activeContainer.scrollHeight;
         });
       }
@@ -178,45 +190,56 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
   };
 
   return (
-    <div className={`${VIEW_PAGE_CLASS} h-full min-h-0 overflow-hidden`}>
-      <section className="flex h-full min-h-0 flex-col overflow-hidden">
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-0 py-3">
-          <h3 className="text-base font-extrabold text-[var(--text-primary)]">
-            {appText.navigation.feedLabel}
-          </h3>
-          <button
-            type="button"
-            onClick={resetPractice}
-            className={getActionButtonClass({ variant: 'secondary', size: 'sm' })}
-          >
-            {appText.appState.reloadLabel}
-          </button>
+    <div className={`${VIEW_PAGE_CLASS} ${CHAT_UI_TOKENS.rootClass}`} style={lessonTextScaleStyle}>
+      <section className={CHAT_UI_TOKENS.sectionClass}>
+        <div className={CHAT_UI_TOKENS.toolbarAnchorClass}>
+          <div className={CHAT_UI_TOKENS.toolbarShellClass}>
+            <div className={CHAT_UI_TOKENS.toolbarInnerClass}>
+              <h3 className="text-base font-extrabold text-[var(--text-primary)]">
+                {appText.navigation.feedLabel}
+              </h3>
+              <button
+                type="button"
+                onClick={resetPractice}
+                className={getActionButtonClass({ variant: 'secondary', size: 'sm' })}
+              >
+                {appText.appState.reloadLabel}
+              </button>
+            </div>
+          </div>
         </div>
+        <div aria-hidden="true" className={CHAT_UI_TOKENS.toolbarSpacerClass} />
 
-        <div ref={messagesScrollRef} className="min-h-0 flex-1 overflow-y-auto px-0 py-3 pb-32 md:pb-44">
+        <div ref={messagesScrollRef} className={CHAT_UI_TOKENS.messagesScrollClass}>
           <div className="space-y-2">
             {messages.map((message, index) => {
               const isAssistant = message.role === 'assistant';
-              const bubbleClass = isAssistant
-                ? 'bg-[var(--surface-subtle)] text-[var(--text-primary)]'
-                : 'bg-[var(--surface-active)] text-[var(--text-primary)]';
+              const bubbleClass = 'bg-[var(--surface-active)] text-[var(--text-primary)]';
               const statusLabel = message.status === 'match' ? '✓' : message.status === 'retry' ? '✗' : '';
               return (
                 <div
                   key={`${message.role}-${index}`}
                   className={`flex ${isAssistant ? 'justify-start' : 'justify-end'}`}
                 >
-                  <div className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm font-semibold ${bubbleClass}`}>
-                    <div className="flex items-center gap-2">
-                      {statusLabel && <span className="text-xs font-extrabold">{statusLabel}</span>}
-                      <span>{message.text}</span>
+                  {isAssistant ? (
+                    <div className={`max-w-[92%] py-1 lesson-row-source text-ink ${sentenceWeightClass}`}>
+                      {message.text}
                     </div>
-                  </div>
+                  ) : (
+                    <div
+                      className={`max-w-[88%] rounded-2xl px-3 py-2 text-[calc(0.875rem*var(--lesson-text-scale,1))] leading-[calc(1.25rem*var(--lesson-text-scale,1))] ${sentenceWeightClass} ${bubbleClass}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {statusLabel && <span className="text-xs font-extrabold">{statusLabel}</span>}
+                        <span>{message.text}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
             {!hasPhrasePool && (
-              <div className="rounded-2xl border border-dashed border-[var(--border-subtle)] px-3 py-4 text-sm font-semibold text-[var(--text-secondary)]">
+              <div className={`rounded-2xl border border-dashed border-[var(--border-subtle)] px-3 py-4 text-[calc(0.875rem*var(--lesson-text-scale,1))] leading-[calc(1.25rem*var(--lesson-text-scale,1))] ${sentenceWeightClass} text-[var(--text-secondary)]`}>
                 {appText.appState.lessonsUnavailableDefaultMessage}
               </div>
             )}
@@ -225,10 +248,10 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
         </div>
 
         <div
-          className={`fixed left-0 right-0 z-20 px-3 ${BUTTON_UI.bottomBarDesktopAnchor} ${
+          className={`${CHAT_UI_CONFIG.composer.anchorClass} ${
             isComposerFocused
-              ? 'bottom-[calc(env(safe-area-inset-bottom)+8px)]'
-              : 'bottom-[calc(64px+env(safe-area-inset-bottom)+8px)]'
+              ? CHAT_UI_CONFIG.composer.bottomFocusedClass
+              : CHAT_UI_CONFIG.composer.bottomDefaultClass
           }`}
         >
           <div className="mx-auto w-full max-w-3xl px-0 py-0">
@@ -258,7 +281,7 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
                 spellCheck={false}
                 name="chat_message"
                 rows={1}
-                className="min-h-11 max-h-28 min-w-0 flex-1 resize-none rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-2 text-base font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--border-strong)] disabled:opacity-60 md:text-sm"
+                className={`min-h-11 max-h-28 min-w-0 flex-1 resize-none rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-3 py-2 text-base leading-6 ${sentenceWeightClass} text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--border-strong)] disabled:opacity-60 md:text-[calc(0.875rem*var(--lesson-text-scale,1))] md:leading-[calc(1.25rem*var(--lesson-text-scale,1))]`}
               />
               <button
                 type="button"

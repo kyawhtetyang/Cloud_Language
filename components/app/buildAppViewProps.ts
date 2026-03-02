@@ -646,6 +646,8 @@ export function buildAppViewProps({
     chatViewProps: {
       defaultLanguage,
       highlightPhrasesByLessonKey: savedHighlightPhrasesByLessonKey,
+      textScalePercent,
+      isBoldTextEnabled,
       onComposerFocusChange: onChatComposerFocusChange,
     },
     lessonViewProps: {
