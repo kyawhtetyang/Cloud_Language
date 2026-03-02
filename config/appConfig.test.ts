@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  coerceFrameworkForLearnLanguage,
+  isFrameworkAllowedForLearnLanguage,
+  resolveLessonContentLanguage,
+  resolveNonConflictingLearnLanguage,
   resolveLessonLearningPronunciationText,
   resolveLessonLearningSourceText,
   resolveLessonTranslationText,
@@ -16,7 +20,7 @@ describe('resolveLessonTranslationText', () => {
         burmese: 'မနက်ပိုင်းမှာ ဘယ်နှစ်နာရီလောက် လက်ဖက်ရည် သောက်ကြသလဲ?',
       },
       defaultLanguage: 'vietnamese',
-      learnLanguage: 'hsk_chinese',
+      learnLanguage: 'chinese',
     });
 
     expect(value).toBe('Các bạn uống trà lúc mấy giờ vào buổi sáng?');
@@ -30,7 +34,7 @@ describe('resolveLessonTranslationText', () => {
         burmese: 'မနက်ပိုင်းမှာ ဘယ်နှစ်နာရီလောက် လက်ဖက်ရည် သောက်ကြသလဲ?',
       },
       defaultLanguage: 'vietnamese',
-      learnLanguage: 'hsk_chinese',
+      learnLanguage: 'chinese',
     });
 
     expect(value).toBe('What time do you have tea in the morning?');
@@ -41,7 +45,7 @@ describe('resolveLessonTranslationText', () => {
       lessonEnglish: '你们上午几点喝茶？',
       lessonBurmese: 'What time do you have tea in the morning?',
       defaultLanguage: 'english',
-      learnLanguage: 'hsk_chinese',
+      learnLanguage: 'chinese',
     });
 
     expect(value).toBe('What time do you have tea in the morning?');
@@ -107,5 +111,30 @@ describe('learning language resolvers', () => {
 
     expect(vietnameseSource).toBe('Fallback source');
     expect(thaiSource).toBe('Fallback source');
+  });
+
+  it('keeps learning language when it does not conflict with default language', () => {
+    expect(resolveNonConflictingLearnLanguage('english', 'thai')).toBe('thai');
+  });
+
+  it('switches learning language when it conflicts with default language', () => {
+    expect(resolveNonConflictingLearnLanguage('english', 'english')).not.toBe('english');
+  });
+
+  it('routes lesson content language by framework and learning language', () => {
+    expect(resolveLessonContentLanguage('chinese', 'cefr')).toBe('chinese');
+    expect(resolveLessonContentLanguage('chinese', 'hsk')).toBe('hsk_chinese');
+    expect(resolveLessonContentLanguage('thai', 'hsk')).toBe('hsk_chinese');
+  });
+
+  it('enforces framework allowlist by learn language', () => {
+    expect(isFrameworkAllowedForLearnLanguage('hsk', 'chinese')).toBe(true);
+    expect(isFrameworkAllowedForLearnLanguage('hsk', 'thai')).toBe(true);
+    expect(isFrameworkAllowedForLearnLanguage('cefr', 'thai')).toBe(true);
+  });
+
+  it('coerces unsupported framework to supported fallback', () => {
+    expect(coerceFrameworkForLearnLanguage('hsk', 'thai')).toBe('hsk');
+    expect(coerceFrameworkForLearnLanguage('hsk', 'chinese')).toBe('hsk');
   });
 });

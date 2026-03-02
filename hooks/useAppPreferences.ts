@@ -1,8 +1,10 @@
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import {
+  CourseFramework,
   AppTheme,
   DefaultLanguage,
   LearnLanguage,
+  UiLockLanguage,
   VoiceProvider,
 } from '../config/appConfig';
 import { readSyncedSettingsFromStorage } from '../config/settingsSync';
@@ -14,8 +16,10 @@ type UseAppPreferencesResult = {
   setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
   defaultLanguage: DefaultLanguage;
   setDefaultLanguage: Dispatch<SetStateAction<DefaultLanguage>>;
-  isEnglishUiLocked: boolean;
-  setIsEnglishUiLocked: Dispatch<SetStateAction<boolean>>;
+  uiLockLanguage: UiLockLanguage;
+  setUiLockLanguage: Dispatch<SetStateAction<UiLockLanguage>>;
+  courseFramework: CourseFramework;
+  setCourseFramework: Dispatch<SetStateAction<CourseFramework>>;
   textScalePercent: number;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
   isBoldTextEnabled: boolean;
@@ -40,7 +44,8 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
   const [isPronunciationEnabled, setIsPronunciationEnabled] = useState<boolean>(initialSettings.isPronunciationEnabled);
   const [learnLanguage, setLearnLanguage] = useState<LearnLanguage>(initialSettings.learnLanguage);
   const [defaultLanguage, setDefaultLanguage] = useState<DefaultLanguage>(initialSettings.defaultLanguage);
-  const [isEnglishUiLocked, setIsEnglishUiLocked] = useState<boolean>(initialSettings.isEnglishUiLocked);
+  const [uiLockLanguage, setUiLockLanguage] = useState<UiLockLanguage>(initialSettings.uiLockLanguage);
+  const [courseFramework, setCourseFramework] = useState<CourseFramework>(initialSettings.courseFramework);
   const [textScalePercent, setTextScalePercent] = useState<number>(initialSettings.textScalePercent);
   const [isBoldTextEnabled, setIsBoldTextEnabled] = useState<boolean>(initialSettings.isBoldTextEnabled);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState<boolean>(initialSettings.isAutoScrollEnabled);
@@ -57,7 +62,8 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     const next = readSyncedSettingsFromStorage(profileStorageId);
     setLearnLanguage(next.learnLanguage);
     setDefaultLanguage(next.defaultLanguage);
-    setIsEnglishUiLocked(next.isEnglishUiLocked);
+    setUiLockLanguage(next.uiLockLanguage);
+    setCourseFramework(next.courseFramework);
     setIsPronunciationEnabled(next.isPronunciationEnabled);
     setTextScalePercent(next.textScalePercent);
     setIsBoldTextEnabled(next.isBoldTextEnabled);
@@ -76,8 +82,10 @@ export function useAppPreferences(profileStorageId: string): UseAppPreferencesRe
     setLearnLanguage,
     defaultLanguage,
     setDefaultLanguage,
-    isEnglishUiLocked,
-    setIsEnglishUiLocked,
+    uiLockLanguage,
+    setUiLockLanguage,
+    courseFramework,
+    setCourseFramework,
     textScalePercent,
     setTextScalePercent,
     isBoldTextEnabled,

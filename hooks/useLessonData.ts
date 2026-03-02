@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { LearnLanguage } from '../config/appConfig';
 import { LessonData } from '../types';
 import { readDownloadedLessonsByLanguage } from '../offline/offlineStore';
 
@@ -43,7 +42,7 @@ type UseLessonDataResult = {
 
 export function useLessonData(
   apiBaseUrl: string,
-  learnLanguage: LearnLanguage,
+  lessonLanguage: string,
   lessonsLoadFailedMessage: string,
 ): UseLessonDataResult {
   const [lessons, setLessons] = useState<LessonData[]>([]);
@@ -61,7 +60,7 @@ export function useLessonData(
         setLoading(true);
         setErrorMessage(null);
         const response = await fetchWithTimeout(
-          `${apiBaseUrl}/api/lessons?language=${encodeURIComponent(learnLanguage)}`,
+          `${apiBaseUrl}/api/lessons?language=${encodeURIComponent(lessonLanguage)}`,
           LESSON_FETCH_TIMEOUT_MS,
           requestController.signal,
         );
@@ -71,7 +70,7 @@ export function useLessonData(
         if (!Array.isArray(data) || data.length === 0) throw new Error('No lessons returned from API');
 
         let englishData: LessonData[] = data;
-        if (learnLanguage !== 'english') {
+        if (lessonLanguage !== 'english') {
           try {
             const englishResponse = await fetchWithTimeout(
               `${apiBaseUrl}/api/lessons?language=english`,
@@ -95,7 +94,7 @@ export function useLessonData(
         if (isAbortError(error)) return;
         console.error('Error loading lessons from API, trying offline packs:', error);
         const [offlineLearnLessons, offlineEnglishLessons] = await Promise.all([
-          readDownloadedLessonsByLanguage(learnLanguage),
+          readDownloadedLessonsByLanguage(lessonLanguage),
           readDownloadedLessonsByLanguage('english'),
         ]);
 
@@ -121,7 +120,7 @@ export function useLessonData(
       isActive = false;
       requestController.abort();
     };
-  }, [apiBaseUrl, learnLanguage, lessonsLoadFailedMessage]);
+  }, [apiBaseUrl, lessonLanguage, lessonsLoadFailedMessage]);
 
   return { lessons, englishReferenceLessons, loading, errorMessage };
 }

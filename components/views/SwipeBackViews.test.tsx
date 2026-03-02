@@ -54,7 +54,8 @@ describe('Swipe-back behavior', () => {
         profileText={getAppText('english').profile}
         defaultLanguage="english"
         learnLanguage="burmese"
-        isEnglishUiLocked={false}
+        uiLockLanguage="off"
+        courseFramework="cefr"
         isPronunciationEnabled
         isBoldTextEnabled={false}
         isAutoScrollEnabled
@@ -68,8 +69,9 @@ describe('Swipe-back behavior', () => {
         hasProfileWhitespace={false}
         isProfileInputValid
         onDefaultLanguageChange={vi.fn()}
-        onToggleEnglishUiLock={vi.fn()}
+        onUiLockLanguageChange={vi.fn()}
         onLearnLanguageChange={vi.fn()}
+        onCourseFrameworkChange={vi.fn()}
         onTogglePronunciation={vi.fn()}
         onToggleBoldText={vi.fn()}
         onToggleAutoScroll={vi.fn()}
@@ -90,6 +92,149 @@ describe('Swipe-back behavior', () => {
     swipeFromLeftEdge(container.firstElementChild as HTMLElement);
     expect(screen.queryByLabelText(/back to settings/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /default language/i })).toBeInTheDocument();
+  });
+
+  it('disables conflicting learn-language option when default and learn language are equal', () => {
+    const onLearnLanguageChange = vi.fn();
+    render(
+      <SettingsView
+        settingsText={getAppText('english').settings}
+        profileText={getAppText('english').profile}
+        defaultLanguage="english"
+        learnLanguage="english"
+        uiLockLanguage="off"
+        courseFramework="cefr"
+        isPronunciationEnabled
+        isBoldTextEnabled={false}
+        isAutoScrollEnabled
+        textScalePercent={100}
+        canDecreaseTextSize
+        canIncreaseTextSize
+        appTheme="dark"
+        voiceProvider="default"
+        profileInput="tester"
+        profileError={null}
+        hasProfileWhitespace={false}
+        isProfileInputValid
+        onDefaultLanguageChange={vi.fn()}
+        onUiLockLanguageChange={vi.fn()}
+        onLearnLanguageChange={onLearnLanguageChange}
+        onCourseFrameworkChange={vi.fn()}
+        onTogglePronunciation={vi.fn()}
+        onToggleBoldText={vi.fn()}
+        onToggleAutoScroll={vi.fn()}
+        onDecreaseTextSize={vi.fn()}
+        onIncreaseTextSize={vi.fn()}
+        onAppThemeChange={vi.fn()}
+        onVoiceProviderChange={vi.fn()}
+        onProfileInputChange={vi.fn()}
+        onApplyProfileName={vi.fn()}
+        onRequestLogout={vi.fn()}
+        onBackToProfile={vi.fn()}
+      />,
+    );
+
+    const learnLanguageButton = screen.getByRole('button', { name: /learn language/i });
+    expect(learnLanguageButton).not.toBeDisabled();
+    fireEvent.click(learnLanguageButton);
+
+    const englishOption = screen.getByRole('button', { name: /english on/i });
+    expect(englishOption).toBeDisabled();
+    fireEvent.click(englishOption);
+    expect(onLearnLanguageChange).not.toHaveBeenCalled();
+  });
+
+  it('shows ui-lock options and applies selected value', () => {
+    const onUiLockLanguageChange = vi.fn();
+    render(
+      <SettingsView
+        settingsText={getAppText('english').settings}
+        profileText={getAppText('english').profile}
+        defaultLanguage="english"
+        learnLanguage="chinese"
+        uiLockLanguage="off"
+        courseFramework="cefr"
+        isPronunciationEnabled
+        isBoldTextEnabled={false}
+        isAutoScrollEnabled
+        textScalePercent={100}
+        canDecreaseTextSize
+        canIncreaseTextSize
+        appTheme="dark"
+        voiceProvider="default"
+        profileInput="tester"
+        profileError={null}
+        hasProfileWhitespace={false}
+        isProfileInputValid
+        onDefaultLanguageChange={vi.fn()}
+        onUiLockLanguageChange={onUiLockLanguageChange}
+        onLearnLanguageChange={vi.fn()}
+        onCourseFrameworkChange={vi.fn()}
+        onTogglePronunciation={vi.fn()}
+        onToggleBoldText={vi.fn()}
+        onToggleAutoScroll={vi.fn()}
+        onDecreaseTextSize={vi.fn()}
+        onIncreaseTextSize={vi.fn()}
+        onAppThemeChange={vi.fn()}
+        onVoiceProviderChange={vi.fn()}
+        onProfileInputChange={vi.fn()}
+        onApplyProfileName={vi.fn()}
+        onRequestLogout={vi.fn()}
+        onBackToProfile={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /ui lock/i }));
+    fireEvent.click(screen.getByRole('button', { name: /english/i }));
+    expect(onUiLockLanguageChange).toHaveBeenCalledWith('english');
+  });
+
+  it('allows selecting hsk framework for thai learn language', () => {
+    const onCourseFrameworkChange = vi.fn();
+    render(
+      <SettingsView
+        settingsText={getAppText('english').settings}
+        profileText={getAppText('english').profile}
+        defaultLanguage="english"
+        learnLanguage="thai"
+        uiLockLanguage="off"
+        courseFramework="cefr"
+        isPronunciationEnabled
+        isBoldTextEnabled={false}
+        isAutoScrollEnabled
+        textScalePercent={100}
+        canDecreaseTextSize
+        canIncreaseTextSize
+        appTheme="dark"
+        voiceProvider="default"
+        profileInput="tester"
+        profileError={null}
+        hasProfileWhitespace={false}
+        isProfileInputValid
+        onDefaultLanguageChange={vi.fn()}
+        onUiLockLanguageChange={vi.fn()}
+        onLearnLanguageChange={vi.fn()}
+        onCourseFrameworkChange={onCourseFrameworkChange}
+        onTogglePronunciation={vi.fn()}
+        onToggleBoldText={vi.fn()}
+        onToggleAutoScroll={vi.fn()}
+        onDecreaseTextSize={vi.fn()}
+        onIncreaseTextSize={vi.fn()}
+        onAppThemeChange={vi.fn()}
+        onVoiceProviderChange={vi.fn()}
+        onProfileInputChange={vi.fn()}
+        onApplyProfileName={vi.fn()}
+        onRequestLogout={vi.fn()}
+        onBackToProfile={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /course framework/i }));
+
+    const hskOption = screen.getByRole('button', { name: /hsk off/i });
+    expect(hskOption).not.toBeDisabled();
+    fireEvent.click(hskOption);
+    expect(onCourseFrameworkChange).toHaveBeenCalledWith('hsk');
   });
 
   it('shows review and quiz toolbar tabs in revision view', () => {

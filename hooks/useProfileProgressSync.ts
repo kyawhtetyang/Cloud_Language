@@ -3,12 +3,14 @@ import { LessonData, ProgressState } from '../types';
 import {
   AppTheme,
   AppMode,
+  CourseFramework,
   DEFAULT_PROGRESS_INDEX,
   DEFAULT_STREAK,
   DEFAULT_UNLOCKED_LEVEL,
   DefaultLanguage,
   getLessonOrderIndex,
   LearnLanguage,
+  UiLockLanguage,
   VoiceProvider,
   PROGRESS_KEY,
   STREAK_KEY,
@@ -33,7 +35,8 @@ type UseProfileProgressSyncParams = {
   streak: number;
   learnLanguage: LearnLanguage;
   defaultLanguage: DefaultLanguage;
-  isEnglishUiLocked: boolean;
+  uiLockLanguage: UiLockLanguage;
+  courseFramework: CourseFramework;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
@@ -51,7 +54,8 @@ type UseProfileProgressSyncParams = {
   setStreak: Dispatch<SetStateAction<number>>;
   setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
   setDefaultLanguage: Dispatch<SetStateAction<DefaultLanguage>>;
-  setIsEnglishUiLocked: Dispatch<SetStateAction<boolean>>;
+  setUiLockLanguage: Dispatch<SetStateAction<UiLockLanguage>>;
+  setCourseFramework: Dispatch<SetStateAction<CourseFramework>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
@@ -72,7 +76,8 @@ export function useProfileProgressSync({
   streak,
   learnLanguage,
   defaultLanguage,
-  isEnglishUiLocked,
+  uiLockLanguage,
+  courseFramework,
   isPronunciationEnabled,
   textScalePercent,
   isBoldTextEnabled,
@@ -90,7 +95,8 @@ export function useProfileProgressSync({
   setStreak,
   setLearnLanguage,
   setDefaultLanguage,
-  setIsEnglishUiLocked,
+  setUiLockLanguage,
+  setCourseFramework,
   setIsPronunciationEnabled,
   setTextScalePercent,
   setIsBoldTextEnabled,
@@ -175,7 +181,8 @@ export function useProfileProgressSync({
           applyRemoteSyncedSettings(remote as Record<string, unknown>, {
             setLearnLanguage,
             setDefaultLanguage,
-            setIsEnglishUiLocked,
+            setUiLockLanguage,
+            setCourseFramework,
             setIsPronunciationEnabled,
             setTextScalePercent,
             setIsBoldTextEnabled,
@@ -205,7 +212,8 @@ export function useProfileProgressSync({
     progressStorageKey,
     setCurrentIndex,
     setDefaultLanguage,
-    setIsEnglishUiLocked,
+    setUiLockLanguage,
+    setCourseFramework,
     setIsPronunciationEnabled,
     setTextScalePercent,
     setIsBoldTextEnabled,
@@ -275,7 +283,8 @@ export function useProfileProgressSync({
       ...buildSyncedSettingsPayload({
         learnLanguage,
         defaultLanguage,
-        isEnglishUiLocked,
+        uiLockLanguage,
+        courseFramework,
         isPronunciationEnabled,
         textScalePercent,
         isBoldTextEnabled,
@@ -315,7 +324,8 @@ export function useProfileProgressSync({
     apiBaseUrl,
     currentIndex,
     defaultLanguage,
-    isEnglishUiLocked,
+    uiLockLanguage,
+    courseFramework,
     hasHydratedProfile,
     isPronunciationEnabled,
     textScalePercent,

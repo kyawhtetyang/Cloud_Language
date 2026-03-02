@@ -55,7 +55,8 @@ describe('useProfileProgressSync debounce', () => {
       streak: 0,
       learnLanguage: 'english' as const,
       defaultLanguage: 'burmese' as const,
-      isEnglishUiLocked: true,
+      uiLockLanguage: 'off' as const,
+      courseFramework: 'cefr' as const,
       isPronunciationEnabled: false,
       textScalePercent: 100,
       isBoldTextEnabled: false,
@@ -73,7 +74,8 @@ describe('useProfileProgressSync debounce', () => {
       setStreak: vi.fn(),
       setLearnLanguage: vi.fn(),
       setDefaultLanguage: vi.fn(),
-      setIsEnglishUiLocked: vi.fn(),
+      setUiLockLanguage: vi.fn(),
+      setCourseFramework: vi.fn(),
       setIsPronunciationEnabled: vi.fn(),
       setTextScalePercent: vi.fn(),
       setIsBoldTextEnabled: vi.fn(),
@@ -140,7 +142,7 @@ describe('useProfileProgressSync debounce', () => {
             streak: 0,
             learnLanguage: 'english',
             defaultLanguage: 'burmese',
-            isEnglishUiLocked: true,
+            uiLockLanguage: 'off',
             isPronunciationEnabled: false,
             textScalePercent: 100,
             isBoldTextEnabled: false,
@@ -165,7 +167,8 @@ describe('useProfileProgressSync debounce', () => {
       unlockedLevel: 1,
       streak: 0,
       defaultLanguage: 'burmese' as const,
-      isEnglishUiLocked: true,
+      uiLockLanguage: 'off' as const,
+      courseFramework: 'cefr' as const,
       isPronunciationEnabled: false,
       textScalePercent: 100,
       isBoldTextEnabled: false,
@@ -183,7 +186,8 @@ describe('useProfileProgressSync debounce', () => {
       setStreak: vi.fn(),
       setLearnLanguage,
       setDefaultLanguage: vi.fn(),
-      setIsEnglishUiLocked: vi.fn(),
+      setUiLockLanguage: vi.fn(),
+      setCourseFramework: vi.fn(),
       setIsPronunciationEnabled: vi.fn(),
       setTextScalePercent: vi.fn(),
       setIsBoldTextEnabled: vi.fn(),
@@ -204,7 +208,7 @@ describe('useProfileProgressSync debounce', () => {
       {
         initialProps: {
           lessonRows: lessons,
-          learnLanguage: 'hsk_chinese' as const,
+          learnLanguage: 'chinese' as const,
         },
       },
     );
@@ -236,7 +240,7 @@ describe('useProfileProgressSync debounce', () => {
 
     rerender({
       lessonRows: reloadedLessons,
-      learnLanguage: 'hsk_chinese' as const,
+      learnLanguage: 'chinese' as const,
     });
 
     await act(async () => {

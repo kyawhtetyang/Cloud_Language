@@ -105,18 +105,8 @@ function getTopicPhotoUrl(topic: string, seed: string): string {
 function getGroupCoverUrl(
   groupIndex: number,
   topic: string,
-  coverLanguageCode: string,
 ): string {
-  if (/^hsk[1-6]$/i.test(coverLanguageCode)) {
-    return `/api/lesson-cover/${coverLanguageCode}`;
-  }
   return getTopicPhotoUrl(topic, `group:${groupIndex + 1}`);
-}
-
-function resolveHskLanguageCodeFromCollectionLabel(label: string): string {
-  const match = label.match(/hsk\s*([1-6])/i);
-  if (!match) return 'hsk_chinese';
-  return `hsk${match[1]}`;
 }
 
 function getConciseTopicTitle(rawTopic: string, defaultLanguage: DefaultLanguage): string {
@@ -130,7 +120,6 @@ function getDisplayAlbumTitle(rawTitle: string, defaultLanguage: DefaultLanguage
 export function useLibraryCollections({
   lessons,
   defaultLanguage,
-  learnLanguage,
   viewMode,
   downloadedUnitKeys,
   selectedAlbumKey,
@@ -194,9 +183,8 @@ export function useLibraryCollections({
 
     const schemePriority = (scheme: string | undefined): number => {
       if (scheme === 'cefr') return 10;
-      if (scheme === 'hsk') return 20;
-      if (scheme === 'jlpt') return 30;
-      return 40;
+      if (scheme === 'jlpt') return 20;
+      return 30;
     };
 
     const collectionEntries = Array.from(byCollection.entries()).sort(([labelA, metaA], [labelB, metaB]) => {
@@ -207,28 +195,20 @@ export function useLibraryCollections({
       const orderB = typeof metaB.levelOrder === 'number' ? metaB.levelOrder : Number.POSITIVE_INFINITY;
       if (orderA !== orderB) return orderA - orderB;
 
-      const aNum = Number((labelA.match(/^hsk\s*([1-9]\d*)$/i)?.[1]) || 0);
-      const bNum = Number((labelB.match(/^hsk\s*([1-9]\d*)$/i)?.[1]) || 0);
-      if (aNum > 0 && bNum > 0) return aNum - bNum;
-      if (aNum > 0) return 1;
-      if (bNum > 0) return -1;
       return labelA.localeCompare(labelB, undefined, { sensitivity: 'base' });
     });
 
     return collectionEntries.map(([collectionLabel, collection]) => {
-      const coverLanguage = /^hsk\s*[1-6]$/i.test(collectionLabel)
-        ? resolveHskLanguageCodeFromCollectionLabel(collectionLabel)
-        : learnLanguage;
       const groups = collection.sourceOrder.map((sourceLabel, groupIndex) => {
         const units = collection.bySource.get(sourceLabel) || [];
         units.sort((a, b) => (a.level - b.level) || (a.unit - b.unit));
         return {
-          key: `hsk-collection-${collectionLabel}-group-${groupIndex}`,
+          key: `collection-${collectionLabel}-group-${groupIndex}`,
           stage: 'A1' as StageCode,
           groupIndex,
           units,
           firstTopicConcise: sourceLabel,
-          coverUrl: getGroupCoverUrl(groupIndex, sourceLabel, coverLanguage),
+          coverUrl: getGroupCoverUrl(groupIndex, sourceLabel),
         };
       });
 
@@ -241,7 +221,7 @@ export function useLibraryCollections({
         groups,
       };
     });
-  }, [collectionFallbackPrefix, learnLanguage, lessons, untitledSourceLabel]);
+  }, [collectionFallbackPrefix, lessons, untitledSourceLabel]);
 
   const libraryModeSections = useMemo<AlbumCollectionSection[]>(() => {
     if (viewMode !== 'downloaded') return collectionSections;

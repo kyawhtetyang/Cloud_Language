@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getLessonOrderIndex, getLessonUnitId, LearnLanguage } from '../config/appConfig';
+import { getLessonOrderIndex, getLessonUnitId } from '../config/appConfig';
 import { LessonData } from '../types';
 import { readDownloadedUnitKeys, removeLessonPack, saveLessonPack } from '../offline/offlineStore';
 
@@ -15,16 +15,16 @@ function unitKey(level: number, unit: number): string {
 }
 
 export function useOfflineLessonPacks(
-  learnLanguage: LearnLanguage,
+  lessonLanguage: string,
   lessons: LessonData[],
 ): UseOfflineLessonPacksResult {
   const [downloadedUnitKeys, setDownloadedUnitKeys] = useState<Set<string>>(new Set());
   const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set());
 
   const refreshDownloadedState = useCallback(async () => {
-    const keys = await readDownloadedUnitKeys(learnLanguage);
+    const keys = await readDownloadedUnitKeys(lessonLanguage);
     setDownloadedUnitKeys(keys);
-  }, [learnLanguage]);
+  }, [lessonLanguage]);
 
   useEffect(() => {
     void refreshDownloadedState();
@@ -49,7 +49,7 @@ export function useOfflineLessonPacks(
 
       setActiveDownloads((prev) => new Set(prev).add(key));
       try {
-        await saveLessonPack(learnLanguage, level, unit, unitLessons, 'v1');
+        await saveLessonPack(lessonLanguage, level, unit, unitLessons, 'v1');
         setDownloadedUnitKeys((prev) => {
           const next = new Set(prev);
           next.add(key);
@@ -63,7 +63,7 @@ export function useOfflineLessonPacks(
         });
       }
     },
-    [learnLanguage, lessonsByUnit],
+    [lessonLanguage, lessonsByUnit],
   );
 
   const removeUnitPack = useCallback(
@@ -71,7 +71,7 @@ export function useOfflineLessonPacks(
       const key = unitKey(level, unit);
       setActiveDownloads((prev) => new Set(prev).add(key));
       try {
-        await removeLessonPack(learnLanguage, level, unit);
+        await removeLessonPack(lessonLanguage, level, unit);
         setDownloadedUnitKeys((prev) => {
           const next = new Set(prev);
           next.delete(key);
@@ -85,7 +85,7 @@ export function useOfflineLessonPacks(
         });
       }
     },
-    [learnLanguage],
+    [lessonLanguage],
   );
 
   const isUnitDownloading = useCallback(
@@ -95,6 +95,5 @@ export function useOfflineLessonPacks(
 
   return { downloadedUnitKeys, downloadUnitPack, removeUnitPack, isUnitDownloading };
 }
-
 
 

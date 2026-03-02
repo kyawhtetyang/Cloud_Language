@@ -2,14 +2,14 @@ import {
   AppMode,
   AppTheme,
   buildStageUnitsFromLessons,
+  CourseFramework,
   DefaultLanguage,
   getLessonOrderIndex,
   getLessonUnitId,
   LibraryViewMode,
   LearnLanguage,
-  mapCourseFrameworkToLearnLanguage,
+  UiLockLanguage,
   resolveLessonLearningSourceText,
-  resolveCourseFramework,
   SidebarTab,
   VoiceProvider,
 } from '../../config/appConfig';
@@ -109,9 +109,11 @@ type BuildAppViewPropsArgs = {
   appTheme: AppTheme;
   voiceProvider: VoiceProvider;
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
-  isEnglishUiLocked: boolean;
-  onToggleEnglishUiLock: () => void;
+  uiLockLanguage: UiLockLanguage;
+  onUiLockLanguageChange: (value: UiLockLanguage) => void;
+  courseFramework: CourseFramework;
   onLearnLanguageChange: (value: LearnLanguage) => void;
+  onCourseFrameworkChange: (value: CourseFramework) => void;
   onTogglePronunciation: () => void;
   onToggleBoldText: () => void;
   onToggleAutoScroll: () => void;
@@ -153,8 +155,7 @@ function buildCollectionKey(levelScheme: string | undefined, levelCode: string |
 }
 
 function getProfileAlbumCoverUrl(collectionLabel: string): string | null {
-  const hskMatch = collectionLabel.match(/hsk[\s_]*([1-6])/i);
-  if (hskMatch) return `/api/lesson-cover/hsk${hskMatch[1]}`;
+  void collectionLabel;
   return null;
 }
 
@@ -419,9 +420,11 @@ export function buildAppViewProps({
   appTheme,
   voiceProvider,
   onDefaultLanguageChange,
-  isEnglishUiLocked,
-  onToggleEnglishUiLock,
+  uiLockLanguage,
+  onUiLockLanguageChange,
+  courseFramework,
   onLearnLanguageChange,
+  onCourseFrameworkChange,
   onTogglePronunciation,
   onToggleBoldText,
   onToggleAutoScroll,
@@ -533,8 +536,6 @@ export function buildAppViewProps({
   const computedIsNextDisabled = isNextDisabled || (mode === 'learn' && repeatMode === 'off' && sectionEnd >= currentStageRange.end);
   const revisionBatchEntries = isFeedView ? currentBatchEntries.slice(0, 3) : currentBatchEntries;
   const lessonViewBatchGroups = isFeedView ? undefined : lessonBatchGroups;
-  const courseFramework = resolveCourseFramework(learnLanguage);
-
   return {
     isLibraryView,
     isProfileView,
@@ -602,8 +603,8 @@ export function buildAppViewProps({
       profileText: appText.profile,
       defaultLanguage: selectedDefaultLanguage,
       learnLanguage,
+      uiLockLanguage,
       courseFramework,
-      isEnglishUiLocked,
       isPronunciationEnabled,
       isBoldTextEnabled,
       isAutoScrollEnabled,
@@ -617,11 +618,9 @@ export function buildAppViewProps({
       hasProfileWhitespace,
       isProfileInputValid,
       onDefaultLanguageChange,
-      onToggleEnglishUiLock,
+      onUiLockLanguageChange,
       onLearnLanguageChange,
-      onCourseFrameworkChange: (framework) => {
-        onLearnLanguageChange(mapCourseFrameworkToLearnLanguage(framework, learnLanguage));
-      },
+      onCourseFrameworkChange,
       onTogglePronunciation,
       onToggleBoldText,
       onToggleAutoScroll,

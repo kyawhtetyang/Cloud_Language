@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import {
   AppTheme,
+  CourseFramework,
   DefaultLanguage,
   LearnLanguage,
+  UiLockLanguage,
   VoiceProvider,
 } from '../config/appConfig';
 import { persistSyncedSettingsToStorage } from '../config/settingsSync';
@@ -12,7 +14,8 @@ type UseSettingsPersistenceParams = {
   enabled?: boolean;
   learnLanguage: LearnLanguage;
   defaultLanguage: DefaultLanguage;
-  isEnglishUiLocked: boolean;
+  uiLockLanguage: UiLockLanguage;
+  courseFramework: CourseFramework;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
@@ -28,7 +31,8 @@ export function useSettingsPersistence({
   enabled = true,
   learnLanguage,
   defaultLanguage,
-  isEnglishUiLocked,
+  uiLockLanguage,
+  courseFramework,
   isPronunciationEnabled,
   textScalePercent,
   isBoldTextEnabled,
@@ -43,7 +47,8 @@ export function useSettingsPersistence({
     persistSyncedSettingsToStorage({
       learnLanguage,
       defaultLanguage,
-      isEnglishUiLocked,
+      uiLockLanguage,
+      courseFramework,
       isPronunciationEnabled,
       textScalePercent,
       isBoldTextEnabled,
@@ -58,7 +63,8 @@ export function useSettingsPersistence({
     enabled,
     learnLanguage,
     defaultLanguage,
-    isEnglishUiLocked,
+    uiLockLanguage,
+    courseFramework,
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,

@@ -1,5 +1,11 @@
 import { useMemo } from 'react';
-import { getLessonOrderIndex, DefaultLanguage, LearnLanguage } from '../config/appConfig';
+import {
+  getLessonOrderIndex,
+  DefaultLanguage,
+  LearnLanguage,
+  CourseFramework,
+  resolveLessonContentLanguage,
+} from '../config/appConfig';
 import { getAppText } from '../config/appI18n';
 import { getLessonModalText } from '../config/lessonModalText';
 import { useLessonData } from './useLessonData';
@@ -18,6 +24,7 @@ function normalizeApiBaseUrl(rawApiBaseUrl: string | undefined): string {
 
 type UseAppContentStateParams = {
   learnLanguage: LearnLanguage;
+  courseFramework: CourseFramework;
   defaultLanguage: DefaultLanguage;
 };
 
@@ -40,13 +47,15 @@ type UseAppContentStateResult = {
 
 export function useAppContentState({
   learnLanguage,
+  courseFramework,
   defaultLanguage,
 }: UseAppContentStateParams): UseAppContentStateResult {
   const apiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
   const appText = getAppText(defaultLanguage);
+  const lessonContentLanguage = resolveLessonContentLanguage(learnLanguage, courseFramework);
   const { lessons, englishReferenceLessons, loading, errorMessage } = useLessonData(
     apiBaseUrl,
-    learnLanguage,
+    lessonContentLanguage,
     appText.appState.lessonsLoadFailedMessage,
   );
   const {
@@ -54,7 +63,7 @@ export function useAppContentState({
     downloadUnitPack,
     removeUnitPack,
     isUnitDownloading,
-  } = useOfflineLessonPacks(learnLanguage, lessons);
+  } = useOfflineLessonPacks(lessonContentLanguage, lessons);
   const totalLevels = useMemo(
     () => lessons.reduce((max, lesson) => Math.max(max, getLessonOrderIndex(lesson)), 1),
     [lessons],

@@ -57,7 +57,8 @@ describe('i18n coverage', () => {
         profileText={text.profile}
         defaultLanguage="vietnamese"
         learnLanguage="english"
-        isEnglishUiLocked={false}
+        uiLockLanguage="off"
+        courseFramework="cefr"
         isPronunciationEnabled
         isBoldTextEnabled={false}
         isAutoScrollEnabled
@@ -71,8 +72,9 @@ describe('i18n coverage', () => {
         hasProfileWhitespace={false}
         isProfileInputValid
         onDefaultLanguageChange={vi.fn()}
-        onToggleEnglishUiLock={vi.fn()}
+        onUiLockLanguageChange={vi.fn()}
         onLearnLanguageChange={vi.fn()}
+        onCourseFrameworkChange={vi.fn()}
         onTogglePronunciation={vi.fn()}
         onToggleBoldText={vi.fn()}
         onToggleAutoScroll={vi.fn()}
@@ -94,7 +96,7 @@ describe('i18n coverage', () => {
     {
       language: 'english' as const,
       selectedDefaultLanguageLabel: 'Vietnamese',
-      selectedLearnLanguageLabel: 'HSK Chinese',
+      selectedLearnLanguageLabel: 'Chinese',
       selectedAppearanceLabel: 'Light Mode',
       selectedVoiceProviderLabel: 'Default',
       englishOptionLabel: 'English',
@@ -102,7 +104,7 @@ describe('i18n coverage', () => {
     {
       language: 'burmese' as const,
       selectedDefaultLanguageLabel: 'ဗီယက်နမ်',
-      selectedLearnLanguageLabel: 'HSK တရုတ်',
+      selectedLearnLanguageLabel: 'တရုတ်',
       selectedAppearanceLabel: 'အလင်း',
       selectedVoiceProviderLabel: 'မူလ',
       englishOptionLabel: 'အင်္ဂလိပ်',
@@ -110,7 +112,7 @@ describe('i18n coverage', () => {
     {
       language: 'vietnamese' as const,
       selectedDefaultLanguageLabel: 'Tiếng Việt',
-      selectedLearnLanguageLabel: 'Tiếng Trung HSK',
+      selectedLearnLanguageLabel: 'Tiếng Trung',
       selectedAppearanceLabel: 'Sáng',
       selectedVoiceProviderLabel: 'Mặc định',
       englishOptionLabel: 'Tiếng Anh',
@@ -129,8 +131,9 @@ describe('i18n coverage', () => {
         settingsText={text.settings}
         profileText={text.profile}
         defaultLanguage="vietnamese"
-        learnLanguage="hsk_chinese"
-        isEnglishUiLocked={false}
+        learnLanguage="chinese"
+        uiLockLanguage="off"
+        courseFramework="cefr"
         isPronunciationEnabled
         isBoldTextEnabled={false}
         isAutoScrollEnabled
@@ -144,8 +147,9 @@ describe('i18n coverage', () => {
         hasProfileWhitespace={false}
         isProfileInputValid
         onDefaultLanguageChange={vi.fn()}
-        onToggleEnglishUiLock={vi.fn()}
+        onUiLockLanguageChange={vi.fn()}
         onLearnLanguageChange={vi.fn()}
+        onCourseFrameworkChange={vi.fn()}
         onTogglePronunciation={vi.fn()}
         onToggleBoldText={vi.fn()}
         onToggleAutoScroll={vi.fn()}

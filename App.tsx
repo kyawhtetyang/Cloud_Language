@@ -21,9 +21,9 @@ import { AppMainContent } from './components/app/AppMainContent';
 import { AppBottomBars } from './components/app/AppBottomBars';
 import {
   AppMode,
+  coerceFrameworkForLearnLanguage,
   DEFAULT_LIBRARY_VIEW_MODE,
   DEFAULT_PROGRESS_INDEX,
-  DefaultLanguage,
   DEFAULT_STREAK,
   DEFAULT_UNLOCKED_LEVEL,
   LibraryViewMode,
@@ -74,8 +74,10 @@ const App: React.FC = () => {
     setLearnLanguage,
     defaultLanguage,
     setDefaultLanguage,
-    isEnglishUiLocked,
-    setIsEnglishUiLocked,
+    uiLockLanguage,
+    setUiLockLanguage,
+    courseFramework,
+    setCourseFramework,
     textScalePercent,
     setTextScalePercent,
     isBoldTextEnabled,
@@ -92,7 +94,7 @@ const App: React.FC = () => {
     setVoiceProvider,
     hasHydratedSettings,
   } = useAppPreferences(profileStorageId);
-  const effectiveDefaultLanguage: DefaultLanguage = isEnglishUiLocked ? 'english' : defaultLanguage;
+  const effectiveUiLanguage = uiLockLanguage === 'off' ? defaultLanguage : uiLockLanguage;
   const [learnStep, setLearnStep] = useState(0);
   const [completedUnitKeys, setCompletedUnitKeys] = useState<Set<string>>(new Set());
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -109,6 +111,14 @@ const App: React.FC = () => {
     setBookmarkedUnitKeys(new Set());
     setBookmarkedAlbumKeys(new Set());
   }, [profileStorageId]);
+
+  useEffect(() => {
+    const normalizedFramework = coerceFrameworkForLearnLanguage(courseFramework, learnLanguage);
+    if (normalizedFramework !== courseFramework) {
+      setCourseFramework(normalizedFramework);
+    }
+  }, [courseFramework, learnLanguage, setCourseFramework]);
+
   const {
     apiBaseUrl,
     lessons,
@@ -126,7 +136,8 @@ const App: React.FC = () => {
     leaveCompletedUnitConfirmLabel,
   } = useAppContentState({
     learnLanguage,
-    defaultLanguage: effectiveDefaultLanguage,
+    courseFramework,
+    defaultLanguage: effectiveUiLanguage,
   });
   const { logReviewEvent } = useReviewEventLogger({
     apiBaseUrl,
@@ -153,7 +164,8 @@ const App: React.FC = () => {
     hasHydratedSettings,
     learnLanguage,
     defaultLanguage,
-    isEnglishUiLocked,
+    uiLockLanguage,
+    courseFramework,
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,
@@ -167,7 +179,8 @@ const App: React.FC = () => {
     setStreak,
     setLearnLanguage,
     setDefaultLanguage,
-    setIsEnglishUiLocked,
+    setUiLockLanguage,
+    setCourseFramework,
     setIsPronunciationEnabled,
     setTextScalePercent,
     setIsBoldTextEnabled,
@@ -316,7 +329,7 @@ const App: React.FC = () => {
     handleReadLibraryAlbum,
     handleRestartCourse,
   } = useAppLifecycle({
-    defaultLanguage: effectiveDefaultLanguage,
+    defaultLanguage: effectiveUiLanguage,
     learnLanguage,
     mode,
     sidebarTab,
@@ -365,8 +378,8 @@ const App: React.FC = () => {
     setSidebarTab,
     setIsSidebarOpen,
   });
-  const appText = getAppText(effectiveDefaultLanguage);
-  const welcomeText = getAppText(effectiveDefaultLanguage).welcome;
+  const appText = getAppText(effectiveUiLanguage);
+  const welcomeText = getAppText(effectiveUiLanguage).welcome;
 
   if (loading) {
     return <LoadingView label={appText.appState.loadingLessonsLabel} />;
@@ -481,6 +494,12 @@ const App: React.FC = () => {
     setVoiceProvider(value);
   };
 
+  const handleCourseFrameworkChangeWithStop = (value: typeof courseFramework) => {
+    if (value === courseFramework) return;
+    stopPlaybackForVoiceSettingChange();
+    setCourseFramework(value);
+  };
+
   const handleReadForActiveTab = async () => {
     const isRevisionTab = sidebarTab === 'feed' && mode === 'learn';
     if (!isRevisionTab) {
@@ -535,7 +554,7 @@ const App: React.FC = () => {
     mobileBottomNavProps,
     appStateText,
   } = useAppViewProps({
-    defaultLanguage: effectiveDefaultLanguage,
+    defaultLanguage: effectiveUiLanguage,
     selectedDefaultLanguage: defaultLanguage,
     currentIndex,
     lessons,
@@ -566,6 +585,7 @@ const App: React.FC = () => {
     setSidebarTab,
     setIsSidebarOpen,
     learnLanguage,
+    courseFramework,
     goToLibraryUnit,
     handleReadLibraryAlbum,
     librarySelectedAlbumKey,
@@ -586,9 +606,10 @@ const App: React.FC = () => {
     appTheme,
     voiceProvider,
     setDefaultLanguage,
-    isEnglishUiLocked,
-    setIsEnglishUiLocked,
+    uiLockLanguage,
+    setUiLockLanguage,
     setLearnLanguage: handleLearnLanguageChangeWithStop,
+    setCourseFramework: handleCourseFrameworkChangeWithStop,
     setIsPronunciationEnabled,
     setIsBoldTextEnabled,
     setIsAutoScrollEnabled,

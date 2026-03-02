@@ -11,7 +11,7 @@ export const STREAK_KEY = 'lingo_burmese_streak';
 export const PRONUNCIATION_ENABLED_KEY = 'lingo_burmese_pronunciation_enabled';
 export const LEARN_LANGUAGE_KEY = 'lingo_burmese_learn_language';
 export const DEFAULT_LANGUAGE_KEY = 'lingo_burmese_default_language';
-export const ENGLISH_UI_LOCK_KEY = 'lingo_burmese_english_ui_lock';
+export const UI_LOCK_LANGUAGE_KEY = 'lingo_burmese_ui_lock_language';
 export const TEXT_SCALE_PERCENT_KEY = 'lingo_burmese_text_scale_percent';
 export const BOLD_TEXT_ENABLED_KEY = 'lingo_burmese_bold_text_enabled';
 export const RANDOM_LESSON_ORDER_ENABLED_KEY = 'lingo_burmese_random_lesson_order_enabled';
@@ -21,6 +21,7 @@ export const RELOAD_TO_LESSON_KEY = 'lingo_burmese_reload_to_lesson';
 export const APP_THEME_KEY = 'lingo_burmese_app_theme';
 export const VOICE_PROVIDER_KEY = 'lingo_burmese_voice_provider';
 export const LESSON_HIGHLIGHTS_KEY = 'lingo_burmese_lesson_highlights';
+export const COURSE_FRAMEWORK_KEY = 'lingo_burmese_course_framework';
 
 export const LESSONS_PER_BATCH = 3;
 export const MATCH_PAIRS_PER_REVIEW = 3;
@@ -127,14 +128,17 @@ export type SidebarTab = 'profile' | 'feed' | 'library' | 'lesson' | 'settings';
 export const LIBRARY_VIEW_MODES = ['all', 'downloaded'] as const;
 export type LibraryViewMode = (typeof LIBRARY_VIEW_MODES)[number];
 export const DEFAULT_LIBRARY_VIEW_MODE: LibraryViewMode = 'all';
-export const LEARN_LANGUAGE_OPTIONS = [
+export const LANGUAGE_OPTIONS = [
+  { code: 'burmese', label: 'Burmese' },
   { code: 'english', label: 'English' },
   { code: 'chinese', label: 'Chinese' },
   { code: 'vietnamese', label: 'Vietnamese' },
   { code: 'thai', label: 'Thai' },
-  { code: 'hsk_chinese', label: 'HSK Chinese' },
 ] as const;
-export type LearnLanguage = (typeof LEARN_LANGUAGE_OPTIONS)[number]['code'];
+export type LanguageCode = (typeof LANGUAGE_OPTIONS)[number]['code'];
+
+export const LEARN_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS;
+export type LearnLanguage = LanguageCode;
 
 export const COURSE_FRAMEWORK_OPTIONS = [
   { code: 'cefr', label: 'CEFR' },
@@ -142,21 +146,24 @@ export const COURSE_FRAMEWORK_OPTIONS = [
 ] as const;
 export type CourseFramework = (typeof COURSE_FRAMEWORK_OPTIONS)[number]['code'];
 
-export const DEFAULT_LANGUAGE_OPTIONS = [
-  { code: 'burmese', label: 'Burmese' },
-  { code: 'english', label: 'English' },
-  { code: 'thai', label: 'Thai' },
-  { code: 'vietnamese', label: 'Tiếng Việt' },
-] as const;
-export type DefaultLanguage = (typeof DEFAULT_LANGUAGE_OPTIONS)[number]['code'];
-
-const LESSON_TRANSLATION_POLICY: Record<LearnLanguage, { englishUiUsesLessonTranslation: boolean }> = {
-  english: { englishUiUsesLessonTranslation: false },
-  chinese: { englishUiUsesLessonTranslation: false },
-  vietnamese: { englishUiUsesLessonTranslation: false },
-  thai: { englishUiUsesLessonTranslation: false },
-  hsk_chinese: { englishUiUsesLessonTranslation: true },
+export const FRAMEWORK_LANGUAGE_ALLOWLIST: Record<CourseFramework, ReadonlyArray<LearnLanguage>> = {
+  cefr: ['burmese', 'english', 'chinese', 'vietnamese', 'thai'],
+  hsk: ['burmese', 'english', 'chinese', 'vietnamese', 'thai'],
 };
+
+const FRAMEWORK_CONTENT_LANGUAGE: Record<CourseFramework, 'learnLanguage' | 'hsk_chinese'> = {
+  cefr: 'learnLanguage',
+  hsk: 'hsk_chinese',
+};
+
+export const DEFAULT_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS;
+export type DefaultLanguage = LanguageCode;
+
+export const UI_LOCK_LANGUAGE_OPTIONS = [
+  { code: 'off', label: 'Off' },
+  ...LANGUAGE_OPTIONS,
+] as const;
+export type UiLockLanguage = (typeof UI_LOCK_LANGUAGE_OPTIONS)[number]['code'];
 
 export const APP_THEME_OPTIONS = [
   { code: 'light', label: 'Light Mode' },
@@ -181,7 +188,8 @@ export const DEFAULT_PROGRESS_INDEX = 0;
 export const APP_DEFAULTS = {
   learnLanguage: 'english' as LearnLanguage,
   defaultLanguage: 'burmese' as DefaultLanguage,
-  isEnglishUiLocked: true,
+  uiLockLanguage: 'english' as UiLockLanguage,
+  courseFramework: 'cefr' as CourseFramework,
   isPronunciationEnabled: false,
   textScalePercent: DEFAULT_TEXT_SCALE_PERCENT,
   isBoldTextEnabled: false,
@@ -207,23 +215,62 @@ export function isLearnLanguage(value: unknown): value is LearnLanguage {
   return LEARN_LANGUAGE_OPTIONS.some((option) => option.code === value);
 }
 
-export function resolveCourseFramework(learnLanguage: LearnLanguage): CourseFramework {
-  if (learnLanguage === 'hsk_chinese') return 'hsk';
-  return 'cefr';
+export function isCourseFramework(value: unknown): value is CourseFramework {
+  if (typeof value !== 'string') return false;
+  return COURSE_FRAMEWORK_OPTIONS.some((option) => option.code === value);
 }
 
-export function mapCourseFrameworkToLearnLanguage(
+export function isFrameworkAllowedForLearnLanguage(
   framework: CourseFramework,
+  learnLanguage: LearnLanguage,
+): boolean {
+  const allowedLanguages = FRAMEWORK_LANGUAGE_ALLOWLIST[framework];
+  return allowedLanguages.includes(learnLanguage);
+}
+
+export function coerceFrameworkForLearnLanguage(
+  framework: CourseFramework,
+  learnLanguage: LearnLanguage,
+): CourseFramework {
+  if (isFrameworkAllowedForLearnLanguage(framework, learnLanguage)) {
+    return framework;
+  }
+  const fallbackFramework = 'cefr' as const;
+  if (isFrameworkAllowedForLearnLanguage(fallbackFramework, learnLanguage)) {
+    return fallbackFramework;
+  }
+  const firstSupportedFramework = COURSE_FRAMEWORK_OPTIONS.find((option) =>
+    isFrameworkAllowedForLearnLanguage(option.code, learnLanguage),
+  );
+  return firstSupportedFramework?.code ?? framework;
+}
+
+export function resolveLessonContentLanguage(
+  learnLanguage: LearnLanguage,
+  courseFramework: CourseFramework,
+): string {
+  const normalizedFramework = coerceFrameworkForLearnLanguage(courseFramework, learnLanguage);
+  const mappedContentLanguage = FRAMEWORK_CONTENT_LANGUAGE[normalizedFramework];
+  return mappedContentLanguage === 'learnLanguage' ? learnLanguage : mappedContentLanguage;
+}
+
+export function resolveNonConflictingLearnLanguage(
+  defaultLanguage: DefaultLanguage,
   currentLearnLanguage: LearnLanguage,
 ): LearnLanguage {
-  if (framework === 'hsk') return 'hsk_chinese';
-  if (currentLearnLanguage === 'hsk_chinese') return 'chinese';
-  return currentLearnLanguage;
+  if (currentLearnLanguage !== defaultLanguage) return currentLearnLanguage;
+  const fallback = LEARN_LANGUAGE_OPTIONS.find((option) => option.code !== defaultLanguage);
+  return fallback ? fallback.code : currentLearnLanguage;
 }
 
 export function isDefaultLanguage(value: unknown): value is DefaultLanguage {
   if (typeof value !== 'string') return false;
   return DEFAULT_LANGUAGE_OPTIONS.some((option) => option.code === value);
+}
+
+export function isUiLockLanguage(value: unknown): value is UiLockLanguage {
+  if (typeof value !== 'string') return false;
+  return UI_LOCK_LANGUAGE_OPTIONS.some((option) => option.code === value);
 }
 
 export function isAppTheme(value: unknown): value is AppTheme {
@@ -334,7 +381,7 @@ export function resolveLessonLearningSourceText({
   if (learnLanguage === 'english') {
     return firstNonEmpty(resolveMappedTranslation(lessonTranslations, 'english'), sourceFallback);
   }
-  if (learnLanguage === 'chinese' || learnLanguage === 'hsk_chinese') {
+  if (learnLanguage === 'chinese') {
     return firstNonEmpty(
       resolveMappedTranslation(lessonTranslations, 'ch'),
       resolveMappedTranslation(lessonTranslations, 'zh'),
@@ -355,6 +402,13 @@ export function resolveLessonLearningSourceText({
       sourceFallback,
     );
   }
+  if (learnLanguage === 'burmese') {
+    return firstNonEmpty(
+      resolveMappedTranslation(lessonTranslations, 'burmese'),
+      resolveMappedTranslation(lessonTranslations, 'my'),
+      sourceFallback,
+    );
+  }
   return sourceFallback;
 }
 
@@ -371,7 +425,7 @@ export function resolveLessonLearningPronunciationText({
       pronunciationFallback,
     );
   }
-  if (learnLanguage === 'chinese' || learnLanguage === 'hsk_chinese') {
+  if (learnLanguage === 'chinese') {
     return firstNonEmpty(
       resolveMappedTranslation(lessonTranslations, 'ch_py'),
       resolveMappedTranslation(lessonTranslations, 'zh_py'),
@@ -390,6 +444,13 @@ export function resolveLessonLearningPronunciationText({
     return firstNonEmpty(
       resolveMappedTranslation(lessonTranslations, 'th_py'),
       resolveMappedTranslation(lessonTranslations, 'thai_py'),
+      pronunciationFallback,
+    );
+  }
+  if (learnLanguage === 'burmese') {
+    return firstNonEmpty(
+      resolveMappedTranslation(lessonTranslations, 'my_py'),
+      resolveMappedTranslation(lessonTranslations, 'burmese_py'),
       pronunciationFallback,
     );
   }
@@ -417,7 +478,7 @@ export function hasLessonLearningPronunciation({
     return pronunciationFallback.toLocaleLowerCase() !== englishSource.toLocaleLowerCase();
   }
 
-  if (learnLanguage === 'chinese' || learnLanguage === 'hsk_chinese') {
+  if (learnLanguage === 'chinese') {
     const mappedPronunciation = firstNonEmpty(
       resolveMappedTranslation(lessonTranslations, 'ch_py'),
       resolveMappedTranslation(lessonTranslations, 'zh_py'),
@@ -463,6 +524,21 @@ export function hasLessonLearningPronunciation({
     if (!thaiSource) return true;
     return pronunciationFallback.toLocaleLowerCase() !== thaiSource.toLocaleLowerCase();
   }
+  if (learnLanguage === 'burmese') {
+    const mappedPronunciation = firstNonEmpty(
+      resolveMappedTranslation(lessonTranslations, 'my_py'),
+      resolveMappedTranslation(lessonTranslations, 'burmese_py'),
+    );
+    if (mappedPronunciation) return true;
+    const burmeseSource = firstNonEmpty(
+      resolveMappedTranslation(lessonTranslations, 'burmese'),
+      resolveMappedTranslation(lessonTranslations, 'my'),
+      sourceFallback,
+    );
+    if (!pronunciationFallback) return false;
+    if (!burmeseSource) return true;
+    return pronunciationFallback.toLocaleLowerCase() !== burmeseSource.toLocaleLowerCase();
+  }
 
   if (!pronunciationFallback) return false;
   if (!sourceFallback) return true;
@@ -477,6 +553,7 @@ export function resolveLessonTranslationText({
   learnLanguage,
   englishReferenceText,
 }: TranslationTextInput): string {
+  void learnLanguage;
   const sourceLine = typeof lessonEnglish === 'string' ? lessonEnglish.trim() : '';
   const translationLine = typeof lessonBurmese === 'string' ? lessonBurmese.trim() : '';
   const englishReference = typeof englishReferenceText === 'string' ? englishReferenceText.trim() : '';
@@ -489,11 +566,7 @@ export function resolveLessonTranslationText({
     return translationLine || sourceLine;
   }
 
-  if (LESSON_TRANSLATION_POLICY[learnLanguage]?.englishUiUsesLessonTranslation) {
-    return translationLine || sourceLine;
-  }
-
-  return englishReference || sourceLine;
+  return englishReference || translationLine || sourceLine;
 }
 
 export function getLessonUnitId(lesson: CoreLessonRef): number {

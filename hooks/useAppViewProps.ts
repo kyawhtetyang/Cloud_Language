@@ -2,12 +2,16 @@ import { Dispatch, SetStateAction } from 'react';
 import { buildAppViewProps } from '../components/app/buildAppViewProps';
 import {
   AppMode,
+  coerceFrameworkForLearnLanguage,
+  CourseFramework,
   AppTheme,
   clampTextScale,
   DefaultLanguage,
   LibraryViewMode,
   LearnLanguage,
+  resolveNonConflictingLearnLanguage,
   SidebarTab,
+  UiLockLanguage,
   VoiceProvider,
 } from '../config/appConfig';
 import { LessonData } from '../types';
@@ -49,6 +53,7 @@ type UseAppViewPropsArgs = {
   setSidebarTab: Dispatch<SetStateAction<SidebarTab>>;
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
   learnLanguage: LearnLanguage;
+  courseFramework: CourseFramework;
   goToLibraryUnit: (level: number, unit: number, albumKey?: string | null) => void;
   handleReadLibraryAlbum: (units: Array<{ level: number; unit: number }>, albumKey?: string | null) => Promise<void>;
   librarySelectedAlbumKey: string | null;
@@ -69,9 +74,10 @@ type UseAppViewPropsArgs = {
   appTheme: AppTheme;
   voiceProvider: VoiceProvider;
   setDefaultLanguage: Dispatch<SetStateAction<DefaultLanguage>>;
-  isEnglishUiLocked: boolean;
-  setIsEnglishUiLocked: Dispatch<SetStateAction<boolean>>;
+  uiLockLanguage: UiLockLanguage;
+  setUiLockLanguage: Dispatch<SetStateAction<UiLockLanguage>>;
   setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
+  setCourseFramework: Dispatch<SetStateAction<CourseFramework>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
   setIsAutoScrollEnabled: Dispatch<SetStateAction<boolean>>;
@@ -137,6 +143,7 @@ export function useAppViewProps({
   setSidebarTab,
   setIsSidebarOpen,
   learnLanguage,
+  courseFramework,
   goToLibraryUnit,
   handleReadLibraryAlbum,
   librarySelectedAlbumKey,
@@ -157,9 +164,10 @@ export function useAppViewProps({
   appTheme,
   voiceProvider,
   setDefaultLanguage,
-  isEnglishUiLocked,
-  setIsEnglishUiLocked,
+  uiLockLanguage,
+  setUiLockLanguage,
   setLearnLanguage,
+  setCourseFramework,
   setIsPronunciationEnabled,
   setIsBoldTextEnabled,
   setIsAutoScrollEnabled,
@@ -248,10 +256,22 @@ export function useAppViewProps({
     textScalePercent,
     appTheme,
     voiceProvider,
-    onDefaultLanguageChange: setDefaultLanguage,
-    isEnglishUiLocked,
-    onToggleEnglishUiLock: () => setIsEnglishUiLocked((prev) => !prev),
-    onLearnLanguageChange: setLearnLanguage,
+    onDefaultLanguageChange: (nextDefaultLanguage) => {
+      setDefaultLanguage(nextDefaultLanguage);
+      setLearnLanguage((prevLearnLanguage) =>
+        resolveNonConflictingLearnLanguage(nextDefaultLanguage, prevLearnLanguage));
+    },
+    uiLockLanguage,
+    onUiLockLanguageChange: setUiLockLanguage,
+    courseFramework,
+    onLearnLanguageChange: (nextLearnLanguage) => {
+      setLearnLanguage(nextLearnLanguage);
+      setCourseFramework((prevFramework) =>
+        coerceFrameworkForLearnLanguage(prevFramework, nextLearnLanguage));
+    },
+    onCourseFrameworkChange: (nextFramework) => {
+      setCourseFramework(coerceFrameworkForLearnLanguage(nextFramework, learnLanguage));
+    },
     onTogglePronunciation: () => setIsPronunciationEnabled((prev) => !prev),
     onToggleBoldText: () => setIsBoldTextEnabled((prev) => !prev),
     onToggleAutoScroll: () => setIsAutoScrollEnabled((prev) => !prev),

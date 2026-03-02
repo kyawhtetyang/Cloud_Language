@@ -2,12 +2,15 @@ import React, { useMemo, useState } from 'react';
 import {
   APP_THEME_OPTIONS,
   AppTheme,
+  isFrameworkAllowedForLearnLanguage,
   COURSE_FRAMEWORK_OPTIONS,
   CourseFramework,
   DEFAULT_LANGUAGE_OPTIONS,
   DefaultLanguage,
   LEARN_LANGUAGE_OPTIONS,
   LearnLanguage,
+  UI_LOCK_LANGUAGE_OPTIONS,
+  UiLockLanguage,
   VOICE_PROVIDER_OPTIONS,
   VoiceProvider,
 } from '../../config/appConfig';
@@ -30,8 +33,8 @@ type SettingsViewProps = {
   profileText: AppTextPack['profile'];
   defaultLanguage: DefaultLanguage;
   learnLanguage: LearnLanguage;
+  uiLockLanguage: UiLockLanguage;
   courseFramework: CourseFramework;
-  isEnglishUiLocked: boolean;
   isPronunciationEnabled: boolean;
   isBoldTextEnabled: boolean;
   isAutoScrollEnabled: boolean;
@@ -45,7 +48,7 @@ type SettingsViewProps = {
   hasProfileWhitespace: boolean;
   isProfileInputValid: boolean;
   onDefaultLanguageChange: (value: DefaultLanguage) => void;
-  onToggleEnglishUiLock: () => void;
+  onUiLockLanguageChange: (value: UiLockLanguage) => void;
   onLearnLanguageChange: (value: LearnLanguage) => void;
   onCourseFrameworkChange: (value: CourseFramework) => void;
   onTogglePronunciation: () => void;
@@ -64,6 +67,7 @@ type SettingsViewProps = {
 type SettingsRoute =
   | 'main'
   | 'defaultLanguage'
+  | 'uiLockLanguage'
   | 'learnLanguage'
   | 'courseFramework'
   | 'appearance'
@@ -91,8 +95,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   profileText,
   defaultLanguage,
   learnLanguage,
+  uiLockLanguage,
   courseFramework,
-  isEnglishUiLocked,
   isPronunciationEnabled,
   isBoldTextEnabled,
   isAutoScrollEnabled,
@@ -106,7 +110,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   hasProfileWhitespace,
   isProfileInputValid,
   onDefaultLanguageChange,
-  onToggleEnglishUiLock,
+  onUiLockLanguageChange,
   onLearnLanguageChange,
   onCourseFrameworkChange,
   onTogglePronunciation,
@@ -134,6 +138,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     () => settingsText.learnLanguageOptions[learnLanguage] || findOptionLabel(LEARN_LANGUAGE_OPTIONS, learnLanguage),
     [learnLanguage, settingsText.learnLanguageOptions],
   );
+  const uiLockLanguageLabel = useMemo(
+    () => settingsText.uiLockLanguageOptions[uiLockLanguage] || findOptionLabel(UI_LOCK_LANGUAGE_OPTIONS, uiLockLanguage),
+    [uiLockLanguage, settingsText.uiLockLanguageOptions],
+  );
   const courseFrameworkLabel = useMemo(
     () => settingsText.courseFrameworkOptions[courseFramework] || findOptionLabel(COURSE_FRAMEWORK_OPTIONS, courseFramework),
     [courseFramework, settingsText.courseFrameworkOptions],
@@ -159,6 +167,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       label: settingsText.learnLanguageOptions[option.code] || option.label,
     })),
     [settingsText.learnLanguageOptions],
+  );
+  const uiLockLanguageOptions = useMemo(
+    () => UI_LOCK_LANGUAGE_OPTIONS.map((option) => ({
+      code: option.code,
+      label: settingsText.uiLockLanguageOptions[option.code] || option.label,
+    })),
+    [settingsText.uiLockLanguageOptions],
   );
   const courseFrameworkOptions = useMemo(
     () => COURSE_FRAMEWORK_OPTIONS.map((option) => ({
@@ -186,6 +201,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     defaultLanguage: {
       title: settingsText.defaultLanguageLabel,
     },
+    uiLockLanguage: {
+      title: settingsText.uiLockLanguageLabel,
+    },
     learnLanguage: {
       title: settingsText.learnLanguageLabel,
     },
@@ -204,16 +222,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     options: ReadonlyArray<{ code: T; label: string }>,
     selectedCode: T,
     onSelect: (value: T) => void,
+    isOptionDisabled?: (value: T) => boolean,
   ) => (
     <div className={SETTINGS_UI.listCard}>
       {options.map((option, index) => {
         const isSelected = selectedCode === option.code;
+        const isDisabled = isOptionDisabled?.(option.code) ?? false;
         return (
           <React.Fragment key={option.code}>
             <button
               type="button"
               onClick={() => onSelect(option.code)}
-              className={SETTINGS_UI.listRow}
+              disabled={isDisabled}
+              className={`${SETTINGS_UI.listRow}${
+                isDisabled ? ' cursor-not-allowed opacity-60 hover:bg-transparent' : ''
+              }`}
             >
               <span className={SETTINGS_UI.optionLabel}>{option.label}</span>
               <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
@@ -250,21 +273,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       <section className="mb-4">
         <div className={SETTINGS_UI.listCard}>
-          <button type="button" onClick={onToggleEnglishUiLock} className={SETTINGS_UI.listRow}>
-            <p className={SETTINGS_UI.sectionTitle}>{settingsText.keepEnglishUiLabel}</p>
-            <span className={`${SETTINGS_UI.rightControlSlot} ${SETTINGS_UI.toggleControlSlot}`}>
-              <ToggleStateBadge
-                isOn={isEnglishUiLocked}
-                onLabel={settingsText.onLabel}
-                offLabel={settingsText.offLabel}
-              />
-            </span>
-          </button>
-          <div className={SETTINGS_UI.listDivider} />
           <button type="button" onClick={() => setRoute('defaultLanguage')} className={SETTINGS_UI.listRow}>
             <p className={SETTINGS_UI.sectionTitle}>{settingsText.defaultLanguageLabel}</p>
             <span className={SETTINGS_UI.rowValue}>
               {defaultLanguageLabel}
+              <span aria-hidden="true">›</span>
+            </span>
+          </button>
+          <div className={SETTINGS_UI.listDivider} />
+          <button type="button" onClick={() => setRoute('uiLockLanguage')} className={SETTINGS_UI.listRow}>
+            <p className={SETTINGS_UI.sectionTitle}>{settingsText.uiLockLanguageLabel}</p>
+            <span className={SETTINGS_UI.rowValue}>
+              {uiLockLanguageLabel}
               <span aria-hidden="true">›</span>
             </span>
           </button>
@@ -442,10 +462,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
         {route === 'defaultLanguage' &&
           renderOptionPage(defaultLanguageOptions, defaultLanguage, onDefaultLanguageChange)}
+        {route === 'uiLockLanguage' &&
+          renderOptionPage(uiLockLanguageOptions, uiLockLanguage, onUiLockLanguageChange)}
         {route === 'learnLanguage' &&
-          renderOptionPage(learnLanguageOptions, learnLanguage, onLearnLanguageChange)}
+          renderOptionPage(
+            learnLanguageOptions,
+            learnLanguage,
+            onLearnLanguageChange,
+            (value) => value === defaultLanguage,
+          )}
         {route === 'courseFramework' &&
-          renderOptionPage(courseFrameworkOptions, courseFramework, onCourseFrameworkChange)}
+          renderOptionPage(
+            courseFrameworkOptions,
+            courseFramework,
+            onCourseFrameworkChange,
+            (value) => !isFrameworkAllowedForLearnLanguage(value, learnLanguage),
+          )}
         {route === 'appearance' &&
           renderOptionPage(appearanceOptions, appTheme, onAppThemeChange)}
         {route === 'voiceProvider' &&

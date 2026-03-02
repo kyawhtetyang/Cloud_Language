@@ -70,6 +70,7 @@ describe('useAppContentState', () => {
     const { result } = renderHook(() =>
       useAppContentState({
         learnLanguage: 'english',
+        courseFramework: 'cefr',
         defaultLanguage: 'vietnamese',
       }),
     );
@@ -112,6 +113,7 @@ describe('useAppContentState', () => {
     renderHook(() =>
       useAppContentState({
         learnLanguage: 'english',
+        courseFramework: 'cefr',
         defaultLanguage: 'english',
       }),
     );
@@ -119,6 +121,64 @@ describe('useAppContentState', () => {
     expect(hookMocks.useLessonDataMock).toHaveBeenCalledWith(
       '',
       'english',
+      getAppText('english').appState.lessonsLoadFailedMessage,
+    );
+  });
+
+  it('maps chinese+hsk framework to hsk_chinese backend lesson language', () => {
+    hookMocks.useLessonDataMock.mockReturnValue({
+      lessons: [],
+      englishReferenceLessons: [],
+      loading: false,
+      errorMessage: null,
+    });
+    hookMocks.useOfflineLessonPacksMock.mockReturnValue({
+      downloadedUnitKeys: new Set<string>(),
+      downloadUnitPack: hookMocks.downloadUnitPackMock,
+      removeUnitPack: hookMocks.removeUnitPackMock,
+      isUnitDownloading: hookMocks.isUnitDownloadingMock,
+    });
+
+    renderHook(() =>
+      useAppContentState({
+        learnLanguage: 'chinese',
+        courseFramework: 'hsk',
+        defaultLanguage: 'english',
+      }),
+    );
+
+    expect(hookMocks.useLessonDataMock).toHaveBeenCalledWith(
+      '',
+      'hsk_chinese',
+      getAppText('english').appState.lessonsLoadFailedMessage,
+    );
+  });
+
+  it('maps thai+hsk framework to hsk_chinese backend lesson language', () => {
+    hookMocks.useLessonDataMock.mockReturnValue({
+      lessons: [],
+      englishReferenceLessons: [],
+      loading: false,
+      errorMessage: null,
+    });
+    hookMocks.useOfflineLessonPacksMock.mockReturnValue({
+      downloadedUnitKeys: new Set<string>(),
+      downloadUnitPack: hookMocks.downloadUnitPackMock,
+      removeUnitPack: hookMocks.removeUnitPackMock,
+      isUnitDownloading: hookMocks.isUnitDownloadingMock,
+    });
+
+    renderHook(() =>
+      useAppContentState({
+        learnLanguage: 'thai',
+        courseFramework: 'hsk',
+        defaultLanguage: 'english',
+      }),
+    );
+
+    expect(hookMocks.useLessonDataMock).toHaveBeenCalledWith(
+      '',
+      'hsk_chinese',
       getAppText('english').appState.lessonsLoadFailedMessage,
     );
   });

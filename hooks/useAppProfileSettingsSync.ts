@@ -2,8 +2,10 @@ import { Dispatch, SetStateAction } from 'react';
 import {
   AppMode,
   AppTheme,
+  CourseFramework,
   DefaultLanguage,
   LearnLanguage,
+  UiLockLanguage,
   PROGRESS_KEY,
   STREAK_KEY,
   VoiceProvider,
@@ -26,7 +28,8 @@ type UseAppProfileSettingsSyncParams = {
   hasHydratedSettings: boolean;
   learnLanguage: LearnLanguage;
   defaultLanguage: DefaultLanguage;
-  isEnglishUiLocked: boolean;
+  uiLockLanguage: UiLockLanguage;
+  courseFramework: CourseFramework;
   isPronunciationEnabled: boolean;
   textScalePercent: number;
   isBoldTextEnabled: boolean;
@@ -40,7 +43,8 @@ type UseAppProfileSettingsSyncParams = {
   setStreak: Dispatch<SetStateAction<number>>;
   setLearnLanguage: Dispatch<SetStateAction<LearnLanguage>>;
   setDefaultLanguage: Dispatch<SetStateAction<DefaultLanguage>>;
-  setIsEnglishUiLocked: Dispatch<SetStateAction<boolean>>;
+  setUiLockLanguage: Dispatch<SetStateAction<UiLockLanguage>>;
+  setCourseFramework: Dispatch<SetStateAction<CourseFramework>>;
   setIsPronunciationEnabled: Dispatch<SetStateAction<boolean>>;
   setTextScalePercent: Dispatch<SetStateAction<number>>;
   setIsBoldTextEnabled: Dispatch<SetStateAction<boolean>>;
@@ -68,7 +72,8 @@ export function useAppProfileSettingsSync({
   hasHydratedSettings,
   learnLanguage,
   defaultLanguage,
-  isEnglishUiLocked,
+  uiLockLanguage,
+  courseFramework,
   isPronunciationEnabled,
   textScalePercent,
   isBoldTextEnabled,
@@ -82,7 +87,8 @@ export function useAppProfileSettingsSync({
   setStreak,
   setLearnLanguage,
   setDefaultLanguage,
-  setIsEnglishUiLocked,
+  setUiLockLanguage,
+  setCourseFramework,
   setIsPronunciationEnabled,
   setTextScalePercent,
   setIsBoldTextEnabled,
@@ -106,7 +112,8 @@ export function useAppProfileSettingsSync({
     streak,
     learnLanguage,
     defaultLanguage,
-    isEnglishUiLocked,
+    uiLockLanguage,
+    courseFramework,
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,
@@ -124,7 +131,8 @@ export function useAppProfileSettingsSync({
     setStreak,
     setLearnLanguage,
     setDefaultLanguage,
-    setIsEnglishUiLocked,
+    setUiLockLanguage,
+    setCourseFramework,
     setIsPronunciationEnabled,
     setTextScalePercent,
     setIsBoldTextEnabled,
@@ -140,7 +148,8 @@ export function useAppProfileSettingsSync({
     enabled: Boolean(profileName) && hasHydratedSettings,
     learnLanguage,
     defaultLanguage,
-    isEnglishUiLocked,
+    uiLockLanguage,
+    courseFramework,
     isPronunciationEnabled,
     textScalePercent,
     isBoldTextEnabled,

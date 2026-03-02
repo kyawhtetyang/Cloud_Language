@@ -55,7 +55,7 @@ function createArgs(
     onOpenProfileAlbumLibrary: vi.fn(),
     onOpenSettings: vi.fn(),
     onRequestLogout: vi.fn(),
-    learnLanguage: 'hsk_chinese',
+    learnLanguage: 'chinese',
     onSelectUnit: vi.fn(),
     onReadAlbum: vi.fn(),
     selectedAlbumKey: 'album-1',
@@ -76,9 +76,11 @@ function createArgs(
     appTheme: 'light',
     voiceProvider: 'apple_siri',
     onDefaultLanguageChange: vi.fn(),
-    isEnglishUiLocked: true,
-    onToggleEnglishUiLock: vi.fn(),
+    uiLockLanguage: 'off',
+    onUiLockLanguageChange: vi.fn(),
+    courseFramework: 'cefr',
     onLearnLanguageChange: vi.fn(),
+    onCourseFrameworkChange: vi.fn(),
     onTogglePronunciation: vi.fn(),
     onToggleBoldText: vi.fn(),
     onToggleAutoScroll: vi.fn(),
@@ -310,5 +312,17 @@ describe('buildAppViewProps feed routing', () => {
 
     expect(result.lessonViewProps.defaultLanguage).toBe('english');
     expect(result.lessonViewProps.translationLanguage).toBe('burmese');
+  });
+
+  it('keeps default and learn language values when they are the same', () => {
+    const result = buildAppViewProps(
+      createArgs({
+        selectedDefaultLanguage: 'english',
+        learnLanguage: 'english',
+      }),
+    );
+
+    expect(result.settingsViewProps.defaultLanguage).toBe('english');
+    expect(result.settingsViewProps.learnLanguage).toBe('english');
   });
 });

@@ -11,6 +11,10 @@ export const DEFAULT_SPEECH_LANGUAGE_PROFILE: SpeechLanguageProfile = {
 };
 
 export const SPEECH_LANGUAGE_PROFILES: Record<LearnLanguage, SpeechLanguageProfile> = {
+  burmese: {
+    locale: 'my-MM',
+    prefix: 'my-',
+  },
   english: {
     locale: 'en-US',
     prefix: 'en-',
@@ -26,10 +30,6 @@ export const SPEECH_LANGUAGE_PROFILES: Record<LearnLanguage, SpeechLanguageProfi
   thai: {
     locale: 'th-TH',
     prefix: 'th-',
-  },
-  hsk_chinese: {
-    locale: 'zh-CN',
-    prefix: 'zh-',
   },
 };
 

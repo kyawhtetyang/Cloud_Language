@@ -384,7 +384,7 @@ describe('App lesson navigation guard', () => {
 
   it('keeps HSK autoplay selection/audio aligned when crossing to next unit', async () => {
     const twoUnitHskLessons = createTwoUnitHskLessons();
-    localStorage.setItem('lingo_burmese_learn_language', 'hsk_chinese');
+    localStorage.setItem('lingo_burmese_learn_language', 'chinese');
     audioButtonMocks.speakTextMock.mockImplementation(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
