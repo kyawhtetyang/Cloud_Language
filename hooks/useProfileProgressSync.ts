@@ -201,6 +201,10 @@ export function useProfileProgressSync({
             setIsReviewQuestionsRemoved,
             setAppTheme,
             setVoiceProvider,
+          }, {
+            learnLanguage,
+            defaultLanguage,
+            courseFramework,
           });
         }
       } catch {

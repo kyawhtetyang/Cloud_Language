@@ -157,4 +157,47 @@ describe('settingsSync', () => {
     expect(settings.isPronunciationEnabled).toBe(false);
     expect(settings.isLearningLanguageVisible).toBe(true);
   });
+
+  it('coerces storage settings when default and learning languages conflict', () => {
+    localStorage.setItem('lingo_burmese_default_language', 'english');
+    localStorage.setItem('lingo_burmese_learn_language', 'english');
+    localStorage.setItem('lingo_burmese_course_framework', 'hsk');
+
+    const settings = readSyncedSettingsFromStorage();
+    expect(settings.defaultLanguage).toBe('english');
+    expect(settings.learnLanguage).toBe('burmese');
+    expect(settings.courseFramework).toBe('hsk');
+  });
+
+  it('coerces remote sync when default language update conflicts with current learning language', () => {
+    const setters = {
+      setLearnLanguage: vi.fn(),
+      setDefaultLanguage: vi.fn(),
+      setUiLockLanguage: vi.fn(),
+      setCourseFramework: vi.fn(),
+      setIsPronunciationEnabled: vi.fn(),
+      setIsLearningLanguageVisible: vi.fn(),
+      setIsTranslationVisible: vi.fn(),
+      setTextScalePercent: vi.fn(),
+      setIsBoldTextEnabled: vi.fn(),
+      setIsAutoScrollEnabled: vi.fn(),
+      setIsRandomLessonOrderEnabled: vi.fn(),
+      setIsReviewQuestionsRemoved: vi.fn(),
+      setAppTheme: vi.fn(),
+      setVoiceProvider: vi.fn(),
+    };
+
+    applyRemoteSyncedSettings(
+      { defaultLanguage: 'english' },
+      setters,
+      {
+        defaultLanguage: 'burmese',
+        learnLanguage: 'english',
+        courseFramework: 'hsk',
+      },
+    );
+
+    expect(setters.setDefaultLanguage).toHaveBeenCalledWith('english');
+    expect(setters.setLearnLanguage).toHaveBeenCalledWith('burmese');
+  });
 });

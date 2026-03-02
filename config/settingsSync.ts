@@ -6,6 +6,7 @@ import {
   AppTheme,
   BOLD_TEXT_ENABLED_KEY,
   clampTextScale,
+  coerceFrameworkForLearnLanguage,
   coerceLessonLineVisibility,
   COURSE_FRAMEWORK_KEY,
   CourseFramework,
@@ -28,6 +29,7 @@ import {
   UI_LOCK_LANGUAGE_KEY,
   UiLockLanguage,
   isVoiceProvider,
+  resolveNonConflictingLearnLanguage,
 } from './appConfig';
 
 export type SyncedAppSettings = {
@@ -67,6 +69,8 @@ export type SyncedAppSettingsSetters = {
 const DEFAULT_SYNCED_SETTINGS: SyncedAppSettings = {
   ...APP_DEFAULTS,
 };
+
+type SyncedLanguageSettings = Pick<SyncedAppSettings, 'learnLanguage' | 'defaultLanguage' | 'courseFramework'>;
 
 function toScopedKey(baseKey: string, profileStorageId: string): string {
   return `${baseKey}:${profileStorageId}`;
@@ -142,6 +146,36 @@ function readWithFallback(baseKey: string, profileStorageId?: string): string | 
   return safeRead(baseKey);
 }
 
+function normalizeLanguageSettings(settings: SyncedLanguageSettings): SyncedLanguageSettings {
+  const normalizedLearnLanguage = resolveNonConflictingLearnLanguage(
+    settings.defaultLanguage,
+    settings.learnLanguage,
+  );
+  const normalizedCourseFramework = coerceFrameworkForLearnLanguage(
+    settings.courseFramework,
+    normalizedLearnLanguage,
+  );
+  return {
+    defaultLanguage: settings.defaultLanguage,
+    learnLanguage: normalizedLearnLanguage,
+    courseFramework: normalizedCourseFramework,
+  };
+}
+
+function normalizeSyncedSettings(settings: SyncedAppSettings): SyncedAppSettings {
+  const languageSettings = normalizeLanguageSettings(settings);
+  const visibility = coerceLessonLineVisibility(
+    settings.isPronunciationEnabled,
+    settings.isLearningLanguageVisible,
+  );
+  return {
+    ...settings,
+    ...languageSettings,
+    isPronunciationEnabled: visibility.isPronunciationEnabled,
+    isLearningLanguageVisible: visibility.isLearningLanguageVisible,
+  };
+}
+
 export function readSyncedSettingsFromStorage(profileStorageId?: string): SyncedAppSettings {
   const isPronunciationEnabled = parseBooleanWithFallback(
     readWithFallback(PRONUNCIATION_ENABLED_KEY, profileStorageId),
@@ -153,7 +187,7 @@ export function readSyncedSettingsFromStorage(profileStorageId?: string): Synced
   );
   const { isPronunciationEnabled: normalizedPronunciation, isLearningLanguageVisible: normalizedLearningLanguage } =
     coerceLessonLineVisibility(isPronunciationEnabled, isLearningLanguageVisible);
-  return {
+  const parsed: SyncedAppSettings = {
     learnLanguage: parseLearnLanguage(readWithFallback(LEARN_LANGUAGE_KEY, profileStorageId)),
     defaultLanguage: parseDefaultLanguage(readWithFallback(DEFAULT_LANGUAGE_KEY, profileStorageId)),
     uiLockLanguage: parseUiLockLanguage(readWithFallback(UI_LOCK_LANGUAGE_KEY, profileStorageId)),
@@ -175,64 +209,77 @@ export function readSyncedSettingsFromStorage(profileStorageId?: string): Synced
     appTheme: parseAppTheme(readWithFallback(APP_THEME_KEY, profileStorageId)),
     voiceProvider: parseVoiceProvider(readWithFallback(VOICE_PROVIDER_KEY, profileStorageId)),
   };
+  return normalizeSyncedSettings(parsed);
 }
 
 export function persistSyncedSettingsToStorage(
   settings: SyncedAppSettings,
   profileStorageId?: string,
 ): void {
+  const normalized = normalizeSyncedSettings(settings);
   const resolveKey = (baseKey: string) =>
     profileStorageId ? toScopedKey(baseKey, profileStorageId) : baseKey;
-  safeWrite(resolveKey(LEARN_LANGUAGE_KEY), settings.learnLanguage);
-  safeWrite(resolveKey(DEFAULT_LANGUAGE_KEY), settings.defaultLanguage);
-  safeWrite(resolveKey(UI_LOCK_LANGUAGE_KEY), settings.uiLockLanguage);
-  safeWrite(resolveKey(COURSE_FRAMEWORK_KEY), settings.courseFramework);
-  safeWrite(resolveKey(PRONUNCIATION_ENABLED_KEY), String(settings.isPronunciationEnabled));
-  safeWrite(resolveKey(LEARNING_LANGUAGE_VISIBLE_KEY), String(settings.isLearningLanguageVisible));
-  safeWrite(resolveKey(TRANSLATION_VISIBLE_KEY), String(settings.isTranslationVisible));
-  safeWrite(resolveKey(TEXT_SCALE_PERCENT_KEY), String(settings.textScalePercent));
-  safeWrite(resolveKey(BOLD_TEXT_ENABLED_KEY), String(settings.isBoldTextEnabled));
-  safeWrite(resolveKey(AUTO_SCROLL_ENABLED_KEY), String(settings.isAutoScrollEnabled));
-  safeWrite(resolveKey(RANDOM_LESSON_ORDER_ENABLED_KEY), String(settings.isRandomLessonOrderEnabled));
-  safeWrite(resolveKey(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY), String(settings.isReviewQuestionsRemoved));
-  safeWrite(resolveKey(APP_THEME_KEY), settings.appTheme);
-  safeWrite(resolveKey(VOICE_PROVIDER_KEY), settings.voiceProvider);
+  safeWrite(resolveKey(LEARN_LANGUAGE_KEY), normalized.learnLanguage);
+  safeWrite(resolveKey(DEFAULT_LANGUAGE_KEY), normalized.defaultLanguage);
+  safeWrite(resolveKey(UI_LOCK_LANGUAGE_KEY), normalized.uiLockLanguage);
+  safeWrite(resolveKey(COURSE_FRAMEWORK_KEY), normalized.courseFramework);
+  safeWrite(resolveKey(PRONUNCIATION_ENABLED_KEY), String(normalized.isPronunciationEnabled));
+  safeWrite(resolveKey(LEARNING_LANGUAGE_VISIBLE_KEY), String(normalized.isLearningLanguageVisible));
+  safeWrite(resolveKey(TRANSLATION_VISIBLE_KEY), String(normalized.isTranslationVisible));
+  safeWrite(resolveKey(TEXT_SCALE_PERCENT_KEY), String(normalized.textScalePercent));
+  safeWrite(resolveKey(BOLD_TEXT_ENABLED_KEY), String(normalized.isBoldTextEnabled));
+  safeWrite(resolveKey(AUTO_SCROLL_ENABLED_KEY), String(normalized.isAutoScrollEnabled));
+  safeWrite(resolveKey(RANDOM_LESSON_ORDER_ENABLED_KEY), String(normalized.isRandomLessonOrderEnabled));
+  safeWrite(resolveKey(REMOVE_REVIEW_QUESTIONS_ENABLED_KEY), String(normalized.isReviewQuestionsRemoved));
+  safeWrite(resolveKey(APP_THEME_KEY), normalized.appTheme);
+  safeWrite(resolveKey(VOICE_PROVIDER_KEY), normalized.voiceProvider);
 }
 
 export function buildSyncedSettingsPayload(settings: SyncedAppSettings): SyncedAppSettings {
-  return {
-    learnLanguage: settings.learnLanguage,
-    defaultLanguage: settings.defaultLanguage,
-    uiLockLanguage: settings.uiLockLanguage,
-    courseFramework: settings.courseFramework,
-    isPronunciationEnabled: settings.isPronunciationEnabled,
-    isLearningLanguageVisible: settings.isLearningLanguageVisible,
-    isTranslationVisible: settings.isTranslationVisible,
-    textScalePercent: settings.textScalePercent,
-    isBoldTextEnabled: settings.isBoldTextEnabled,
-    isAutoScrollEnabled: settings.isAutoScrollEnabled,
-    isRandomLessonOrderEnabled: settings.isRandomLessonOrderEnabled,
-    isReviewQuestionsRemoved: settings.isReviewQuestionsRemoved,
-    appTheme: settings.appTheme,
-    voiceProvider: settings.voiceProvider,
-  };
+  return normalizeSyncedSettings(settings);
 }
 
 export function applyRemoteSyncedSettings(
   remote: Record<string, unknown>,
   setters: SyncedAppSettingsSetters,
+  currentSettings?: Partial<SyncedLanguageSettings>,
 ): void {
-  if (isLearnLanguage(remote.learnLanguage)) {
-    setters.setLearnLanguage(remote.learnLanguage);
+  const currentDefaultLanguage = isDefaultLanguage(currentSettings?.defaultLanguage)
+    ? currentSettings.defaultLanguage
+    : APP_DEFAULTS.defaultLanguage;
+  const currentLearnLanguage = isLearnLanguage(currentSettings?.learnLanguage)
+    ? currentSettings.learnLanguage
+    : APP_DEFAULTS.learnLanguage;
+  const currentCourseFramework = isCourseFramework(currentSettings?.courseFramework)
+    ? currentSettings.courseFramework
+    : APP_DEFAULTS.courseFramework;
+
+  const nextDefaultLanguage = isDefaultLanguage(remote.defaultLanguage)
+    ? remote.defaultLanguage
+    : currentDefaultLanguage;
+  const nextLearnLanguageRaw = isLearnLanguage(remote.learnLanguage)
+    ? remote.learnLanguage
+    : currentLearnLanguage;
+  const nextCourseFrameworkRaw = isCourseFramework(remote.courseFramework)
+    ? remote.courseFramework
+    : currentCourseFramework;
+  const normalizedLanguageSettings = normalizeLanguageSettings({
+    defaultLanguage: nextDefaultLanguage,
+    learnLanguage: nextLearnLanguageRaw,
+    courseFramework: nextCourseFrameworkRaw,
+  });
+
+  if (normalizedLanguageSettings.defaultLanguage !== currentDefaultLanguage) {
+    setters.setDefaultLanguage(normalizedLanguageSettings.defaultLanguage);
   }
-  if (isDefaultLanguage(remote.defaultLanguage)) {
-    setters.setDefaultLanguage(remote.defaultLanguage);
+  if (normalizedLanguageSettings.learnLanguage !== currentLearnLanguage) {
+    setters.setLearnLanguage(normalizedLanguageSettings.learnLanguage);
+  }
+  if (normalizedLanguageSettings.courseFramework !== currentCourseFramework) {
+    setters.setCourseFramework(normalizedLanguageSettings.courseFramework);
   }
   if (isUiLockLanguage(remote.uiLockLanguage)) {
     setters.setUiLockLanguage(remote.uiLockLanguage);
-  }
-  if (isCourseFramework(remote.courseFramework)) {
-    setters.setCourseFramework(remote.courseFramework);
   }
   if (typeof remote.isPronunciationEnabled === 'boolean') {
     setters.setIsPronunciationEnabled(remote.isPronunciationEnabled);
