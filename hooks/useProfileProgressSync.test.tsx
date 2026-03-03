@@ -50,6 +50,7 @@ describe('useProfileProgressSync debounce', () => {
       apiBaseUrl: 'http://localhost:4000',
       lessons,
       profileName: 'tester',
+      profileStorageId: 'tester',
       mode: 'learn' as const,
       unlockedLevel: 1,
       streak: 0,
@@ -166,6 +167,7 @@ describe('useProfileProgressSync debounce', () => {
     const baseParams = {
       apiBaseUrl: 'http://localhost:4000',
       profileName: 'tester',
+      profileStorageId: 'tester',
       mode: 'learn' as const,
       currentIndex: 0,
       unlockedLevel: 1,

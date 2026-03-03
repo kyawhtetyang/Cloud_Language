@@ -1,11 +1,13 @@
 import { useCallback } from 'react';
 import { LearnLanguage } from '../config/appConfig';
+import { buildProfileAuthHeaders } from '../utils/profileAuth';
 
 type ReviewEventMetadata = Record<string, unknown>;
 
 type UseReviewEventLoggerParams = {
   apiBaseUrl: string;
   profileName: string;
+  profileStorageId: string;
   learnLanguage: LearnLanguage;
 };
 
@@ -14,6 +16,7 @@ type LogReviewEvent = (eventType: string, metadata?: ReviewEventMetadata) => voi
 export function useReviewEventLogger({
   apiBaseUrl,
   profileName,
+  profileStorageId,
   learnLanguage,
 }: UseReviewEventLoggerParams): { logReviewEvent: LogReviewEvent } {
   const logReviewEvent = useCallback<LogReviewEvent>((eventType, metadata = {}) => {
@@ -25,6 +28,7 @@ export function useReviewEventLogger({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...buildProfileAuthHeaders(profileStorageId),
       },
       body: JSON.stringify({
         profileName: normalizedProfileName,
@@ -36,7 +40,7 @@ export function useReviewEventLogger({
     }).catch(() => {
       // Event logging is best effort and must not block the lesson flow.
     });
-  }, [apiBaseUrl, learnLanguage, profileName]);
+  }, [apiBaseUrl, learnLanguage, profileName, profileStorageId]);
 
   return { logReviewEvent };
 }

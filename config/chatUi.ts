@@ -9,7 +9,7 @@ function joinClasses(...values: Array<string | false | undefined>): string {
 
 export const CHAT_UI_CONFIG = {
   scrollMode: {
-    mobile: 'container' as ChatScrollMode,
+    mobile: 'page' as ChatScrollMode,
     desktop: 'page' as ChatScrollMode,
   },
   composer: {
@@ -22,38 +22,42 @@ export const CHAT_UI_CONFIG = {
     desktopBottomPaddingClass: 'md:pb-44',
   },
   toolbar: {
-    anchorClass: `sticky top-0 z-10 bg-[var(--surface-default)] ${TOP_TOOLBAR_UI.desktopFixedAnchor}`,
-    shellClass: `w-full ${TOP_TOOLBAR_UI.desktopFixedContent}`,
+    wrapClass: TOP_TOOLBAR_UI.wrapWithMargin,
     rowClass: TOP_TOOLBAR_UI.rowBetween,
-    rowDividerClass: TOP_TOOLBAR_UI.dividerWithBottomPadding,
-    spacerClass: TOP_TOOLBAR_UI.desktopFixedSpacer,
   },
 } as const;
 
+const usesMobilePageScroll = CHAT_UI_CONFIG.scrollMode.mobile === 'page';
 const usesDesktopPageScroll = CHAT_UI_CONFIG.scrollMode.desktop === 'page';
+const usesMobileContainerScroll = CHAT_UI_CONFIG.scrollMode.mobile === 'container';
+const usesDesktopContainerScroll = CHAT_UI_CONFIG.scrollMode.desktop === 'container';
 
 export const CHAT_UI_TOKENS = {
   rootClass: joinClasses(
-    'h-full min-h-0 overflow-hidden',
+    usesMobilePageScroll
+      ? 'h-auto overflow-visible'
+      : 'h-full min-h-0 overflow-hidden',
     usesDesktopPageScroll && 'md:h-auto md:overflow-visible',
+    usesDesktopContainerScroll && 'md:h-full md:min-h-0 md:overflow-hidden',
   ),
   sectionClass: joinClasses(
-    'flex h-full min-h-0 flex-col overflow-hidden',
+    usesMobilePageScroll
+      ? 'flex h-auto flex-col overflow-visible'
+      : 'flex h-full min-h-0 flex-col overflow-hidden',
     usesDesktopPageScroll && 'md:h-auto md:overflow-visible',
+    usesDesktopContainerScroll && 'md:h-full md:min-h-0 md:overflow-hidden',
   ),
   messagesScrollClass: joinClasses(
-    'min-h-0 flex-1 overflow-y-auto px-0 py-3',
+    usesMobileContainerScroll
+      ? 'min-h-0 flex-1 overflow-y-auto px-0 py-3'
+      : 'px-0 py-3',
     CHAT_UI_CONFIG.messages.mobileBottomPaddingClass,
     usesDesktopPageScroll && 'md:flex-none md:overflow-visible',
+    usesDesktopContainerScroll && 'md:min-h-0 md:flex-1 md:overflow-y-auto',
     CHAT_UI_CONFIG.messages.desktopBottomPaddingClass,
   ),
-  toolbarAnchorClass: CHAT_UI_CONFIG.toolbar.anchorClass,
-  toolbarShellClass: CHAT_UI_CONFIG.toolbar.shellClass,
-  toolbarSpacerClass: CHAT_UI_CONFIG.toolbar.spacerClass,
-  toolbarInnerClass: joinClasses(
-    CHAT_UI_CONFIG.toolbar.rowClass,
-    CHAT_UI_CONFIG.toolbar.rowDividerClass,
-  ),
+  toolbarWrapClass: CHAT_UI_CONFIG.toolbar.wrapClass,
+  toolbarRowClass: CHAT_UI_CONFIG.toolbar.rowClass,
 } as const;
 
 function isDesktopViewport(): boolean {

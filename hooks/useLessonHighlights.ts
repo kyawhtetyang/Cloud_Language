@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LEARN_LANGUAGE_OPTIONS, LESSON_HIGHLIGHTS_KEY, LearnLanguage } from '../config/appConfig';
 import { LessonHighlight, LessonData } from '../types';
 import { buildLessonReferenceKey } from '../utils/lessonReference';
+import { buildProfileAuthHeaders } from '../utils/profileAuth';
 
 const GUEST_PROFILE_STORAGE_ID = 'guest';
 
@@ -142,7 +143,12 @@ export function useLessonHighlights({
       try {
         const response = await fetch(
           `${apiBaseUrl}/api/highlights?profileName=${encodeURIComponent(normalizedProfileName)}&learnLanguage=${encodeURIComponent(learnLanguage)}`,
-          { signal: controller.signal },
+          {
+            signal: controller.signal,
+            headers: {
+              ...buildProfileAuthHeaders(profileId),
+            },
+          },
         );
         if (!response.ok) return;
         const payload = await response.json();
@@ -204,6 +210,7 @@ export function useLessonHighlights({
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            ...buildProfileAuthHeaders(profileId),
           },
           body: JSON.stringify({
             profileName: normalizedProfileName,
@@ -228,6 +235,7 @@ export function useLessonHighlights({
 
   const clearHighlightSelection = useCallback((lesson: LessonData): boolean => {
     const lessonKey = buildLessonReferenceKey(lesson);
+    const profileId = profileStorageId?.trim() || GUEST_PROFILE_STORAGE_ID;
     const hadExisting = highlights.some((entry) => entry.lessonKey === lessonKey);
     setHighlights((prev) => {
       const next = prev.filter((entry) => entry.lessonKey !== lessonKey);
@@ -240,7 +248,12 @@ export function useLessonHighlights({
       if (normalizedProfileName) {
         void fetch(
           `${apiBaseUrl}/api/highlights?profileName=${encodeURIComponent(normalizedProfileName)}&learnLanguage=${encodeURIComponent(learnLanguage)}&lessonKey=${encodeURIComponent(lessonKey)}`,
-          { method: 'DELETE' },
+          {
+            method: 'DELETE',
+            headers: {
+              ...buildProfileAuthHeaders(profileId),
+            },
+          },
         ).catch(() => {
           // Highlight sync is best effort; local storage remains source of truth.
         });
@@ -250,7 +263,7 @@ export function useLessonHighlights({
       });
     }
     return hadExisting;
-  }, [apiBaseUrl, highlights, learnLanguage, logReviewEvent, profileName, storageKey]);
+  }, [apiBaseUrl, highlights, learnLanguage, logReviewEvent, profileName, profileStorageId, storageKey]);
 
   const highlightCountByLessonKey = useMemo(() => {
     const counts = new Map<string, number>();

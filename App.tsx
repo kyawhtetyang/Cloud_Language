@@ -167,6 +167,7 @@ const App: React.FC = () => {
   const { logReviewEvent } = useReviewEventLogger({
     apiBaseUrl,
     profileName,
+    profileStorageId,
     learnLanguage,
   });
   const { highlightPhrasesByLessonKey, saveHighlightSelection, clearHighlightSelection } = useLessonHighlights({

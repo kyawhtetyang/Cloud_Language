@@ -31,6 +31,8 @@ type SyncQueueRecord = {
   id?: number;
   type: 'progress_update';
   profileName: string;
+  profileSecret?: string;
+  bearerToken?: string;
   payload: Record<string, unknown>;
   clientUpdatedAt: string;
   status: SyncQueueStatus;
@@ -223,6 +225,8 @@ export async function enqueueProgressUpdate(
   profileName: string,
   payload: Record<string, unknown>,
   clientUpdatedAt: string,
+  profileSecret?: string,
+  bearerToken?: string,
 ): Promise<void> {
   const db = await openDb();
   if (!db) {
@@ -232,6 +236,8 @@ export async function enqueueProgressUpdate(
   const item: SyncQueueRecord = {
     type: 'progress_update',
     profileName,
+    profileSecret,
+    bearerToken,
     payload,
     clientUpdatedAt,
     status: 'pending',
@@ -312,7 +318,11 @@ export async function flushProgressQueue(apiBaseUrl: string): Promise<void> {
     try {
       const response = await fetch(`${apiBaseUrl}/api/progress`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(item.bearerToken ? { Authorization: `Bearer ${item.bearerToken}` } : {}),
+          ...(item.profileSecret ? { 'X-Profile-Secret': item.profileSecret } : {}),
+        },
         body: JSON.stringify({
           ...item.payload,
           profileName: item.profileName,
@@ -337,6 +347,4 @@ export async function flushProgressQueue(apiBaseUrl: string): Promise<void> {
     }
   }
 }
-
-
 

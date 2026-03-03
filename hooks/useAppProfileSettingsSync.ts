@@ -114,6 +114,7 @@ export function useAppProfileSettingsSync({
     apiBaseUrl,
     lessons,
     profileName,
+    profileStorageId,
     mode,
     currentIndex,
     unlockedLevel,

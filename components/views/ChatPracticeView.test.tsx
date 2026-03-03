@@ -4,7 +4,7 @@ import { ChatPracticeView } from './ChatPracticeView';
 import { getAppText } from '../../config/appI18n';
 
 describe('ChatPracticeView', () => {
-  it('shows fallback message when no highlight phrases are available', () => {
+  it('does not show fallback message before user sends input when no highlights are available', () => {
     render(
       <ChatPracticeView
         defaultLanguage="english"
@@ -12,7 +12,7 @@ describe('ChatPracticeView', () => {
       />,
     );
 
-    expect(screen.getByText(getAppText('english').appState.lessonsUnavailableDefaultMessage)).toBeInTheDocument();
+    expect(screen.queryByText(getAppText('english').appState.lessonsUnavailableDefaultMessage)).not.toBeInTheDocument();
     expect(screen.getByRole('textbox')).not.toBeDisabled();
   });
 
@@ -28,7 +28,8 @@ describe('ChatPracticeView', () => {
     fireEvent.change(input, { target: { value: 'hello' } });
     fireEvent.click(screen.getByRole('button', { name: getAppText('english').profile.saveLabel }));
 
-    expect(screen.getAllByText(getAppText('english').appState.lessonsUnavailableDefaultMessage).length).toBeGreaterThan(0);
+    expect(screen.getByText('hello')).toBeInTheDocument();
+    expect(screen.queryByText(getAppText('english').appState.lessonsUnavailableDefaultMessage)).not.toBeInTheDocument();
   });
 
   it('selects a random highlighted phrase after correct answer', () => {

@@ -36,20 +36,26 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
   lessonViewProps,
   appStateText,
   onCompletedRestart,
-}) => (
-  <main className={`flex-1 min-h-0 flex justify-center p-4 pt-6 md:p-6 md:pt-5 ${isFeedView ? 'items-stretch' : 'items-start'}`}>
-    {isProfileView ? (
-      <ProfileView {...profileViewProps} />
-    ) : isLibraryView ? (
-      <LibraryView {...libraryViewProps} />
-    ) : isSettingsView ? (
-      <SettingsView {...settingsViewProps} />
-    ) : isFeedView ? (
-      <ChatPracticeView {...chatViewProps} />
-    ) : mode === 'completed' ? (
-      <CompletedView onRestart={onCompletedRestart} appStateText={appStateText} />
-    ) : (
-      <LessonView {...lessonViewProps} />
-    )}
-  </main>
-);
+}) => {
+  const mainClass = isFeedView
+    ? 'flex-1 min-h-0 flex items-stretch justify-center px-4 pb-4 pt-0 md:px-6 md:pb-6 md:pt-0'
+    : 'flex-1 min-h-0 flex items-start justify-center p-4 pt-6 md:p-6 md:pt-5';
+
+  return (
+    <main className={mainClass}>
+      {isProfileView ? (
+        <ProfileView {...profileViewProps} />
+      ) : isLibraryView ? (
+        <LibraryView {...libraryViewProps} />
+      ) : isSettingsView ? (
+        <SettingsView {...settingsViewProps} />
+      ) : isFeedView ? (
+        <ChatPracticeView {...chatViewProps} />
+      ) : mode === 'completed' ? (
+        <CompletedView onRestart={onCompletedRestart} appStateText={appStateText} />
+      ) : (
+        <LessonView {...lessonViewProps} />
+      )}
+    </main>
+  );
+};

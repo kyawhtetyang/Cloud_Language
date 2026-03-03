@@ -22,6 +22,7 @@ import {
   flushProgressQueue,
   resetProcessingQueueItems,
 } from '../offline/offlineStore';
+import { buildProfileAuthHeaders } from '../utils/profileAuth';
 
 const PROGRESS_SYNC_DEBOUNCE_MS = 600;
 
@@ -29,6 +30,7 @@ type UseProfileProgressSyncParams = {
   apiBaseUrl: string;
   lessons: LessonData[];
   profileName: string;
+  profileStorageId: string;
   mode: AppMode;
   currentIndex: number;
   unlockedLevel: number;
@@ -74,6 +76,7 @@ export function useProfileProgressSync({
   apiBaseUrl,
   lessons,
   profileName,
+  profileStorageId,
   mode,
   currentIndex,
   unlockedLevel,
@@ -168,8 +171,12 @@ export function useProfileProgressSync({
       setStreak(safeLocalStreak);
 
       try {
+        const authHeaders = buildProfileAuthHeaders(profileStorageId);
         const response = await fetch(
           `${apiBaseUrl}/api/progress?profileName=${encodeURIComponent(profileName)}`,
+          {
+            headers: authHeaders,
+          },
         );
         if (response.ok) {
           const remote = await response.json();
@@ -244,6 +251,7 @@ export function useProfileProgressSync({
     streakStorageKey,
     totalLevels,
     unlockedStorageKey,
+    profileStorageId,
   ]);
 
   useEffect(() => {
@@ -290,6 +298,11 @@ export function useProfileProgressSync({
 
   useEffect(() => {
     if (!profileName || lessons.length === 0 || !hasHydratedProfile) return;
+    const authHeaders = buildProfileAuthHeaders(profileStorageId);
+    const profileSecret = authHeaders['X-Profile-Secret'];
+    const bearerToken = typeof authHeaders.Authorization === 'string'
+      ? authHeaders.Authorization.replace(/^Bearer\s+/i, '').trim()
+      : '';
 
     const payload = {
       profileName,
@@ -316,7 +329,7 @@ export function useProfileProgressSync({
 
     const timeoutId = window.setTimeout(() => {
       const clientUpdatedAt = new Date().toISOString();
-      void enqueueProgressUpdate(profileName, payload, clientUpdatedAt)
+      void enqueueProgressUpdate(profileName, payload, clientUpdatedAt, profileSecret, bearerToken)
         .then(() => flushSyncQueueSafely())
         .catch(() => {
           // Fallback to direct sync when queue storage is unavailable (e.g. blocked IndexedDB).
@@ -324,6 +337,7 @@ export function useProfileProgressSync({
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
+              ...authHeaders,
             },
             body: JSON.stringify({
               ...payload,
@@ -358,6 +372,7 @@ export function useProfileProgressSync({
     learnLanguage,
     lessons.length,
     profileName,
+    profileStorageId,
     streak,
     unlockedLevel,
     flushSyncQueueSafely,

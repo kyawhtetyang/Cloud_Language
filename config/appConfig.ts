@@ -24,6 +24,8 @@ export const APP_THEME_KEY = 'lingo_burmese_app_theme';
 export const VOICE_PROVIDER_KEY = 'lingo_burmese_voice_provider';
 export const LESSON_HIGHLIGHTS_KEY = 'lingo_burmese_lesson_highlights';
 export const COURSE_FRAMEWORK_KEY = 'lingo_burmese_course_framework';
+export const PROFILE_AUTH_SECRET_KEY = 'lingo_burmese_profile_secret';
+export const SUPABASE_SESSION_KEY = 'lingo_burmese_supabase_session';
 
 export const LESSONS_PER_BATCH = 3;
 export const MATCH_PAIRS_PER_REVIEW = 3;

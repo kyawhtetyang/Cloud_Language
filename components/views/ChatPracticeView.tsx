@@ -122,9 +122,34 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
       }
       return;
     }
+
+    const scrollWindowToBottom = () => {
+      if (typeof window === 'undefined' || typeof document === 'undefined') return;
+      const scrollingElement = document.scrollingElement || document.documentElement;
+      if (!scrollingElement) return;
+      const targetTop = Math.max(
+        scrollingElement.scrollHeight,
+        document.body?.scrollHeight || 0,
+      );
+      try {
+        window.scrollTo({ top: targetTop, behavior: 'auto' });
+      } catch {
+        // Some test environments do not implement window scrolling.
+      }
+    };
+
     const anchor = messagesBottomRef.current;
-    if (!anchor || typeof anchor.scrollIntoView !== 'function') return;
-    anchor.scrollIntoView({ block: 'end' });
+    if (anchor && typeof anchor.scrollIntoView === 'function') {
+      anchor.scrollIntoView({ block: 'end' });
+    }
+    scrollWindowToBottom();
+    if (typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        const activeContainer = messagesScrollRef.current;
+        if (shouldUseChatContainerScroll(activeContainer)) return;
+        scrollWindowToBottom();
+      });
+    }
   }, [messages]);
 
   const submitDraft = () => {
@@ -136,11 +161,6 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
         {
           role: 'user',
           text: normalizedDraft,
-          status: 'none',
-        },
-        {
-          role: 'assistant',
-          text: appText.appState.lessonsUnavailableDefaultMessage,
           status: 'none',
         },
       ]);
@@ -189,26 +209,23 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
     setActivePhraseIndex(initialPhraseIndex);
   };
 
-  return (
+      return (
     <div className={`${VIEW_PAGE_CLASS} ${CHAT_UI_TOKENS.rootClass}`} style={lessonTextScaleStyle}>
       <section className={CHAT_UI_TOKENS.sectionClass}>
-        <div className={CHAT_UI_TOKENS.toolbarAnchorClass}>
-          <div className={CHAT_UI_TOKENS.toolbarShellClass}>
-            <div className={CHAT_UI_TOKENS.toolbarInnerClass}>
-              <h3 className="text-base font-extrabold text-[var(--text-primary)]">
-                {appText.navigation.feedLabel}
-              </h3>
-              <button
-                type="button"
-                onClick={resetPractice}
-                className={getActionButtonClass({ variant: 'secondary', size: 'sm' })}
-              >
-                {appText.appState.reloadLabel}
-              </button>
-            </div>
+        <div className={CHAT_UI_TOKENS.toolbarWrapClass}>
+          <div className={CHAT_UI_TOKENS.toolbarRowClass}>
+            <h3 className="text-base font-extrabold text-[var(--text-primary)]">
+              {appText.navigation.feedLabel}
+            </h3>
+            <button
+              type="button"
+              onClick={resetPractice}
+              className={getActionButtonClass({ variant: 'secondary', size: 'sm' })}
+            >
+              {appText.appState.reloadLabel}
+            </button>
           </div>
         </div>
-        <div aria-hidden="true" className={CHAT_UI_TOKENS.toolbarSpacerClass} />
 
         <div ref={messagesScrollRef} className={CHAT_UI_TOKENS.messagesScrollClass}>
           <div className="space-y-2">
@@ -238,11 +255,6 @@ export const ChatPracticeView: React.FC<ChatPracticeViewProps> = ({
                 </div>
               );
             })}
-            {!hasPhrasePool && (
-              <div className={`rounded-2xl border border-dashed border-[var(--border-subtle)] px-3 py-4 text-[calc(0.875rem*var(--lesson-text-scale,1))] leading-[calc(1.25rem*var(--lesson-text-scale,1))] ${sentenceWeightClass} text-[var(--text-secondary)]`}>
-                {appText.appState.lessonsUnavailableDefaultMessage}
-              </div>
-            )}
             <div ref={messagesBottomRef} />
           </div>
         </div>
