@@ -1,6 +1,6 @@
 # Frontend (React + Vite)
 
-This is the frontend client for LingoBurmese.
+This is the frontend client for CloudLanguage.
 
 - Fetches lessons from backend API (`/api/lessons`).
 - Uses lesson metadata (`level`, `unit`, `topic`) for unit navigation.
@@ -23,4 +23,3 @@ Default local frontend URL: `http://localhost:3000`
 ## QA
 
 - Mobile pre-push check: `MOBILE_SMOKE_TEST.md`
-

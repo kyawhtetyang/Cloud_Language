@@ -1,7 +1,7 @@
 import { LessonData } from '../types';
 import { getLessonOrderIndex, getLessonUnitId } from '../config/appConfig';
 
-const DB_NAME = 'lingoburmese_offline';
+const DB_NAME = 'cloudlanguage_offline';
 const DB_VERSION = 1;
 const LESSON_PACKS_STORE = 'lesson_packs';
 const DOWNLOAD_STATE_STORE = 'download_state';
@@ -347,4 +347,3 @@ export async function flushProgressQueue(apiBaseUrl: string): Promise<void> {
     }
   }
 }
-
