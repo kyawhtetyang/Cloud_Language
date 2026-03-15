@@ -66,7 +66,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             <span className={BUTTON_UI.sidebarBrandIcon}>
               <span className="text-sm font-extrabold leading-none">U</span>
             </span>
-            Duolingo
+            CloudLanguage
           </button>
           <button className={BUTTON_UI.sidebarCloseButton} onClick={onClose} aria-label={navText.closeAriaLabel}>
             ×

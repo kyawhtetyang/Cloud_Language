@@ -18,7 +18,7 @@ const SCAN_TARGETS = [
   path.join(FRONTEND_ROOT, 'components'),
 ];
 const ALLOWED_LITERAL_TEXT = new Set([
-  'Duolingo',
+  'CloudLanguage',
 ]);
 const USER_FACING_ATTR_NAMES = new Set(['aria-label', 'title', 'placeholder']);
 
